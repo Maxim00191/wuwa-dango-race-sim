@@ -1,4 +1,5 @@
 import { CELL_COUNT, FINISH_LINE_CELL_INDEX } from "@/constants/board";
+import type { TravelDirection } from "@/types/game";
 
 export function normalizeCellIndex(raw: number): number {
   const zeroBased = (raw - 1 + CELL_COUNT * 1000) % CELL_COUNT;
@@ -27,4 +28,20 @@ export function clockwiseProgressFromFinishLine(cellIndex: number): number {
     FINISH_LINE_CELL_INDEX,
     cellIndex
   );
+}
+
+export function buildStepLandingCells(
+  fromCellIndex: number,
+  steps: number,
+  direction: TravelDirection
+): number[] {
+  const landings: number[] = [];
+  for (let ordinal = 1; ordinal <= steps; ordinal++) {
+    landings.push(
+      direction === "clockwise"
+        ? addClockwise(fromCellIndex, ordinal)
+        : addCounterClockwise(fromCellIndex, ordinal)
+    );
+  }
+  return landings;
 }

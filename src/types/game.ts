@@ -58,6 +58,7 @@ export type GamePhase = "idle" | "running" | "finished";
 export type GameLogEntryKind =
   | "turnHeader"
   | "roll"
+  | "skillTrigger"
   | "skipNotBottom"
   | "standby"
   | "move"
@@ -78,6 +79,46 @@ export type EntityRuntimeState = {
   sequentialDiceOrdinal?: number;
 };
 
+export type PlaybackIdleSegment = {
+  kind: "idle";
+  actorId: DangoId;
+  reason: "standby" | "skipNotBottom";
+};
+
+export type PlaybackHopsSegment = {
+  kind: "hops";
+  actorId: DangoId;
+  travelingIds: DangoId[];
+  direction: TravelDirection;
+  cellsPath: CellIndex[];
+};
+
+export type PlaybackTeleportSegment = {
+  kind: "teleport";
+  entityIds: DangoId[];
+  fromCell: CellIndex;
+  toCell: CellIndex;
+};
+
+export type PlaybackSlideSegment = {
+  kind: "slide";
+  travelingIds: DangoId[];
+  direction: TravelDirection;
+  fromCell: CellIndex;
+  toCell: CellIndex;
+};
+
+export type PlaybackSegment =
+  | PlaybackIdleSegment
+  | PlaybackHopsSegment
+  | PlaybackTeleportSegment
+  | PlaybackSlideSegment;
+
+export type TurnPlaybackPlan = {
+  turnIndex: number;
+  segments: PlaybackSegment[];
+};
+
 export type GameState = {
   phase: GamePhase;
   turnIndex: number;
@@ -89,11 +130,13 @@ export type GameState = {
   abbyPendingTeleportToStart: boolean;
   lastRollById: Record<DangoId, number | undefined>;
   log: GameLogEntry[];
+  lastTurnPlayback: TurnPlaybackPlan | null;
 };
 
 export type DiceRollResult = {
   diceValue: number;
   entityPatches?: Partial<Record<DangoId, Partial<EntityRuntimeState>>>;
+  skillNarrative?: string;
 };
 
 export type CharacterDefinition = {

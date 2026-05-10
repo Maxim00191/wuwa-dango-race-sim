@@ -8,6 +8,7 @@ import { CHARACTER_BY_ID } from "@/services/characters";
 import {
   addClockwise,
   addCounterClockwise,
+  buildStepLandingCells,
   clockwiseProgressFromFinishLine,
 } from "@/services/circular";
 import { resolveCellEffectIfPresent } from "@/services/cellEffects";
@@ -16,6 +17,7 @@ import {
   cloneCellMap,
   findCellIndexForEntity,
   mergeWithAbbyBottomRule,
+  relocateActorLedPortionCellsOnly,
 } from "@/services/stateCells";
 import type {
   DangoId,
@@ -23,6 +25,7 @@ import type {
   GameAction,
   GameLogEntry,
   GameState,
+  PlaybackSegment,
   SkillHookContext,
 } from "@/types/game";
 
@@ -72,6 +75,7 @@ function createRunningSessionFromSelection(
     abbyPendingTeleportToStart: false,
     lastRollById: {},
     log: [],
+    lastTurnPlayback: null,
   };
 }
 
@@ -87,6 +91,7 @@ export function createInitialGameState(): GameState {
     abbyPendingTeleportToStart: false,
     lastRollById: {},
     log: [],
+    lastTurnPlayback: null,
   };
 }
 
@@ -126,26 +131,20 @@ function relocateActorLedPortionBetweenCells(
   actorIndexInStack: number,
   clockwiseDisplacementDelta: number
 ): GameState {
-  const remainderBottomToTop = fullStackBottomToTop.slice(0, actorIndexInStack);
   const movingBottomToTop = fullStackBottomToTop.slice(actorIndexInStack);
   if (movingBottomToTop.length === 0) {
     return state;
   }
-  const nextCells = cloneCellMap(state.cells);
-  const atSource = nextCells.get(fromCellIndex);
-  if (!atSource || atSource.join("|") !== fullStackBottomToTop.join("|")) {
+  const nextCells = relocateActorLedPortionCellsOnly(
+    state.cells,
+    fromCellIndex,
+    toCellIndex,
+    fullStackBottomToTop,
+    actorIndexInStack
+  );
+  if (nextCells === state.cells) {
     return state;
   }
-  if (remainderBottomToTop.length === 0) {
-    nextCells.delete(fromCellIndex);
-  } else {
-    nextCells.set(fromCellIndex, remainderBottomToTop);
-  }
-  const existingAtDestination = nextCells.get(toCellIndex) ?? [];
-  nextCells.set(
-    toCellIndex,
-    mergeWithAbbyBottomRule(existingAtDestination, movingBottomToTop)
-  );
   let nextState: GameState = { ...state, cells: nextCells };
   nextState = applyRaceDisplacementDeltaForMembers(
     nextState,
@@ -290,19 +289,29 @@ function resolveTurnForEntity(
   state: GameState,
   actingEntityId: string,
   boardEffectByCellIndex: Map<number, string | null>
-): GameState {
+): { state: GameState; segments: PlaybackSegment[] } {
+  const segments: PlaybackSegment[] = [];
   const character = CHARACTER_BY_ID[actingEntityId];
   if (!character) {
-    return state;
+    return { state, segments };
   }
   const shouldStandbyBoss =
     character.role === "boss" &&
     state.turnIndex <= character.activateAfterTurnIndex;
   if (shouldStandbyBoss) {
-    return appendLog(state, {
-      kind: "standby",
-      message: `${character.displayName} is still on standby.`,
-    });
+    return {
+      state: appendLog(state, {
+        kind: "standby",
+        message: `${character.displayName} is still on standby.`,
+      }),
+      segments: [
+        {
+          kind: "idle",
+          actorId: actingEntityId,
+          reason: "standby",
+        },
+      ],
+    };
   }
   const diceRollContext = {
     turnIndex: state.turnIndex,
@@ -319,6 +328,12 @@ function resolveTurnForEntity(
     kind: "roll",
     message: `${character.displayName} rolled ${diceValue}.`,
   });
+  if (diceOutcome.skillNarrative) {
+    nextState = appendLog(nextState, {
+      kind: "skillTrigger",
+      message: diceOutcome.skillNarrative,
+    });
+  }
   const diceContext: SkillHookContext = {
     turnIndex: state.turnIndex,
     rollerId: actingEntityId,
@@ -329,15 +344,24 @@ function resolveTurnForEntity(
   nextState = applySkillHookAfterDice(nextState, diceContext);
   const activeCellIndex = findCellIndexForEntity(nextState.cells, actingEntityId);
   if (activeCellIndex === null) {
-    return nextState;
+    return { state: nextState, segments };
   }
   const activeStack = nextState.cells.get(activeCellIndex)!;
   const actorIndexInStack = activeStack.indexOf(actingEntityId);
   if (actorIndexInStack === -1) {
-    return appendLog(nextState, {
-      kind: "skipNotBottom",
-      message: `${character.displayName} could not be placed on the track.`,
-    });
+    return {
+      state: appendLog(nextState, {
+        kind: "skipNotBottom",
+        message: `${character.displayName} could not be placed on the track.`,
+      }),
+      segments: [
+        {
+          kind: "idle",
+          actorId: actingEntityId,
+          reason: "skipNotBottom",
+        },
+      ],
+    };
   }
   const destinationCellIndex =
     character.travelDirection === "clockwise"
@@ -347,6 +371,19 @@ function resolveTurnForEntity(
     character.travelDirection === "clockwise"
       ? diceValue
       : -diceValue;
+  if (diceValue > 0) {
+    segments.push({
+      kind: "hops",
+      actorId: actingEntityId,
+      travelingIds: activeStack.slice(actorIndexInStack),
+      direction: character.travelDirection,
+      cellsPath: buildStepLandingCells(
+        activeCellIndex,
+        diceValue,
+        character.travelDirection
+      ),
+    });
+  }
   nextState = relocateActorLedPortionBetweenCells(
     nextState,
     activeCellIndex,
@@ -364,7 +401,7 @@ function resolveTurnForEntity(
     actingEntityId
   );
   if (destinationStackCellIndex === null) {
-    return nextState;
+    return { state: nextState, segments };
   }
   const destinationStack =
     nextState.cells.get(destinationStackCellIndex) ?? [];
@@ -396,6 +433,13 @@ function resolveTurnForEntity(
     postEffectCellIndex !== null &&
     postEffectCellIndex !== destinationStackCellIndex
   ) {
+    segments.push({
+      kind: "slide",
+      travelingIds: [...refreshedStack],
+      direction: character.travelDirection,
+      fromCell: destinationStackCellIndex,
+      toCell: postEffectCellIndex,
+    });
     afterEffectState = appendLog(afterEffectState, {
       kind: "cellEffect",
       message: "A special cell shifted the stack farther along the track.",
@@ -414,20 +458,33 @@ function resolveTurnForEntity(
       message: `${winnerDisplay} finished a lap and won the scramble.`,
     });
     return {
-      ...finished,
-      phase: "finished",
-      winnerId,
+      state: {
+        ...finished,
+        phase: "finished",
+        winnerId,
+      },
+      segments,
     };
   }
-  return afterEffectState;
+  return { state: afterEffectState, segments };
 }
 
 function runSingleTurnCore(
   state: GameState,
   boardEffectByCellIndex: Map<number, string | null>
 ): GameState {
+  const playbackSegments: PlaybackSegment[] = [];
   let nextState = state;
   if (nextState.abbyPendingTeleportToStart) {
+    const abbyOriginCellIndex = findCellIndexForEntity(nextState.cells, ABBY_ID);
+    if (abbyOriginCellIndex !== null) {
+      playbackSegments.push({
+        kind: "teleport",
+        entityIds: [ABBY_ID],
+        fromCell: abbyOriginCellIndex,
+        toCell: 1,
+      });
+    }
     nextState = teleportAbbyToStartLine(nextState);
   }
   nextState = {
@@ -440,17 +497,31 @@ function runSingleTurnCore(
   });
   const orderedActors = shuffleOrderStableCopy(nextState.entityOrder);
   for (const actorId of orderedActors) {
-    nextState = resolveTurnForEntity(
+    const resolved = resolveTurnForEntity(
       nextState,
       actorId,
       boardEffectByCellIndex
     );
+    nextState = resolved.state;
+    playbackSegments.push(...resolved.segments);
     if (nextState.phase === "finished") {
-      return nextState;
+      return {
+        ...nextState,
+        lastTurnPlayback: {
+          turnIndex: nextState.turnIndex,
+          segments: playbackSegments,
+        },
+      };
     }
   }
   nextState = evaluateAbbyResetScheduling(nextState);
-  return nextState;
+  return {
+    ...nextState,
+    lastTurnPlayback: {
+      turnIndex: nextState.turnIndex,
+      segments: playbackSegments,
+    },
+  };
 }
 
 export function reduceGameState(

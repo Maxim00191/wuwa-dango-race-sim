@@ -16,7 +16,13 @@ function rollCarlottaLuckyDoubleDice(
   void context;
   const baseFace = rollInclusive(1, 3);
   const isLuckyDouble = Math.random() < CARLOTTA_DOUBLE_CHANCE;
-  return { diceValue: isLuckyDouble ? baseFace * 2 : baseFace };
+  const diceValue = isLuckyDouble ? baseFace * 2 : baseFace;
+  return {
+    diceValue,
+    skillNarrative: isLuckyDouble
+      ? `Carlotta's Skill! Roll doubled to ${diceValue}!`
+      : undefined,
+  };
 }
 
 export const carlottaCharacter: CharacterDefinition = {

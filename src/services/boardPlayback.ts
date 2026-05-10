@@ -1,0 +1,240 @@
+import {
+  cloneCellMap,
+  findCellIndexForEntity,
+  moveWholeStackCellsOnly,
+  relocateActorLedPortionCellsOnly,
+  teleportEntitySliceCellsOnly,
+} from "@/services/stateCells";
+import type {
+  CellIndex,
+  DangoId,
+  PlaybackSegment,
+  TravelDirection,
+} from "@/types/game";
+
+export type AtomicPlaybackStep =
+  | {
+      kind: "hop";
+      actorId: DangoId;
+      travelingIds: DangoId[];
+      direction: TravelDirection;
+      fromCell: CellIndex;
+      toCell: CellIndex;
+    }
+  | {
+      kind: "teleport";
+      entityIds: DangoId[];
+      fromCell: CellIndex;
+      toCell: CellIndex;
+    }
+  | {
+      kind: "slide";
+      travelingIds: DangoId[];
+      direction: TravelDirection;
+      fromCell: CellIndex;
+      toCell: CellIndex;
+    };
+
+export function expandPlaybackToAtomicSteps(
+  segments: PlaybackSegment[],
+  initialCells: Map<number, DangoId[]>
+): AtomicPlaybackStep[] {
+  let cells = cloneCellMap(initialCells);
+  const atomic: AtomicPlaybackStep[] = [];
+  for (const segment of segments) {
+    if (segment.kind === "idle") {
+      continue;
+    }
+    if (segment.kind === "hops") {
+      let fromCell = findCellIndexForEntity(cells, segment.actorId);
+      if (fromCell === null) {
+        continue;
+      }
+      for (const toCell of segment.cellsPath) {
+        atomic.push({
+          kind: "hop",
+          actorId: segment.actorId,
+          travelingIds: segment.travelingIds,
+          direction: segment.direction,
+          fromCell,
+          toCell,
+        });
+        const stack = cells.get(fromCell)!;
+        const actorIndexInStack = stack.indexOf(segment.actorId);
+        cells = relocateActorLedPortionCellsOnly(
+          cells,
+          fromCell,
+          toCell,
+          stack,
+          actorIndexInStack
+        );
+        fromCell = toCell;
+      }
+      continue;
+    }
+    if (segment.kind === "teleport") {
+      atomic.push({
+        kind: "teleport",
+        entityIds: segment.entityIds,
+        fromCell: segment.fromCell,
+        toCell: segment.toCell,
+      });
+      cells = teleportEntitySliceCellsOnly(
+        cells,
+        segment.fromCell,
+        segment.toCell,
+        segment.entityIds
+      );
+      continue;
+    }
+    if (segment.kind === "slide") {
+      atomic.push({
+        kind: "slide",
+        travelingIds: segment.travelingIds,
+        direction: segment.direction,
+        fromCell: segment.fromCell,
+        toCell: segment.toCell,
+      });
+      const stackAtOrigin = cells.get(segment.fromCell);
+      if (
+        stackAtOrigin &&
+        stackAtOrigin.join("|") === segment.travelingIds.join("|")
+      ) {
+        cells = moveWholeStackCellsOnly(
+          cells,
+          segment.fromCell,
+          segment.travelingIds,
+          segment.toCell
+        );
+      }
+    }
+  }
+  return atomic;
+}
+
+export function expandPlaybackToSegmentAtomicChunks(
+  segments: PlaybackSegment[],
+  initialCells: Map<number, DangoId[]>
+): AtomicPlaybackStep[][] {
+  let cells = cloneCellMap(initialCells);
+  const chunks: AtomicPlaybackStep[][] = [];
+  for (const segment of segments) {
+    const chunk: AtomicPlaybackStep[] = [];
+    if (segment.kind === "idle") {
+      chunks.push(chunk);
+      continue;
+    }
+    if (segment.kind === "hops") {
+      let fromCell = findCellIndexForEntity(cells, segment.actorId);
+      if (fromCell === null) {
+        chunks.push(chunk);
+        continue;
+      }
+      for (const toCell of segment.cellsPath) {
+        chunk.push({
+          kind: "hop",
+          actorId: segment.actorId,
+          travelingIds: segment.travelingIds,
+          direction: segment.direction,
+          fromCell,
+          toCell,
+        });
+        const stack = cells.get(fromCell)!;
+        const actorIndexInStack = stack.indexOf(segment.actorId);
+        cells = relocateActorLedPortionCellsOnly(
+          cells,
+          fromCell,
+          toCell,
+          stack,
+          actorIndexInStack
+        );
+        fromCell = toCell;
+      }
+      chunks.push(chunk);
+      continue;
+    }
+    if (segment.kind === "teleport") {
+      chunk.push({
+        kind: "teleport",
+        entityIds: segment.entityIds,
+        fromCell: segment.fromCell,
+        toCell: segment.toCell,
+      });
+      cells = teleportEntitySliceCellsOnly(
+        cells,
+        segment.fromCell,
+        segment.toCell,
+        segment.entityIds
+      );
+      chunks.push(chunk);
+      continue;
+    }
+    if (segment.kind === "slide") {
+      chunk.push({
+        kind: "slide",
+        travelingIds: segment.travelingIds,
+        direction: segment.direction,
+        fromCell: segment.fromCell,
+        toCell: segment.toCell,
+      });
+      const stackAtOrigin = cells.get(segment.fromCell);
+      if (
+        stackAtOrigin &&
+        stackAtOrigin.join("|") === segment.travelingIds.join("|")
+      ) {
+        cells = moveWholeStackCellsOnly(
+          cells,
+          segment.fromCell,
+          segment.travelingIds,
+          segment.toCell
+        );
+      }
+      chunks.push(chunk);
+    }
+  }
+  return chunks;
+}
+
+export function applyAtomicCellsStep(
+  cells: Map<number, DangoId[]>,
+  step: AtomicPlaybackStep
+): Map<number, DangoId[]> {
+  if (step.kind === "hop") {
+    const stack = cells.get(step.fromCell);
+    if (!stack) {
+      return cells;
+    }
+    const actorIndexInStack = stack.indexOf(step.actorId);
+    if (actorIndexInStack === -1) {
+      return cells;
+    }
+    return relocateActorLedPortionCellsOnly(
+      cells,
+      step.fromCell,
+      step.toCell,
+      stack,
+      actorIndexInStack
+    );
+  }
+  if (step.kind === "teleport") {
+    return teleportEntitySliceCellsOnly(
+      cells,
+      step.fromCell,
+      step.toCell,
+      step.entityIds
+    );
+  }
+  const stackAtOrigin = cells.get(step.fromCell);
+  if (
+    !stackAtOrigin ||
+    stackAtOrigin.join("|") !== step.travelingIds.join("|")
+  ) {
+    return cells;
+  }
+  return moveWholeStackCellsOnly(
+    cells,
+    step.fromCell,
+    step.travelingIds,
+    step.toCell
+  );
+}

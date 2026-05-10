@@ -1,28 +1,46 @@
 import { useMemo } from "react";
+import type { BroadcastBannerPayload } from "@/components/BroadcastBanner";
 import { CircularBoard } from "@/components/CircularBoard";
 import { DangoPicker } from "@/components/DangoPicker";
 import { ABBY_ID, ACTIVE_BASIC_DANGO_COUNT } from "@/constants/ids";
 import { CHARACTER_BY_ID, CHARACTER_LIST } from "@/services/characters";
+import {
+  accentFillHexForDango,
+  contrastingInkHexForFill,
+} from "@/services/dangoColors";
+import { orderedRacerIdsForLeaderboard } from "@/services/racerRanking";
 import type { DangoId, GameState } from "@/types/game";
 
 type GameShellProps = {
   state: GameState;
+  broadcastPayload: BroadcastBannerPayload | null;
+  boardCells: Map<number, DangoId[]>;
   boardEffects: Map<number, string | null>;
+  hoppingEntityIds: Set<DangoId>;
   pendingBasicIds: DangoId[];
   onToggleBasicId: (id: DangoId) => void;
   onStart: () => void;
   onNextTurn: () => void;
   onReset: () => void;
+  isAnimating: boolean;
+  autoPlayEnabled: boolean;
+  onAutoPlayEnabledChange: (nextValue: boolean) => void;
 };
 
 export function GameShell({
   state,
+  broadcastPayload,
+  boardCells,
   boardEffects,
+  hoppingEntityIds,
   pendingBasicIds,
   onToggleBasicId,
   onStart,
   onNextTurn,
   onReset,
+  isAnimating,
+  autoPlayEnabled,
+  onAutoPlayEnabledChange,
 }: GameShellProps) {
   const rosterBasics = useMemo(
     () => CHARACTER_LIST.filter((character) => character.role === "basic"),
@@ -32,25 +50,28 @@ export function GameShell({
     if (state.phase === "idle") {
       return [...pendingBasicIds, ABBY_ID];
     }
-    return [...state.activeBasicIds, ABBY_ID];
-  }, [pendingBasicIds, state.activeBasicIds, state.phase]);
+    return orderedRacerIdsForLeaderboard(state);
+  }, [pendingBasicIds, state]);
   const startDisabled =
     state.phase !== "idle" ||
     pendingBasicIds.length !== ACTIVE_BASIC_DANGO_COUNT;
-  const nextTurnDisabled = state.phase !== "running" || Boolean(state.winnerId);
+  const nextTurnDisabled =
+    state.phase !== "running" ||
+    Boolean(state.winnerId) ||
+    isAnimating;
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-6xl flex-col gap-8 px-4 py-10 text-slate-100">
-      <header className="flex flex-col gap-3">
+    <div className="flex min-h-screen w-full flex-col gap-8 px-4 py-8 text-slate-100 sm:px-6 md:px-10 lg:px-14 xl:px-16 2xl:px-24">
+      <header className="flex w-full flex-col gap-3">
         <p className="text-xs uppercase tracking-[0.35em] text-slate-400">
           Circular ladder chase
         </p>
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
+        <div className="flex flex-wrap items-end justify-between gap-6 gap-y-4">
+          <div className="min-w-0 flex-1">
             <h1 className="text-3xl font-semibold text-white md:text-4xl">
               Dango Scramble
             </h1>
-            <p className="mt-2 max-w-2xl text-sm text-slate-300 md:text-base">
+            <p className="mt-2 max-w-none text-sm text-slate-300 md:text-base lg:text-lg">
               Thirty-two linked cells, stacking carries, Abby counters the pack,
               and the top dango claims victory when a lap completes.
             </p>
@@ -74,6 +95,18 @@ export function GameShell({
             </button>
             <button
               type="button"
+              onClick={() => onAutoPlayEnabledChange(!autoPlayEnabled)}
+              disabled={state.phase !== "running" || Boolean(state.winnerId)}
+              className={`rounded-full px-5 py-2 text-sm font-semibold shadow-lg transition disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400 disabled:shadow-none ${
+                autoPlayEnabled
+                  ? "bg-amber-400 text-amber-950 shadow-amber-900/40 hover:bg-amber-300"
+                  : "border border-slate-600 text-slate-100 hover:border-slate-400 hover:text-white"
+              }`}
+            >
+              {autoPlayEnabled ? "Pause auto-play" : "Auto-play"}
+            </button>
+            <button
+              type="button"
               onClick={onReset}
               className="rounded-full border border-slate-600 px-5 py-2 text-sm font-semibold text-slate-100 transition hover:border-slate-400 hover:text-white"
             >
@@ -91,8 +124,8 @@ export function GameShell({
         />
       ) : null}
 
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <section className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-2xl shadow-slate-950/60 backdrop-blur">
+      <div className="grid w-full gap-8 lg:grid-cols-[minmax(0,2.3fr)_minmax(0,1fr)] lg:gap-10 xl:grid-cols-[minmax(0,2.85fr)_minmax(0,1fr)] xl:gap-12 2xl:grid-cols-[minmax(0,3.1fr)_minmax(0,1fr)]">
+        <section className="min-w-0 rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-2xl shadow-slate-950/60 backdrop-blur xl:p-8">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.25em] text-slate-400">
@@ -113,7 +146,12 @@ export function GameShell({
               </div>
             ) : null}
           </div>
-          <CircularBoard state={state} boardEffects={boardEffects} />
+          <CircularBoard
+            boardCells={boardCells}
+            boardEffects={boardEffects}
+            broadcastPayload={broadcastPayload}
+            hoppingEntityIds={hoppingEntityIds}
+          />
           <div className="mt-6 grid gap-4 text-sm text-slate-300 sm:grid-cols-3">
             <LegendSwatch
               label="Finish line"
@@ -127,39 +165,57 @@ export function GameShell({
             />
             <LegendSwatch
               label="Stacks"
-              description="Dots show occupants from bottom to top."
+              description="Totem stacks climb outward with the base hugging each waypoint."
               borderClass="border-slate-500"
             />
           </div>
         </section>
 
-        <aside className="flex flex-col gap-6">
-          <section className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-slate-950/60">
+        <aside className="flex min-w-0 flex-col gap-6 xl:min-w-[18rem]">
+          <section className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-slate-950/60 xl:p-8">
             <p className="text-xs uppercase tracking-[0.25em] text-slate-400">
               Racers
             </p>
             <ul className="mt-4 space-y-3 text-sm text-slate-200">
-              {racerParticipantIds.map((participantId) => {
+              {racerParticipantIds.map((participantId, leaderboardIndex) => {
                 const character = CHARACTER_BY_ID[participantId];
                 if (!character) {
                   return null;
                 }
                 const runtime = state.entities[character.id];
                 const roll = state.lastRollById[character.id];
+                const rankVisible =
+                  state.phase === "running" || state.phase === "finished";
+                const dangoAccentHex = accentFillHexForDango(participantId);
+                const rankInk = contrastingInkHexForFill(dangoAccentHex);
                 return (
                   <li
                     key={character.id}
-                    className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3"
+                    className="flex items-center justify-between rounded-2xl border border-slate-800 border-l-4 bg-slate-950/60 px-4 py-3"
+                    style={{ borderLeftColor: dangoAccentHex }}
                   >
-                    <div>
-                      <p className="font-semibold text-white">
-                        {character.displayName}
-                      </p>
-                      <p className="text-xs text-slate-400">
-                        {character.role === "boss"
-                          ? "Boss · dice 1-6 · counter-clockwise"
-                          : "Basic · dice 1-3 · clockwise"}
-                      </p>
+                    <div className="flex items-start gap-3">
+                      {rankVisible ? (
+                        <span
+                          className="mt-0.5 inline-flex h-7 min-w-[2rem] items-center justify-center rounded-full px-2 text-xs font-semibold ring-1 ring-black/20"
+                          style={{
+                            backgroundColor: dangoAccentHex,
+                            color: rankInk,
+                          }}
+                        >
+                          #{leaderboardIndex + 1}
+                        </span>
+                      ) : null}
+                      <div>
+                        <p className="font-semibold text-white">
+                          {character.displayName}
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          {character.role === "boss"
+                            ? "Boss · dice 1-6 · counter-clockwise"
+                            : "Basic · dice 1-3 · clockwise"}
+                        </p>
+                      </div>
                     </div>
                     <div className="text-right text-xs text-slate-400">
                       <p className="font-mono text-[13px] text-slate-100">
@@ -175,7 +231,7 @@ export function GameShell({
             </ul>
           </section>
 
-          <section className="flex max-h-[420px] flex-col rounded-3xl border border-slate-800 bg-slate-950/70 p-6 shadow-xl shadow-slate-950/60">
+          <section className="flex max-h-[420px] flex-col rounded-3xl border border-slate-800 bg-slate-950/70 p-6 shadow-xl shadow-slate-950/60 xl:max-h-[min(58vh,560px)] xl:p-8 2xl:max-h-[min(62vh,640px)]">
             <div className="mb-3 flex items-center justify-between gap-3">
               <p className="text-xs uppercase tracking-[0.25em] text-slate-400">
                 Chronicle

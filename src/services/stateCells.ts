@@ -9,6 +9,87 @@ export function cloneCellMap(
   );
 }
 
+export function relocateActorLedPortionCellsOnly(
+  cells: Map<number, string[]>,
+  fromCellIndex: number,
+  toCellIndex: number,
+  fullStackBottomToTop: string[],
+  actorIndexInStack: number
+): Map<number, string[]> {
+  const remainderBottomToTop = fullStackBottomToTop.slice(0, actorIndexInStack);
+  const movingBottomToTop = fullStackBottomToTop.slice(actorIndexInStack);
+  if (movingBottomToTop.length === 0) {
+    return cells;
+  }
+  const nextCells = cloneCellMap(cells);
+  const atSource = nextCells.get(fromCellIndex);
+  if (!atSource || atSource.join("|") !== fullStackBottomToTop.join("|")) {
+    return cells;
+  }
+  if (remainderBottomToTop.length === 0) {
+    nextCells.delete(fromCellIndex);
+  } else {
+    nextCells.set(fromCellIndex, remainderBottomToTop);
+  }
+  const existingAtDestination = nextCells.get(toCellIndex) ?? [];
+  nextCells.set(
+    toCellIndex,
+    mergeWithAbbyBottomRule(existingAtDestination, movingBottomToTop)
+  );
+  return nextCells;
+}
+
+export function moveWholeStackCellsOnly(
+  cells: Map<number, string[]>,
+  originCellIndex: number,
+  stackBottomToTop: string[],
+  destinationCellIndex: number
+): Map<number, string[]> {
+  const nextCells = cloneCellMap(cells);
+  const atOrigin = nextCells.get(originCellIndex);
+  if (!atOrigin || atOrigin.join("|") !== stackBottomToTop.join("|")) {
+    return cells;
+  }
+  nextCells.delete(originCellIndex);
+  const existing = nextCells.get(destinationCellIndex) ?? [];
+  nextCells.set(
+    destinationCellIndex,
+    mergeWithAbbyBottomRule(existing, stackBottomToTop)
+  );
+  return nextCells;
+}
+
+export function teleportEntitySliceCellsOnly(
+  cells: Map<number, string[]>,
+  fromCellIndex: number,
+  toCellIndex: number,
+  entityIdsToRemoveFromOrigin: string[]
+): Map<number, string[]> {
+  const stack = cells.get(fromCellIndex);
+  if (!stack) {
+    return cells;
+  }
+  const incoming = entityIdsToRemoveFromOrigin.filter((id) =>
+    stack.includes(id)
+  );
+  if (incoming.length === 0) {
+    return cells;
+  }
+  const nextCells = cloneCellMap(cells);
+  const remaining = stack.filter((id) => !entityIdsToRemoveFromOrigin.includes(id));
+  if (remaining.length === 0) {
+    nextCells.delete(fromCellIndex);
+  } else {
+    nextCells.set(fromCellIndex, remaining);
+  }
+  const existingAtDestination = nextCells.get(toCellIndex) ?? [];
+  nextCells.set(
+    toCellIndex,
+    mergeWithAbbyBottomRule(existingAtDestination, incoming)
+  );
+  return nextCells;
+}
+
 export function mergeWithAbbyBottomRule(
   existingBottomToTop: string[],
   incomingBottomToTop: string[]
