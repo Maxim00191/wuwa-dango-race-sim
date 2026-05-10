@@ -262,13 +262,23 @@ export function useGame() {
         const chunk = segmentChunks[segmentIndex] ?? [];
 
         if (segment.kind === "teleport") {
+          const accentDangoId = segment.entityIds[segment.entityIds.length - 1];
+          const name =
+            accentDangoId === ABBY_ID
+              ? CHARACTER_BY_ID[ABBY_ID]?.displayName ?? "Abby"
+              : accentDangoId
+                ? CHARACTER_BY_ID[accentDangoId]?.displayName ?? accentDangoId
+                : "The stack";
           await shineBanner(
             {
               variant: "teleport",
-              headline: "Abby reclaims the starting lane",
+              headline:
+                accentDangoId === ABBY_ID
+                  ? "Abby reclaims the starting lane"
+                  : `${name} leaps to a nearby stack`,
               detail:
-                incomingLogs[logCursor]?.message ?? "Boss reposition complete",
-              accentDangoId: ABBY_ID,
+                incomingLogs[logCursor]?.message ?? "Teleport reposition complete",
+              accentDangoId,
             },
             TELEPORT_BANNER_MS
           );

@@ -1,0 +1,45 @@
+import { rollInclusive } from "@/services/characters/dice";
+import type {
+  CharacterDefinition,
+  DiceRollContext,
+  DiceRollResult,
+  GameState,
+} from "@/types/game";
+
+const LYNAE_DOUBLE_CHANCE = 0.6;
+const LYNAE_STUCK_CHANCE = 0.2;
+
+function rollLynaeUnstableDice(
+  state: GameState,
+  context: DiceRollContext
+): DiceRollResult {
+  void state;
+  void context;
+  const initialDiceValue = rollInclusive(1, 3);
+  const unstableRoll = Math.random();
+  if (unstableRoll < LYNAE_DOUBLE_CHANCE) {
+    return {
+      diceValue: initialDiceValue * 2,
+      initialDiceValue,
+      skillNarrative: `Lynae's Skill! Roll doubled to ${initialDiceValue * 2}!`,
+    };
+  }
+  if (unstableRoll < LYNAE_DOUBLE_CHANCE + LYNAE_STUCK_CHANCE) {
+    return {
+      diceValue: 0,
+      initialDiceValue,
+      skillNarrative: "Lynae's Skill! She got stuck and cannot move!",
+    };
+  }
+  return { diceValue: initialDiceValue, initialDiceValue };
+}
+
+export const lynaeCharacter: CharacterDefinition = {
+  id: "lynae",
+  displayName: "Lynae",
+  role: "basic",
+  diceRoll: rollLynaeUnstableDice,
+  travelDirection: "clockwise",
+  activateAfterTurnIndex: 0,
+  skillHooks: {},
+};

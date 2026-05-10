@@ -16,19 +16,63 @@ export type SkillHookContext = {
   cellIndex: CellIndex;
 };
 
-export type SkillHookName =
-  | "afterDiceRoll"
-  | "afterMovement"
-  | "afterHalfwayCrossing";
-
 export type SkillHookHandler = (
   state: GameState,
   context: SkillHookContext
 ) => GameState;
 
-export type CharacterSkillHooks = Partial<
-  Record<SkillHookName, SkillHookHandler>
->;
+export type MovementEvaluationContext = {
+  turnIndex: number;
+  rollerId: DangoId;
+  initialDiceValue: number;
+  diceValue: number;
+  allInitialRolls: number[];
+  allInitialRollsById: Record<DangoId, number | undefined>;
+  allResolvedRollsById: Record<DangoId, number | undefined>;
+};
+
+export type MovementEvaluationResult = {
+  diceValue: number;
+  entityPatches?: Partial<Record<DangoId, Partial<EntityRuntimeState>>>;
+  skillNarrative?: string;
+};
+
+export type MovementEvaluationHookHandler = (
+  state: GameState,
+  context: MovementEvaluationContext
+) => MovementEvaluationResult;
+
+export type MovementStepHookContext = {
+  turnIndex: number;
+  rollerId: DangoId;
+  diceValue: number;
+  stepNumber: number;
+  remainingSteps: number;
+  fromCellIndex: CellIndex;
+  toCellIndex: CellIndex;
+  travelingIds: DangoId[];
+  travelDirection: TravelDirection;
+  rankedRacerIds: DangoId[];
+};
+
+export type MovementStepHookResult = {
+  state: GameState;
+  segments?: PlaybackSegment[];
+  skillNarrative?: string;
+};
+
+export type MovementStepHookHandler = (
+  state: GameState,
+  context: MovementStepHookContext
+) => MovementStepHookResult;
+
+export type CharacterSkillHooks = {
+  afterDiceRoll?: SkillHookHandler;
+  afterMovement?: SkillHookHandler;
+  afterHalfwayCrossing?: SkillHookHandler;
+  resolveMovement?: MovementEvaluationHookHandler;
+  afterMovementStep?: MovementStepHookHandler;
+};
 
 export type CellEffectTriggerContext = {
   turnIndex: number;
@@ -78,6 +122,7 @@ export type EntityRuntimeState = {
   cellIndex: CellIndex;
   raceDisplacement: number;
   sequentialDiceOrdinal?: number;
+  hasUsedMidpointLeap?: boolean;
 };
 
 export type PlaybackIdleSegment = {
@@ -136,6 +181,7 @@ export type GameState = {
 
 export type DiceRollResult = {
   diceValue: number;
+  initialDiceValue?: number;
   entityPatches?: Partial<Record<DangoId, Partial<EntityRuntimeState>>>;
   skillNarrative?: string;
 };

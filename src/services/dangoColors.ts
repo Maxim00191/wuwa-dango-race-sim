@@ -10,6 +10,15 @@ const BASIC_ACCENT_PALETTE = [
   "#94a3b8",
 ] as const;
 
+const DANGO_ACCENT_OVERRIDES: Partial<Record<DangoId, string>> = {
+  aemeath: "#f9a8d4",
+  carlotta: "#ffffff",
+  chisa: "#020617",
+  lynae: "#d6b48f",
+  mornye: "#c7d2fe",
+  shorekeeper: "#3b82f6",
+};
+
 function hashStringId(entityId: string): number {
   return entityId
     .split("")
@@ -18,7 +27,11 @@ function hashStringId(entityId: string): number {
 
 export function accentFillHexForDango(entityId: DangoId): string {
   if (entityId === ABBY_ID) {
-    return "#fb7185";
+    return "#8B15AF";
+  }
+  const override = DANGO_ACCENT_OVERRIDES[entityId];
+  if (override) {
+    return override;
   }
   return BASIC_ACCENT_PALETTE[hashStringId(entityId) % BASIC_ACCENT_PALETTE.length]!;
 }

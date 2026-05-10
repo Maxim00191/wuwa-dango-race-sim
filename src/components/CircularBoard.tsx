@@ -6,7 +6,10 @@ import {
   ellipsePointFromAngle,
 } from "@/services/boardLayout";
 import { CHARACTER_BY_ID } from "@/services/characters";
-import { accentFillHexForDango } from "@/services/dangoColors";
+import {
+  accentFillHexForDango,
+  contrastingInkHexForFill,
+} from "@/services/dangoColors";
 import type { DangoId } from "@/types/game";
 
 type CircularBoardProps = {
@@ -336,6 +339,8 @@ function CircularBoardComponent({
           }) => {
             const isHopping = hoppingEntityIds.has(entityId);
             const displayName = displayNameForEntity(entityId);
+            const accentFill = accentFillHexForDango(entityId);
+            const labelFill = contrastingInkHexForFill(accentFill);
             const nameLines = splitDisplayNameIntoLines(displayName);
             const labelFontSize = fontSizeForTokenLabelLines(nameLines);
             const stackedLift = stackIndex / Math.max(stackDepth, 1);
@@ -360,7 +365,7 @@ function CircularBoardComponent({
                 >
                   <circle
                     r={TOKEN_RADIUS}
-                    fill={accentFillHexForDango(entityId)}
+                    fill={accentFill}
                     stroke="#020617"
                     strokeWidth={2.2}
                     opacity={0.92 + stackedLift * 0.06}
@@ -369,7 +374,8 @@ function CircularBoardComponent({
                     <text
                       textAnchor="middle"
                       dominantBaseline="central"
-                      className="pointer-events-none fill-slate-950 font-bold tracking-tight"
+                      className="pointer-events-none font-bold tracking-tight"
+                      fill={labelFill}
                       style={{ fontSize: labelFontSize }}
                     >
                       {nameLines[0]}
@@ -377,7 +383,8 @@ function CircularBoardComponent({
                   ) : (
                     <text
                       textAnchor="middle"
-                      className="pointer-events-none fill-slate-950 font-bold tracking-tight"
+                      className="pointer-events-none font-bold tracking-tight"
+                      fill={labelFill}
                       style={{ fontSize: labelFontSize }}
                     >
                       <tspan x={0} dy="-0.52em">

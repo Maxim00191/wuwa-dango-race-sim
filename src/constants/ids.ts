@@ -4,13 +4,12 @@ export const ACTIVE_BASIC_DANGO_COUNT = 6;
 
 export const SELECTABLE_BASIC_DANGO_IDS = [
   "bot1",
-  "bot2",
-  "bot3",
-  "bot4",
-  "bot5",
-  "bot6",
   "mornye",
   "carlotta",
+  "shorekeeper",
+  "lynae",
+  "chisa",
+  "aemeath",
 ] as const;
 
 export function createDefaultPendingBasicIds(): string[] {

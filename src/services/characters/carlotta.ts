@@ -19,6 +19,7 @@ function rollCarlottaLuckyDoubleDice(
   const diceValue = isLuckyDouble ? baseFace * 2 : baseFace;
   return {
     diceValue,
+    initialDiceValue: baseFace,
     skillNarrative: isLuckyDouble
       ? `Carlotta's Skill! Roll doubled to ${diceValue}!`
       : undefined,
