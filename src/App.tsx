@@ -4,6 +4,7 @@ import { useGame } from "@/hooks/useGame";
 export default function App() {
   const {
     state,
+    rankingState,
     pendingBasicIds,
     togglePendingBasicId,
     start,
@@ -21,6 +22,7 @@ export default function App() {
   return (
     <GameShell
       state={state}
+      rankingState={rankingState}
       broadcastPayload={broadcastPayload}
       boardCells={boardCells}
       boardEffects={boardEffects}

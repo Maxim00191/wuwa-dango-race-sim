@@ -5,7 +5,8 @@ import {
   normalizeCellIndex,
 } from "@/services/circular";
 import {
-  applyRaceDisplacementDeltaForMembers,
+  applyCellIndexForMembers,
+  applyMovementDeltaForMembers,
   cloneCellMap,
   mergeWithAbbyBottomRule,
 } from "@/services/stateCells";
@@ -39,10 +40,16 @@ function moveWholeStackByCells(
   nextCells.delete(originCellIndex);
   insertStackAtCell(nextCells, destinationCellIndex, stackBottomToTop);
   let nextState: GameState = { ...state, cells: nextCells };
-  nextState = applyRaceDisplacementDeltaForMembers(
+  nextState = applyMovementDeltaForMembers(
     nextState,
     stackBottomToTop,
-    clockwiseDeltaForDisplacement
+    clockwiseDeltaForDisplacement,
+    destinationCellIndex
+  );
+  nextState = applyCellIndexForMembers(
+    nextState,
+    nextCells.get(destinationCellIndex) ?? [],
+    destinationCellIndex
   );
   return nextState;
 }

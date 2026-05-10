@@ -13,7 +13,8 @@ import {
 } from "@/services/circular";
 import { resolveCellEffectIfPresent } from "@/services/cellEffects";
 import {
-  applyRaceDisplacementDeltaForMembers,
+  applyCellIndexForMembers,
+  applyMovementDeltaForMembers,
   cloneCellMap,
   findCellIndexForEntity,
   mergeWithAbbyBottomRule,
@@ -58,9 +59,9 @@ function createRunningSessionFromSelection(
 ): GameState {
   const entities: GameState["entities"] = {};
   for (const id of selectedBasicIds) {
-    entities[id] = { id, raceDisplacement: 0 };
+    entities[id] = { id, cellIndex: 1, raceDisplacement: 0 };
   }
-  entities[ABBY_ID] = { id: ABBY_ID, raceDisplacement: 0 };
+  entities[ABBY_ID] = { id: ABBY_ID, cellIndex: 1, raceDisplacement: 0 };
   const cells = new Map<number, DangoId[]>([
     [1, [ABBY_ID, ...selectedBasicIds]],
   ]);
@@ -146,10 +147,16 @@ function relocateActorLedPortionBetweenCells(
     return state;
   }
   let nextState: GameState = { ...state, cells: nextCells };
-  nextState = applyRaceDisplacementDeltaForMembers(
+  nextState = applyMovementDeltaForMembers(
     nextState,
     movingBottomToTop,
-    clockwiseDisplacementDelta
+    clockwiseDisplacementDelta,
+    toCellIndex
+  );
+  nextState = applyCellIndexForMembers(
+    nextState,
+    nextCells.get(toCellIndex) ?? [],
+    toCellIndex
   );
   return nextState;
 }
@@ -240,7 +247,11 @@ function teleportAbbyToStartLine(state: GameState): GameState {
   );
   const nextEntities = {
     ...state.entities,
-    [ABBY_ID]: { ...state.entities[ABBY_ID]!, raceDisplacement: 0 },
+    [ABBY_ID]: {
+      ...state.entities[ABBY_ID]!,
+      cellIndex: destinationCellIndex,
+      raceDisplacement: 0,
+    },
   };
   let nextState: GameState = {
     ...state,
@@ -248,6 +259,11 @@ function teleportAbbyToStartLine(state: GameState): GameState {
     entities: nextEntities,
     abbyPendingTeleportToStart: false,
   };
+  nextState = applyCellIndexForMembers(
+    nextState,
+    nextCells.get(destinationCellIndex) ?? [],
+    destinationCellIndex
+  );
   nextState = appendLog(nextState, {
     kind: "abbyTeleport",
     message: "Abby was sent back to the start line.",

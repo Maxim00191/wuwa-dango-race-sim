@@ -18,6 +18,7 @@ import {
 } from "@/services/boardLayout";
 import {
   applyAtomicCellsStep,
+  applyAtomicStepToEntities,
   expandPlaybackToSegmentAtomicChunks,
   type AtomicPlaybackStep,
 } from "@/services/boardPlayback";
@@ -27,7 +28,7 @@ import {
   isValidBasicSelection,
   reduceGameState,
 } from "@/services/gameEngine";
-import { cloneCellMap } from "@/services/stateCells";
+import { cloneCellMap, cloneEntityMap } from "@/services/stateCells";
 import type { BroadcastBannerPayload } from "@/components/BroadcastBanner";
 import type { DangoId, GameAction, GameState, PlaybackSegment } from "@/types/game";
 import { formatTurnOrderArrowLine } from "@/narration/formatTurnOrderArrowLine";
@@ -85,6 +86,9 @@ export function useGame() {
   const [playbackCells, setPlaybackCells] = useState<
     Map<number, DangoId[]> | null
   >(null);
+  const [playbackEntities, setPlaybackEntities] = useState<
+    GameState["entities"] | null
+  >(null);
   const [hoppingEntityIds, setHoppingEntityIds] = useState<Set<DangoId>>(
     () => new Set()
   );
@@ -120,6 +124,7 @@ export function useGame() {
     isAnimatingRef.current = false;
     snapshotBeforeTurnRef.current = null;
     setPlaybackCells(null);
+    setPlaybackEntities(null);
     setHoppingEntityIds(new Set());
     setIsAnimating(false);
     setBroadcastPayload(null);
@@ -137,6 +142,7 @@ export function useGame() {
     }
     snapshotBeforeTurnRef.current = state;
     setPlaybackCells(cloneCellMap(state.cells));
+    setPlaybackEntities(cloneEntityMap(state.entities));
     isAnimatingRef.current = true;
     setIsAnimating(true);
     dispatch({ type: "RUN_FULL_TURN" });
@@ -157,7 +163,9 @@ export function useGame() {
     const incomingLogs = state.log.slice(snapshot.log.length);
     const generation = ++animationGenerationRef.current;
     let workingCells = cloneCellMap(snapshot.cells);
+    let workingEntities = cloneEntityMap(snapshot.entities);
     setPlaybackCells(workingCells);
+    setPlaybackEntities(workingEntities);
     void (async () => {
       const guard = () =>
         !cancelled && generation === animationGenerationRef.current;
@@ -183,7 +191,9 @@ export function useGame() {
             return;
           }
           workingCells = applyAtomicCellsStep(workingCells, step);
+          workingEntities = applyAtomicStepToEntities(workingEntities, step);
           setPlaybackCells(cloneCellMap(workingCells));
+          setPlaybackEntities(cloneEntityMap(workingEntities));
           const movers =
             step.kind === "hop"
               ? step.travelingIds
@@ -397,6 +407,7 @@ export function useGame() {
         return;
       }
       setPlaybackCells(null);
+      setPlaybackEntities(null);
       setHoppingEntityIds(new Set());
       setBroadcastPayload(null);
       isAnimatingRef.current = false;
@@ -436,8 +447,16 @@ export function useGame() {
     runFullTurn,
   ]);
 
+  const rankingState = useMemo((): GameState => {
+    if (playbackCells !== null && playbackEntities !== null) {
+      return { ...state, cells: playbackCells, entities: playbackEntities };
+    }
+    return state;
+  }, [state, playbackCells, playbackEntities]);
+
   return {
     state,
+    rankingState,
     pendingBasicIds,
     togglePendingBasicId,
     start,

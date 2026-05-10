@@ -1,3 +1,4 @@
+import { clockwiseDistanceBetweenInclusive } from "@/services/circular";
 import {
   cloneCellMap,
   findCellIndexForEntity,
@@ -5,9 +6,11 @@ import {
   relocateActorLedPortionCellsOnly,
   teleportEntitySliceCellsOnly,
 } from "@/services/stateCells";
+import { ABBY_ID } from "@/constants/ids";
 import type {
   CellIndex,
   DangoId,
+  GameState,
   PlaybackSegment,
   TravelDirection,
 } from "@/types/game";
@@ -237,4 +240,48 @@ export function applyAtomicCellsStep(
     step.travelingIds,
     step.toCell
   );
+}
+
+export function applyAtomicStepToEntities(
+  entities: GameState["entities"],
+  step: AtomicPlaybackStep
+): GameState["entities"] {
+  if (step.kind === "teleport") {
+    let nextEntities = { ...entities };
+    for (const id of step.entityIds) {
+      const runtime = nextEntities[id];
+      if (!runtime) {
+        continue;
+      }
+      nextEntities = {
+        ...nextEntities,
+        [id]: {
+          ...runtime,
+          cellIndex: step.toCell,
+          raceDisplacement: id === ABBY_ID ? 0 : runtime.raceDisplacement,
+        },
+      };
+    }
+    return nextEntities;
+  }
+  const delta =
+    step.direction === "clockwise"
+      ? clockwiseDistanceBetweenInclusive(step.fromCell, step.toCell)
+      : -clockwiseDistanceBetweenInclusive(step.toCell, step.fromCell);
+  let nextEntities = { ...entities };
+  for (const id of step.travelingIds) {
+    const runtime = nextEntities[id];
+    if (!runtime) {
+      continue;
+    }
+    nextEntities = {
+      ...nextEntities,
+      [id]: {
+        ...runtime,
+        cellIndex: step.toCell,
+        raceDisplacement: runtime.raceDisplacement + delta,
+      },
+    };
+  }
+  return nextEntities;
 }

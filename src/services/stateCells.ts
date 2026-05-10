@@ -1,6 +1,19 @@
 import { ABBY_ID } from "@/constants/ids";
 import type { GameState } from "@/types/game";
 
+export function cloneEntityMap(
+  entities: GameState["entities"]
+): GameState["entities"] {
+  const next: GameState["entities"] = {};
+  for (const id of Object.keys(entities)) {
+    const runtime = entities[id];
+    if (runtime) {
+      next[id] = { ...runtime };
+    }
+  }
+  return next;
+}
+
 export function cloneCellMap(
   cells: Map<number, string[]>
 ): Map<number, string[]> {
@@ -117,17 +130,38 @@ export function getBottomEntityId(stackBottomToTop: string[]): string {
   return stackBottomToTop[0]!;
 }
 
-export function applyRaceDisplacementDeltaForMembers(
+export function applyMovementDeltaForMembers(
   state: GameState,
   memberIds: string[],
-  clockwiseDelta: number
+  clockwiseDelta: number,
+  destinationCellIndex: number
 ): GameState {
   const nextEntities = { ...state.entities };
   for (const id of memberIds) {
     const previous = nextEntities[id]!;
     nextEntities[id] = {
       ...previous,
+      cellIndex: destinationCellIndex,
       raceDisplacement: previous.raceDisplacement + clockwiseDelta,
+    };
+  }
+  return { ...state, entities: nextEntities };
+}
+
+export function applyCellIndexForMembers(
+  state: GameState,
+  memberIds: string[],
+  cellIndex: number
+): GameState {
+  const nextEntities = { ...state.entities };
+  for (const id of memberIds) {
+    const previous = nextEntities[id];
+    if (!previous) {
+      continue;
+    }
+    nextEntities[id] = {
+      ...previous,
+      cellIndex,
     };
   }
   return { ...state, entities: nextEntities };

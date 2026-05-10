@@ -5,7 +5,7 @@ import type {
   GameState,
 } from "@/types/game";
 
-const MORNYE_DICE_SEQUENCE = [1, 2, 3] as const;
+const MORNYE_DICE_SEQUENCE = [3, 2, 1] as const;
 
 function rollMornyeSequentialDice(
   state: GameState,

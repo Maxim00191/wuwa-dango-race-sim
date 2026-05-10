@@ -1,9 +1,10 @@
-import { memo, useMemo } from "react";
+import { memo, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { CELL_COUNT, FINISH_LINE_CELL_INDEX } from "@/constants/board";
+import { ACTIVE_BASIC_DANGO_COUNT } from "@/constants/ids";
 import {
-  BroadcastBanner,
-  type BroadcastBannerPayload,
-} from "@/components/BroadcastBanner";
-import { CELL_COUNT } from "@/constants/board";
+  angleForCellIndex,
+  ellipsePointFromAngle,
+} from "@/services/boardLayout";
 import { CHARACTER_BY_ID } from "@/services/characters";
 import { accentFillHexForDango } from "@/services/dangoColors";
 import type { DangoId } from "@/types/game";
@@ -11,24 +12,20 @@ import type { DangoId } from "@/types/game";
 type CircularBoardProps = {
   boardCells: Map<number, DangoId[]>;
   boardEffects: Map<number, string | null>;
-  broadcastPayload: BroadcastBannerPayload | null;
   hoppingEntityIds: Set<DangoId>;
 };
 
-const VIEWBOX_SIZE = 560;
-const CENTER = VIEWBOX_SIZE / 2;
-const ORBIT_RADIUS = 228;
+const TRACK_RING_PAD_X = 6;
+const TRACK_RING_PAD_Y = 6;
 const CELL_MARKER_RADIUS = 5.5;
+const FINISH_CELL_MARKER_RADIUS = 8.25;
 const TOKEN_RADIUS = 21;
-const TOKEN_BASE_OUTWARD = 26;
 const TOTEM_LAYER_STEP_VIEWBOX = 24;
+const FILTER_SHADOW_BLEED = 10;
+const CELL_INDEX_LABEL_BAND =
+  FINISH_CELL_MARKER_RADIUS + 7 + 11;
 
-function polarToCartesian(angleRadians: number, radius: number) {
-  return {
-    x: CENTER + radius * Math.cos(angleRadians),
-    y: CENTER + radius * Math.sin(angleRadians),
-  };
-}
+const MAX_TOTEM_DEPTH_FOR_ORBIT = ACTIVE_BASIC_DANGO_COUNT;
 
 function displayNameForEntity(entityId: DangoId): string {
   const name = CHARACTER_BY_ID[entityId]?.displayName ?? entityId;
@@ -71,51 +68,216 @@ function fontSizeForTokenLabelLines(lines: string[]): number {
 function CircularBoardComponent({
   boardCells,
   boardEffects,
-  broadcastPayload,
   hoppingEntityIds,
 }: CircularBoardProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [viewportPixels, setViewportPixels] = useState({
+    width: 960,
+    height: 700,
+  });
+
+  useLayoutEffect(() => {
+    const element = containerRef.current;
+    if (!element) {
+      return;
+    }
+    const applyRect = (width: number, height: number) => {
+      const nextWidth = Math.max(1, Math.round(width));
+      const nextHeight = Math.max(1, Math.round(height));
+      setViewportPixels((current) =>
+        current.width === nextWidth && current.height === nextHeight
+          ? current
+          : { width: nextWidth, height: nextHeight }
+      );
+    };
+    const syncFromElement = () => {
+      const rect = element.getBoundingClientRect();
+      applyRect(rect.width, rect.height);
+    };
+    syncFromElement();
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) {
+        return;
+      }
+      const { width, height } = entry.contentRect;
+      applyRect(width, height);
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  const orbitLayout = useMemo(() => {
+    const viewWidth = viewportPixels.width;
+    const viewHeight = viewportPixels.height;
+    const dangoFootprintWidth = TOKEN_RADIUS * 2;
+    const horizontalHalfReserve = dangoFootprintWidth + FILTER_SHADOW_BLEED;
+    const totemColumnHeight =
+      TOKEN_RADIUS +
+      MAX_TOTEM_DEPTH_FOR_ORBIT * TOTEM_LAYER_STEP_VIEWBOX +
+      TOKEN_RADIUS;
+    const verticalHalfReserve =
+      totemColumnHeight + CELL_INDEX_LABEL_BAND + FILTER_SHADOW_BLEED;
+    const centerX = viewWidth / 2;
+    const centerY = viewHeight / 2;
+    const orbitRadiusX = Math.max(
+      12,
+      viewWidth / 2 - horizontalHalfReserve
+    );
+    const orbitRadiusY = Math.max(
+      12,
+      viewHeight / 2 - verticalHalfReserve
+    );
+    return {
+      centerX,
+      centerY,
+      orbitRadiusX,
+      orbitRadiusY,
+      viewWidth,
+      viewHeight,
+    };
+  }, [viewportPixels.width, viewportPixels.height]);
+
   const cellsArray = useMemo(
     () => Array.from({ length: CELL_COUNT }, (_, index) => index + 1),
     []
   );
 
-  const hubLabelVisible = !broadcastPayload;
+  const orderedTokenDraws = useMemo(() => {
+    type Row = {
+      cellIndex: number;
+      stackIndex: number;
+      stackDepth: number;
+      entityId: DangoId;
+      tx: number;
+      ty: number;
+    };
+    const rows: Row[] = [];
+    const {
+      centerX,
+      centerY,
+      orbitRadiusX,
+      orbitRadiusY,
+    } = orbitLayout;
+    for (const cellIndex of cellsArray) {
+      const angle = angleForCellIndex(cellIndex, CELL_COUNT);
+      const cellCenter = ellipsePointFromAngle(
+        centerX,
+        centerY,
+        orbitRadiusX,
+        orbitRadiusY,
+        angle
+      );
+      const stackBottomToTop = boardCells.get(cellIndex) ?? [];
+      const stackDepth = stackBottomToTop.length - 1;
+      stackBottomToTop.forEach((entityId, stackIndex) => {
+        rows.push({
+          cellIndex,
+          stackIndex,
+          stackDepth,
+          entityId,
+          tx: cellCenter.x,
+          ty:
+            cellCenter.y -
+            TOKEN_RADIUS -
+            stackIndex * TOTEM_LAYER_STEP_VIEWBOX,
+        });
+      });
+    }
+    rows.sort((left, right) => {
+      if (left.stackIndex !== right.stackIndex) {
+        return left.stackIndex - right.stackIndex;
+      }
+      return left.cellIndex - right.cellIndex;
+    });
+    return rows;
+  }, [boardCells, cellsArray, orbitLayout]);
+
+  const {
+    centerX,
+    centerY,
+    orbitRadiusX,
+    orbitRadiusY,
+    viewWidth,
+    viewHeight,
+  } = orbitLayout;
 
   return (
-    <div className="relative mx-auto flex aspect-square h-[min(85vw,480px)] w-[min(85vw,480px)] justify-center xl:h-[min(58vw,560px)] xl:w-[min(58vw,560px)] 2xl:h-[min(52vw,640px)] 2xl:w-[min(52vw,640px)]">
+    <div
+      ref={containerRef}
+      className="relative h-full w-full min-h-0 overflow-hidden"
+    >
       <svg
-        viewBox={`0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}`}
+        viewBox={`0 0 ${viewWidth} ${viewHeight}`}
         className="h-full w-full text-slate-100"
         role="img"
-        aria-label="Circular race board with thirty-two cells"
+        aria-label="Elliptical race board with thirty-two cells"
       >
         <defs>
-          <radialGradient id="boardGlow" cx="50%" cy="50%" r="58%">
+          <pattern
+            id="finishChecker"
+            width={10}
+            height={10}
+            patternUnits="userSpaceOnUse"
+          >
+            <rect width={10} height={10} fill="#0f172a" />
+            <rect width={5} height={5} fill="#e2e8f0" opacity={0.92} />
+            <rect x={5} y={5} width={5} height={5} fill="#e2e8f0" opacity={0.92} />
+            <rect x={5} width={5} height={5} fill="#1e293b" />
+            <rect y={5} width={5} height={5} fill="#1e293b" />
+          </pattern>
+          <radialGradient id="boardGlow" cx="50%" cy="50%" r="68%">
             <stop offset="0%" stopColor="#1e293b" />
             <stop offset="100%" stopColor="#020617" />
           </radialGradient>
+          <filter
+            id="finishCellGlow"
+            x="-80%"
+            y="-80%"
+            width="260%"
+            height="260%"
+          >
+            <feGaussianBlur in="SourceAlpha" stdDeviation={2.2} result="blur" />
+            <feFlood floodColor="#fbbf24" floodOpacity={0.55} result="glowColor" />
+            <feComposite in="glowColor" in2="blur" operator="in" result="glow" />
+            <feMerge>
+              <feMergeNode in="glow" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+          <filter id="tokenShadowGrounded" x="-55%" y="-55%" width="210%" height="210%">
+            <feDropShadow
+              dx="0"
+              dy="6"
+              stdDeviation={5.5}
+              floodColor="#020617"
+              floodOpacity={0.78}
+            />
+          </filter>
           <filter id="tokenShadowStacked" x="-50%" y="-50%" width="200%" height="200%">
             <feDropShadow
               dx="0"
-              dy="3"
-              stdDeviation="3"
+              dy={2.5}
+              stdDeviation={2.4}
               floodColor="#020617"
-              floodOpacity="0.62"
+              floodOpacity={0.48}
             />
           </filter>
         </defs>
-        <circle
-          cx={CENTER}
-          cy={CENTER}
-          r={ORBIT_RADIUS + 58}
+        <ellipse
+          cx={centerX}
+          cy={centerY}
+          rx={orbitRadiusX + TRACK_RING_PAD_X}
+          ry={orbitRadiusY + TRACK_RING_PAD_Y}
           fill="url(#boardGlow)"
           stroke="#334155"
           strokeWidth={2}
         />
-        <circle
-          cx={CENTER}
-          cy={CENTER}
-          r={ORBIT_RADIUS}
+        <ellipse
+          cx={centerX}
+          cy={centerY}
+          rx={orbitRadiusX}
+          ry={orbitRadiusY}
           fill="none"
           stroke="#334155"
           strokeWidth={1.25}
@@ -123,130 +285,115 @@ function CircularBoardComponent({
           opacity={0.55}
         />
         {cellsArray.map((cellIndex) => {
-          const angle = (cellIndex / CELL_COUNT) * Math.PI * 2 - Math.PI / 2;
-          const cellCenter = polarToCartesian(angle, ORBIT_RADIUS);
-          const outwardX = Math.cos(angle);
-          const outwardY = Math.sin(angle);
-          const stackBottomToTop = boardCells.get(cellIndex) ?? [];
+          const angle = angleForCellIndex(cellIndex, CELL_COUNT);
+          const cellCenter = ellipsePointFromAngle(
+            centerX,
+            centerY,
+            orbitRadiusX,
+            orbitRadiusY,
+            angle
+          );
           const effectId = boardEffects.get(cellIndex);
           const hasEffect = Boolean(effectId);
-          const finishAccent = cellIndex === 1;
+          const finishAccent = cellIndex === FINISH_LINE_CELL_INDEX;
+          const markerRadius = finishAccent
+            ? FINISH_CELL_MARKER_RADIUS
+            : CELL_MARKER_RADIUS;
           return (
             <g key={`cell-${cellIndex}`}>
               <g transform={`translate(${cellCenter.x}, ${cellCenter.y})`}>
                 <circle
-                  r={CELL_MARKER_RADIUS}
-                  fill="#0f172a"
+                  r={markerRadius}
+                  fill={finishAccent ? "url(#finishChecker)" : "#0f172a"}
                   stroke={
                     finishAccent ? "#fbbf24" : hasEffect ? "#c084fc" : "#64748b"
                   }
-                  strokeWidth={finishAccent ? 2.4 : hasEffect ? 2 : 1.4}
+                  strokeWidth={finishAccent ? 3 : hasEffect ? 2 : 1.4}
+                  filter={finishAccent ? "url(#finishCellGlow)" : undefined}
                 />
                 <text
                   textAnchor="middle"
                   dominantBaseline="central"
-                  y={-CELL_MARKER_RADIUS - 7}
-                  className="fill-slate-500 pointer-events-none text-[9px] font-semibold tabular-nums"
+                  y={-markerRadius - 7}
+                  className={`pointer-events-none text-[9px] font-semibold tabular-nums ${
+                    finishAccent ? "fill-amber-100" : "fill-slate-500"
+                  }`}
                 >
                   {cellIndex}
                 </text>
               </g>
-              {stackBottomToTop.map((entityId, stackIndex) => {
-                const stackDepth = stackBottomToTop.length - 1;
-                const baseX = cellCenter.x + outwardX * TOKEN_BASE_OUTWARD;
-                const baseY = cellCenter.y + outwardY * TOKEN_BASE_OUTWARD;
-                const liftY = -stackIndex * TOTEM_LAYER_STEP_VIEWBOX;
-                const tx = baseX;
-                const ty = baseY + liftY;
-                const isHopping = hoppingEntityIds.has(entityId);
-                const displayName = displayNameForEntity(entityId);
-                const nameLines = splitDisplayNameIntoLines(displayName);
-                const labelFontSize = fontSizeForTokenLabelLines(nameLines);
-                const stackedLift = stackIndex / Math.max(stackDepth, 1);
-                return (
-                  <g
-                    key={`${entityId}-${cellIndex}-${stackIndex}`}
-                    transform={`translate(${tx}, ${ty})`}
-                    filter="url(#tokenShadowStacked)"
-                  >
-                    <g
-                      className={
-                        isHopping ? "origin-center animate-dango-hop" : undefined
-                      }
-                      style={{
-                        transformBox: "fill-box",
-                        transformOrigin: "50% 50%",
-                      }}
-                    >
-                      <circle
-                        r={TOKEN_RADIUS}
-                        fill={accentFillHexForDango(entityId)}
-                        stroke="#020617"
-                        strokeWidth={2.2}
-                        opacity={0.92 + stackedLift * 0.06}
-                      />
-                      {nameLines.length === 1 ? (
-                        <text
-                          textAnchor="middle"
-                          dominantBaseline="central"
-                          className="pointer-events-none fill-slate-950 font-bold tracking-tight"
-                          style={{ fontSize: labelFontSize }}
-                        >
-                          {nameLines[0]}
-                        </text>
-                      ) : (
-                        <text
-                          textAnchor="middle"
-                          className="pointer-events-none fill-slate-950 font-bold tracking-tight"
-                          style={{ fontSize: labelFontSize }}
-                        >
-                          <tspan x={0} dy="-0.52em">
-                            {nameLines[0]}
-                          </tspan>
-                          <tspan x={0} dy="1.05em">
-                            {nameLines[1]}
-                          </tspan>
-                        </text>
-                      )}
-                    </g>
-                  </g>
-                );
-              })}
             </g>
           );
         })}
-        <circle
-          cx={CENTER}
-          cy={CENTER}
-          r={52}
-          fill="#020617"
-          stroke="#475569"
-          strokeWidth={2}
-        />
-        {hubLabelVisible ? (
-          <>
-            <text
-              x={CENTER}
-              y={CENTER - 10}
-              textAnchor="middle"
-              className="fill-slate-100 text-[14px] font-semibold"
-            >
-              Finish
-            </text>
-            <text
-              x={CENTER}
-              y={CENTER + 12}
-              textAnchor="middle"
-              className="fill-slate-400 text-[11px]"
-            >
-              Cell 1
-            </text>
-          </>
-        ) : null}
+        {orderedTokenDraws.map(
+          ({
+            cellIndex,
+            stackIndex,
+            stackDepth,
+            entityId,
+            tx,
+            ty,
+          }) => {
+            const isHopping = hoppingEntityIds.has(entityId);
+            const displayName = displayNameForEntity(entityId);
+            const nameLines = splitDisplayNameIntoLines(displayName);
+            const labelFontSize = fontSizeForTokenLabelLines(nameLines);
+            const stackedLift = stackIndex / Math.max(stackDepth, 1);
+            const tokenFilter =
+              stackIndex === 0
+                ? "url(#tokenShadowGrounded)"
+                : "url(#tokenShadowStacked)";
+            return (
+              <g
+                key={`${entityId}-${cellIndex}-${stackIndex}`}
+                transform={`translate(${tx}, ${ty})`}
+                filter={tokenFilter}
+              >
+                <g
+                  className={
+                    isHopping ? "origin-center animate-dango-hop" : undefined
+                  }
+                  style={{
+                    transformBox: "fill-box",
+                    transformOrigin: "50% 50%",
+                  }}
+                >
+                  <circle
+                    r={TOKEN_RADIUS}
+                    fill={accentFillHexForDango(entityId)}
+                    stroke="#020617"
+                    strokeWidth={2.2}
+                    opacity={0.92 + stackedLift * 0.06}
+                  />
+                  {nameLines.length === 1 ? (
+                    <text
+                      textAnchor="middle"
+                      dominantBaseline="central"
+                      className="pointer-events-none fill-slate-950 font-bold tracking-tight"
+                      style={{ fontSize: labelFontSize }}
+                    >
+                      {nameLines[0]}
+                    </text>
+                  ) : (
+                    <text
+                      textAnchor="middle"
+                      className="pointer-events-none fill-slate-950 font-bold tracking-tight"
+                      style={{ fontSize: labelFontSize }}
+                    >
+                      <tspan x={0} dy="-0.52em">
+                        {nameLines[0]}
+                      </tspan>
+                      <tspan x={0} dy="1.05em">
+                        {nameLines[1]}
+                      </tspan>
+                    </text>
+                  )}
+                </g>
+              </g>
+            );
+          }
+        )}
       </svg>
-      <div className="pointer-events-none absolute inset-0 z-20 m-auto flex items-center justify-center px-3">
-        <BroadcastBanner payload={broadcastPayload} />
-      </div>
     </div>
   );
 }
@@ -258,23 +405,11 @@ function serializeCellMap(cells: Map<number, DangoId[]>): string {
     .join(";");
 }
 
-function broadcastFingerprint(
-  payload: BroadcastBannerPayload | null
-): string {
-  if (!payload) {
-    return "";
-  }
-  return `${payload.variant}\u001f${payload.headline}\u001f${payload.detail ?? ""}\u001f${payload.accentDangoId ?? ""}`;
-}
-
 function propsAreEqual(
   previous: CircularBoardProps,
   next: CircularBoardProps
 ): boolean {
   if (serializeCellMap(previous.boardCells) !== serializeCellMap(next.boardCells)) {
-    return false;
-  }
-  if (broadcastFingerprint(previous.broadcastPayload) !== broadcastFingerprint(next.broadcastPayload)) {
     return false;
   }
   if (previous.boardEffects !== next.boardEffects) {

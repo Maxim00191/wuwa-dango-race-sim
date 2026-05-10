@@ -75,6 +75,7 @@ export type GameLogEntry = {
 
 export type EntityRuntimeState = {
   id: DangoId;
+  cellIndex: CellIndex;
   raceDisplacement: number;
   sequentialDiceOrdinal?: number;
 };

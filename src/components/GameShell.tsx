@@ -1,5 +1,8 @@
 import { useMemo } from "react";
-import type { BroadcastBannerPayload } from "@/components/BroadcastBanner";
+import {
+  BroadcastBanner,
+  type BroadcastBannerPayload,
+} from "@/components/BroadcastBanner";
 import { CircularBoard } from "@/components/CircularBoard";
 import { DangoPicker } from "@/components/DangoPicker";
 import { ABBY_ID, ACTIVE_BASIC_DANGO_COUNT } from "@/constants/ids";
@@ -8,11 +11,13 @@ import {
   accentFillHexForDango,
   contrastingInkHexForFill,
 } from "@/services/dangoColors";
+import { useListFlipAnimation } from "@/hooks/useListFlipAnimation";
 import { orderedRacerIdsForLeaderboard } from "@/services/racerRanking";
 import type { DangoId, GameState } from "@/types/game";
 
 type GameShellProps = {
   state: GameState;
+  rankingState: GameState;
   broadcastPayload: BroadcastBannerPayload | null;
   boardCells: Map<number, DangoId[]>;
   boardEffects: Map<number, string | null>;
@@ -29,6 +34,7 @@ type GameShellProps = {
 
 export function GameShell({
   state,
+  rankingState,
   broadcastPayload,
   boardCells,
   boardEffects,
@@ -50,8 +56,10 @@ export function GameShell({
     if (state.phase === "idle") {
       return [...pendingBasicIds, ABBY_ID];
     }
-    return orderedRacerIdsForLeaderboard(state);
-  }, [pendingBasicIds, state]);
+    return orderedRacerIdsForLeaderboard(rankingState);
+  }, [pendingBasicIds, rankingState, state.phase]);
+  const racerOrderFlipKey = racerParticipantIds.join("\u0001");
+  const rankListRef = useListFlipAnimation(racerOrderFlipKey);
   const startDisabled =
     state.phase !== "idle" ||
     pendingBasicIds.length !== ACTIVE_BASIC_DANGO_COUNT;
@@ -125,8 +133,8 @@ export function GameShell({
       ) : null}
 
       <div className="grid w-full gap-8 lg:grid-cols-[minmax(0,2.3fr)_minmax(0,1fr)] lg:gap-10 xl:grid-cols-[minmax(0,2.85fr)_minmax(0,1fr)] xl:gap-12 2xl:grid-cols-[minmax(0,3.1fr)_minmax(0,1fr)]">
-        <section className="min-w-0 rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-2xl shadow-slate-950/60 backdrop-blur xl:p-8">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <section className="flex min-w-0 flex-col rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-2xl shadow-slate-950/60 backdrop-blur lg:min-h-[min(72vh,780px)] xl:p-8">
+          <div className="mb-4 flex shrink-0 flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.25em] text-slate-400">
                 Track overview
@@ -146,13 +154,17 @@ export function GameShell({
               </div>
             ) : null}
           </div>
-          <CircularBoard
-            boardCells={boardCells}
-            boardEffects={boardEffects}
-            broadcastPayload={broadcastPayload}
-            hoppingEntityIds={hoppingEntityIds}
-          />
-          <div className="mt-6 grid gap-4 text-sm text-slate-300 sm:grid-cols-3">
+          <div className="relative min-h-[min(42vh,420px)] flex-1 overflow-hidden lg:min-h-[min(48vh,520px)]">
+            <CircularBoard
+              boardCells={boardCells}
+              boardEffects={boardEffects}
+              hoppingEntityIds={hoppingEntityIds}
+            />
+            <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center px-2">
+              <BroadcastBanner payload={broadcastPayload} />
+            </div>
+          </div>
+          <div className="mt-6 shrink-0 grid gap-4 text-sm text-slate-300 sm:grid-cols-3">
             <LegendSwatch
               label="Finish line"
               description="Cell 1 wraps the lap counter."
@@ -165,7 +177,7 @@ export function GameShell({
             />
             <LegendSwatch
               label="Stacks"
-              description="Totem stacks climb outward with the base hugging each waypoint."
+              description="Totem stacks build straight up from each waypoint with no sideways drift."
               borderClass="border-slate-500"
             />
           </div>
@@ -176,13 +188,16 @@ export function GameShell({
             <p className="text-xs uppercase tracking-[0.25em] text-slate-400">
               Racers
             </p>
-            <ul className="mt-4 space-y-3 text-sm text-slate-200">
+            <ul
+              ref={rankListRef}
+              className="mt-4 space-y-3 text-sm text-slate-200"
+            >
               {racerParticipantIds.map((participantId, leaderboardIndex) => {
                 const character = CHARACTER_BY_ID[participantId];
                 if (!character) {
                   return null;
                 }
-                const runtime = state.entities[character.id];
+                const runtime = rankingState.entities[character.id];
                 const roll = state.lastRollById[character.id];
                 const rankVisible =
                   state.phase === "running" || state.phase === "finished";
@@ -191,6 +206,7 @@ export function GameShell({
                 return (
                   <li
                     key={character.id}
+                    data-flip-item={character.id}
                     className="flex items-center justify-between rounded-2xl border border-slate-800 border-l-4 bg-slate-950/60 px-4 py-3"
                     style={{ borderLeftColor: dangoAccentHex }}
                   >
@@ -219,7 +235,7 @@ export function GameShell({
                     </div>
                     <div className="text-right text-xs text-slate-400">
                       <p className="font-mono text-[13px] text-slate-100">
-                        Δ {runtime?.raceDisplacement ?? 0}
+                        ● {runtime?.raceDisplacement ?? 0}
                       </p>
                       <p className="text-[11px]">
                         roll {roll ?? "—"}
