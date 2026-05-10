@@ -11,7 +11,3 @@ export const SELECTABLE_BASIC_DANGO_IDS = [
   "chisa",
   "aemeath",
 ] as const;
-
-export function createDefaultPendingBasicIds(): string[] {
-  return SELECTABLE_BASIC_DANGO_IDS.slice(0, ACTIVE_BASIC_DANGO_COUNT) as string[];
-}

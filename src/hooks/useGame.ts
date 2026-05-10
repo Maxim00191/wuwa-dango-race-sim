@@ -7,11 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
-import {
-  ABBY_ID,
-  ACTIVE_BASIC_DANGO_COUNT,
-  createDefaultPendingBasicIds,
-} from "@/constants/ids";
+import { ABBY_ID, ACTIVE_BASIC_DANGO_COUNT } from "@/constants/ids";
 import {
   buildEffectLookup,
   buildLinearBoardDescriptor,
@@ -23,6 +19,10 @@ import {
   type AtomicPlaybackStep,
 } from "@/services/boardPlayback";
 import { CHARACTER_BY_ID } from "@/services/characters";
+import {
+  resolvePersistedOrSmartDefaultLineup,
+  writePersistedLineupSelection,
+} from "@/services/savedLineup";
 import {
   createInitialGameState,
   isValidBasicSelection,
@@ -84,7 +84,7 @@ export function useGame() {
   const initialState = useMemo(() => createInitialGameState(), []);
   const [state, dispatch] = useReducer(gameReducer, initialState);
   const [pendingBasicIds, setPendingBasicIds] = useState<DangoId[]>(() =>
-    createDefaultPendingBasicIds() as DangoId[]
+    resolvePersistedOrSmartDefaultLineup()
   );
   const [playbackCells, setPlaybackCells] = useState<
     Map<number, DangoId[]> | null
@@ -136,8 +136,12 @@ export function useGame() {
     setBroadcastPayload(null);
     setAutoPlayEnabled(false);
     dispatch({ type: "RESET" });
-    setPendingBasicIds(createDefaultPendingBasicIds() as DangoId[]);
+    setPendingBasicIds(resolvePersistedOrSmartDefaultLineup());
   }, []);
+
+  useEffect(() => {
+    writePersistedLineupSelection(pendingBasicIds);
+  }, [pendingBasicIds]);
 
   const executeNextStep = useCallback(() => {
     if (isAnimatingRef.current) {
