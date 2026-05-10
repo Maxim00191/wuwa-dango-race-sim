@@ -1,10 +1,15 @@
+import { useMemo } from "react";
 import { CircularBoard } from "@/components/CircularBoard";
-import { CHARACTER_LIST } from "@/services/characters";
-import type { GameState } from "@/types/game";
+import { DangoPicker } from "@/components/DangoPicker";
+import { ABBY_ID, ACTIVE_BASIC_DANGO_COUNT } from "@/constants/ids";
+import { CHARACTER_BY_ID, CHARACTER_LIST } from "@/services/characters";
+import type { DangoId, GameState } from "@/types/game";
 
 type GameShellProps = {
   state: GameState;
   boardEffects: Map<number, string | null>;
+  pendingBasicIds: DangoId[];
+  onToggleBasicId: (id: DangoId) => void;
   onStart: () => void;
   onNextTurn: () => void;
   onReset: () => void;
@@ -13,11 +18,25 @@ type GameShellProps = {
 export function GameShell({
   state,
   boardEffects,
+  pendingBasicIds,
+  onToggleBasicId,
   onStart,
   onNextTurn,
   onReset,
 }: GameShellProps) {
-  const startDisabled = state.phase !== "idle";
+  const rosterBasics = useMemo(
+    () => CHARACTER_LIST.filter((character) => character.role === "basic"),
+    []
+  );
+  const racerParticipantIds = useMemo(() => {
+    if (state.phase === "idle") {
+      return [...pendingBasicIds, ABBY_ID];
+    }
+    return [...state.activeBasicIds, ABBY_ID];
+  }, [pendingBasicIds, state.activeBasicIds, state.phase]);
+  const startDisabled =
+    state.phase !== "idle" ||
+    pendingBasicIds.length !== ACTIVE_BASIC_DANGO_COUNT;
   const nextTurnDisabled = state.phase !== "running" || Boolean(state.winnerId);
 
   return (
@@ -63,6 +82,14 @@ export function GameShell({
           </div>
         </div>
       </header>
+
+      {state.phase === "idle" ? (
+        <DangoPicker
+          rosterBasics={rosterBasics}
+          selectedBasicIds={pendingBasicIds}
+          onToggleBasicId={onToggleBasicId}
+        />
+      ) : null}
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <section className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-2xl shadow-slate-950/60 backdrop-blur">
@@ -112,7 +139,11 @@ export function GameShell({
               Racers
             </p>
             <ul className="mt-4 space-y-3 text-sm text-slate-200">
-              {CHARACTER_LIST.map((character) => {
+              {racerParticipantIds.map((participantId) => {
+                const character = CHARACTER_BY_ID[participantId];
+                if (!character) {
+                  return null;
+                }
                 const runtime = state.entities[character.id];
                 const roll = state.lastRollById[character.id];
                 return (

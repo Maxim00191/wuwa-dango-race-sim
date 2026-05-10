@@ -1,16 +1,25 @@
 import { LAP_DISTANCE_IN_CLOCKWISE_STEPS } from "@/constants/board";
-import { ABBY_ID, BASIC_DANGO_IDS } from "@/constants/ids";
+import {
+  ABBY_ID,
+  ACTIVE_BASIC_DANGO_COUNT,
+  SELECTABLE_BASIC_DANGO_IDS,
+} from "@/constants/ids";
 import { CHARACTER_BY_ID } from "@/services/characters";
-import { addClockwise, addCounterClockwise } from "@/services/circular";
+import {
+  addClockwise,
+  addCounterClockwise,
+  clockwiseProgressFromFinishLine,
+} from "@/services/circular";
 import { resolveCellEffectIfPresent } from "@/services/cellEffects";
 import {
   applyRaceDisplacementDeltaForMembers,
   cloneCellMap,
   findCellIndexForEntity,
-  getBottomEntityId,
   mergeWithAbbyBottomRule,
 } from "@/services/stateCells";
 import type {
+  DangoId,
+  EntityRuntimeState,
   GameAction,
   GameLogEntry,
   GameState,
@@ -28,30 +37,52 @@ function shuffleOrderStableCopy(ids: string[]): string[] {
   return copy;
 }
 
-function createInitialEntities(): GameState["entities"] {
-  const record: GameState["entities"] = {};
-  for (const id of BASIC_DANGO_IDS) {
-    record[id] = { id, raceDisplacement: 0 };
+const SELECTABLE_BASIC_ID_SET = new Set<string>(SELECTABLE_BASIC_DANGO_IDS);
+
+export function isValidBasicSelection(ids: DangoId[]): boolean {
+  if (ids.length !== ACTIVE_BASIC_DANGO_COUNT) {
+    return false;
   }
-  record[ABBY_ID] = { id: ABBY_ID, raceDisplacement: 0 };
-  return record;
+  const unique = new Set(ids);
+  if (unique.size !== ids.length) {
+    return false;
+  }
+  return ids.every((id) => SELECTABLE_BASIC_ID_SET.has(id));
 }
 
-function createStartingCells(): Map<number, string[]> {
-  const initialStackBottomToTop = [
-    ABBY_ID,
-    ...BASIC_DANGO_IDS,
-  ];
-  return new Map([[1, initialStackBottomToTop]]);
+function createRunningSessionFromSelection(
+  selectedBasicIds: DangoId[]
+): GameState {
+  const entities: GameState["entities"] = {};
+  for (const id of selectedBasicIds) {
+    entities[id] = { id, raceDisplacement: 0 };
+  }
+  entities[ABBY_ID] = { id: ABBY_ID, raceDisplacement: 0 };
+  const cells = new Map<number, DangoId[]>([
+    [1, [ABBY_ID, ...selectedBasicIds]],
+  ]);
+  return {
+    phase: "running",
+    turnIndex: 0,
+    cells,
+    entityOrder: shuffleOrderStableCopy([...selectedBasicIds, ABBY_ID]),
+    entities,
+    activeBasicIds: [...selectedBasicIds],
+    winnerId: null,
+    abbyPendingTeleportToStart: false,
+    lastRollById: {},
+    log: [],
+  };
 }
 
 export function createInitialGameState(): GameState {
   return {
     phase: "idle",
     turnIndex: 0,
-    cells: createStartingCells(),
-    entityOrder: [...BASIC_DANGO_IDS, ABBY_ID],
-    entities: createInitialEntities(),
+    cells: new Map(),
+    entityOrder: [],
+    entities: {},
+    activeBasicIds: [],
     winnerId: null,
     abbyPendingTeleportToStart: false,
     lastRollById: {},
@@ -63,28 +94,62 @@ function appendLog(state: GameState, entry: GameLogEntry): GameState {
   return { ...state, log: [...state.log, entry] };
 }
 
-function relocateStackBetweenCells(
+function applyEntityRuntimePatches(
+  entities: GameState["entities"],
+  patches: Partial<Record<DangoId, Partial<EntityRuntimeState>>> | undefined
+): GameState["entities"] {
+  if (!patches) {
+    return entities;
+  }
+  let nextEntities = entities;
+  for (const [entityId, patch] of Object.entries(patches)) {
+    if (!patch) {
+      continue;
+    }
+    const previous = nextEntities[entityId];
+    if (!previous) {
+      continue;
+    }
+    nextEntities = {
+      ...nextEntities,
+      [entityId]: { ...previous, ...patch },
+    };
+  }
+  return nextEntities;
+}
+
+function relocateActorLedPortionBetweenCells(
   state: GameState,
   fromCellIndex: number,
   toCellIndex: number,
-  stackBottomToTop: string[],
+  fullStackBottomToTop: string[],
+  actorIndexInStack: number,
   clockwiseDisplacementDelta: number
 ): GameState {
-  const nextCells = cloneCellMap(state.cells);
-  const atSource = nextCells.get(fromCellIndex);
-  if (!atSource || atSource.join("|") !== stackBottomToTop.join("|")) {
+  const remainderBottomToTop = fullStackBottomToTop.slice(0, actorIndexInStack);
+  const movingBottomToTop = fullStackBottomToTop.slice(actorIndexInStack);
+  if (movingBottomToTop.length === 0) {
     return state;
   }
-  nextCells.delete(fromCellIndex);
+  const nextCells = cloneCellMap(state.cells);
+  const atSource = nextCells.get(fromCellIndex);
+  if (!atSource || atSource.join("|") !== fullStackBottomToTop.join("|")) {
+    return state;
+  }
+  if (remainderBottomToTop.length === 0) {
+    nextCells.delete(fromCellIndex);
+  } else {
+    nextCells.set(fromCellIndex, remainderBottomToTop);
+  }
   const existingAtDestination = nextCells.get(toCellIndex) ?? [];
   nextCells.set(
     toCellIndex,
-    mergeWithAbbyBottomRule(existingAtDestination, stackBottomToTop)
+    mergeWithAbbyBottomRule(existingAtDestination, movingBottomToTop)
   );
   let nextState: GameState = { ...state, cells: nextCells };
   nextState = applyRaceDisplacementDeltaForMembers(
     nextState,
-    stackBottomToTop,
+    movingBottomToTop,
     clockwiseDisplacementDelta
   );
   return nextState;
@@ -111,6 +176,13 @@ function pickWinnerBasicDangoId(state: GameState): string | null {
 }
 
 function evaluateAbbyResetScheduling(state: GameState): GameState {
+  const bossCharacter = CHARACTER_BY_ID[ABBY_ID];
+  if (
+    bossCharacter &&
+    state.turnIndex <= bossCharacter.activateAfterTurnIndex
+  ) {
+    return state;
+  }
   const abbyCellIndex = findCellIndexForEntity(state.cells, ABBY_ID);
   if (abbyCellIndex === null) {
     return state;
@@ -121,11 +193,23 @@ function evaluateAbbyResetScheduling(state: GameState): GameState {
   if (!aloneWithAbby) {
     return state;
   }
-  const abbyDisplacement = state.entities[ABBY_ID]!.raceDisplacement;
-  const behindEveryBasic = BASIC_DANGO_IDS.every(
-    (id) => state.entities[id]!.raceDisplacement > abbyDisplacement
-  );
-  if (!behindEveryBasic) {
+  const abbyClockwiseProgress =
+    clockwiseProgressFromFinishLine(abbyCellIndex);
+  let minimumBasicClockwiseProgress = Infinity;
+  for (const basicId of state.activeBasicIds) {
+    const basicCellIndex = findCellIndexForEntity(state.cells, basicId);
+    if (basicCellIndex === null) {
+      return state;
+    }
+    const basicClockwiseProgress =
+      clockwiseProgressFromFinishLine(basicCellIndex);
+    if (basicClockwiseProgress < minimumBasicClockwiseProgress) {
+      minimumBasicClockwiseProgress = basicClockwiseProgress;
+    }
+  }
+  const abbyIsCompletelyBehindClockwisePack =
+    abbyClockwiseProgress < minimumBasicClockwiseProgress;
+  if (!abbyIsCompletelyBehindClockwisePack) {
     return state;
   }
   const nextState = appendLog(state, {
@@ -220,13 +304,16 @@ function resolveTurnForEntity(
       message: `${character.displayName} is still on standby.`,
     });
   }
-  const diceValue = character.diceRoll({
+  const diceRollContext = {
     turnIndex: state.turnIndex,
     rollerId: actingEntityId,
-  });
+  };
+  const diceOutcome = character.diceRoll(state, diceRollContext);
+  const diceValue = diceOutcome.diceValue;
   let nextState: GameState = {
     ...state,
     lastRollById: { ...state.lastRollById, [actingEntityId]: diceValue },
+    entities: applyEntityRuntimePatches(state.entities, diceOutcome.entityPatches),
   };
   nextState = appendLog(nextState, {
     kind: "roll",
@@ -245,11 +332,11 @@ function resolveTurnForEntity(
     return nextState;
   }
   const activeStack = nextState.cells.get(activeCellIndex)!;
-  const bottomId = getBottomEntityId(activeStack);
-  if (bottomId !== actingEntityId) {
+  const actorIndexInStack = activeStack.indexOf(actingEntityId);
+  if (actorIndexInStack === -1) {
     return appendLog(nextState, {
       kind: "skipNotBottom",
-      message: `${character.displayName} is not at the bottom of a stack and cannot pull the stack.`,
+      message: `${character.displayName} could not be placed on the track.`,
     });
   }
   const destinationCellIndex =
@@ -260,11 +347,12 @@ function resolveTurnForEntity(
     character.travelDirection === "clockwise"
       ? diceValue
       : -diceValue;
-  nextState = relocateStackBetweenCells(
+  nextState = relocateActorLedPortionBetweenCells(
     nextState,
     activeCellIndex,
     destinationCellIndex,
     activeStack,
+    actorIndexInStack,
     clockwiseDisplacementDelta
   );
   nextState = appendLog(nextState, {
@@ -380,13 +468,10 @@ export function reduceGameState(
     if (state.phase !== "idle") {
       return state;
     }
-    const seeded = {
-      ...state,
-      phase: "running" as const,
-      entityOrder: shuffleOrderStableCopy(state.entityOrder),
-      log: [],
-    };
-    return seeded;
+    if (!isValidBasicSelection(action.selectedBasicIds)) {
+      return state;
+    }
+    return createRunningSessionFromSelection(action.selectedBasicIds);
   }
   if (action.type === "RUN_FULL_TURN") {
     if (state.phase !== "running") {

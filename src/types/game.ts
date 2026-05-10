@@ -30,16 +30,6 @@ export type CharacterSkillHooks = Partial<
   Record<SkillHookName, SkillHookHandler>
 >;
 
-export type CharacterDefinition = {
-  id: DangoId;
-  displayName: string;
-  role: "basic" | "boss";
-  diceRoll: (ctx: DiceRollContext) => number;
-  travelDirection: TravelDirection;
-  activateAfterTurnIndex: number;
-  skillHooks: CharacterSkillHooks;
-};
-
 export type CellEffectTriggerContext = {
   turnIndex: number;
   moverId: DangoId;
@@ -85,6 +75,7 @@ export type GameLogEntry = {
 export type EntityRuntimeState = {
   id: DangoId;
   raceDisplacement: number;
+  sequentialDiceOrdinal?: number;
 };
 
 export type GameState = {
@@ -93,14 +84,30 @@ export type GameState = {
   cells: Map<CellIndex, DangoId[]>;
   entityOrder: DangoId[];
   entities: Record<DangoId, EntityRuntimeState>;
+  activeBasicIds: DangoId[];
   winnerId: DangoId | null;
   abbyPendingTeleportToStart: boolean;
   lastRollById: Record<DangoId, number | undefined>;
   log: GameLogEntry[];
 };
 
+export type DiceRollResult = {
+  diceValue: number;
+  entityPatches?: Partial<Record<DangoId, Partial<EntityRuntimeState>>>;
+};
+
+export type CharacterDefinition = {
+  id: DangoId;
+  displayName: string;
+  role: "basic" | "boss";
+  diceRoll: (state: GameState, ctx: DiceRollContext) => DiceRollResult;
+  travelDirection: TravelDirection;
+  activateAfterTurnIndex: number;
+  skillHooks: CharacterSkillHooks;
+};
+
 export type GameAction =
   | { type: "INITIALIZE" }
-  | { type: "START" }
+  | { type: "START"; selectedBasicIds: DangoId[] }
   | { type: "RUN_FULL_TURN" }
   | { type: "RESET" };
