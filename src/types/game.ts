@@ -160,9 +160,36 @@ export type PlaybackSegment =
   | PlaybackTeleportSegment
   | PlaybackSlideSegment;
 
+export type TurnQueueAttachment = {
+  orderedActorIds: DangoId[];
+  initialDiceByActorId: Record<DangoId, number | undefined>;
+  nextActorIndexAfterPlayback: number;
+};
+
 export type TurnPlaybackPlan = {
   turnIndex: number;
   segments: PlaybackSegment[];
+  playbackStamp: number;
+  showTurnIntroBanner: boolean;
+  turnOrderActorIds?: DangoId[];
+  turnQueue?: TurnQueueAttachment;
+};
+
+export type TurnRollPlan = {
+  actorId: DangoId;
+  diceValue: number;
+  initialDiceValue: number;
+  entityPatches?: Partial<Record<DangoId, Partial<EntityRuntimeState>>>;
+  skillNarrative?: string;
+};
+
+export type PendingTurnResolution = {
+  orderedActorIds: DangoId[];
+  plansByActorId: Record<DangoId, TurnRollPlan | undefined>;
+  allInitialRollsById: Record<DangoId, number | undefined>;
+  allResolvedRollsById: Record<DangoId, number | undefined>;
+  nextActorIndex: number;
+  openingBannerConsumed: boolean;
 };
 
 export type GameState = {
@@ -177,6 +204,8 @@ export type GameState = {
   lastRollById: Record<DangoId, number | undefined>;
   log: GameLogEntry[];
   lastTurnPlayback: TurnPlaybackPlan | null;
+  pendingTurn: PendingTurnResolution | null;
+  playbackStamp: number;
 };
 
 export type DiceRollResult = {
@@ -199,5 +228,7 @@ export type CharacterDefinition = {
 export type GameAction =
   | { type: "INITIALIZE" }
   | { type: "START"; selectedBasicIds: DangoId[] }
-  | { type: "RUN_FULL_TURN" }
+  | { type: "STEP_ACTION" }
+  | { type: "INSTANT_FULL_TURN" }
+  | { type: "INSTANT_SIMULATE_GAME" }
   | { type: "RESET" };

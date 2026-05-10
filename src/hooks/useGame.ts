@@ -31,14 +31,17 @@ import {
 import { cloneCellMap, cloneEntityMap } from "@/services/stateCells";
 import type { BroadcastBannerPayload } from "@/components/BroadcastBanner";
 import type { DangoId, GameAction, GameState, PlaybackSegment } from "@/types/game";
-import { formatTurnOrderArrowLine } from "@/narration/formatTurnOrderArrowLine";
+import {
+  formatTurnOrderArrowLine,
+  formatTurnOrderFromActorIds,
+} from "@/narration/formatTurnOrderArrowLine";
 
 const BOARD_EFFECT_BY_CELL_INDEX = buildEffectLookup(
   buildLinearBoardDescriptor()
 );
 
 const ATOMIC_STEP_DELAY_MS = 520;
-const AUTO_PLAY_IDLE_GAP_MS = 780;
+const SINGLE_ACTION_PLAYBACK_GAP_MS = 800;
 const BANNER_READ_MS = 1450;
 const SKILL_BANNER_READ_MS = 1850;
 const TURN_OPEN_HOLD_MS = 1750;
@@ -93,12 +96,14 @@ export function useGame() {
     () => new Set()
   );
   const [isAnimating, setIsAnimating] = useState(false);
+  const [playTurnEnabled, setPlayTurnEnabled] = useState(false);
   const [autoPlayEnabled, setAutoPlayEnabled] = useState(false);
   const [broadcastPayload, setBroadcastPayload] =
     useState<BroadcastBannerPayload | null>(null);
   const snapshotBeforeTurnRef = useRef<GameState | null>(null);
   const isAnimatingRef = useRef(false);
   const animationGenerationRef = useRef(0);
+  const playTurnStartedRef = useRef(false);
 
   const togglePendingBasicId = useCallback((id: DangoId) => {
     setPendingBasicIds((previous) => {
@@ -127,13 +132,14 @@ export function useGame() {
     setPlaybackEntities(null);
     setHoppingEntityIds(new Set());
     setIsAnimating(false);
+    setPlayTurnEnabled(false);
     setBroadcastPayload(null);
     setAutoPlayEnabled(false);
     dispatch({ type: "RESET" });
     setPendingBasicIds(createDefaultPendingBasicIds() as DangoId[]);
   }, []);
 
-  const runFullTurn = useCallback(() => {
+  const executeNextStep = useCallback(() => {
     if (isAnimatingRef.current) {
       return;
     }
@@ -145,14 +151,59 @@ export function useGame() {
     setPlaybackEntities(cloneEntityMap(state.entities));
     isAnimatingRef.current = true;
     setIsAnimating(true);
-    dispatch({ type: "RUN_FULL_TURN" });
+    dispatch({ type: "STEP_ACTION" });
   }, [state]);
+
+  const playTurn = useCallback(() => {
+    if (isAnimatingRef.current) {
+      return;
+    }
+    if (state.phase !== "running" || state.winnerId) {
+      return;
+    }
+    playTurnStartedRef.current = false;
+    setAutoPlayEnabled(false);
+    setPlayTurnEnabled(true);
+  }, [state.phase, state.winnerId]);
+
+  const setUnifiedAutoPlayEnabled = useCallback((nextValue: boolean) => {
+    if (nextValue) {
+      playTurnStartedRef.current = false;
+      setPlayTurnEnabled(false);
+    }
+    setAutoPlayEnabled(nextValue);
+  }, []);
+
+  const instantFullTurn = useCallback(() => {
+    if (isAnimatingRef.current) {
+      return;
+    }
+    if (state.phase !== "running" || state.winnerId) {
+      return;
+    }
+    animationGenerationRef.current += 1;
+    dispatch({ type: "INSTANT_FULL_TURN" });
+  }, [state.phase, state.winnerId]);
+
+  const instantSimulateGame = useCallback(() => {
+    if (isAnimatingRef.current) {
+      return;
+    }
+    if (state.phase !== "running" || state.winnerId) {
+      return;
+    }
+    animationGenerationRef.current += 1;
+    dispatch({ type: "INSTANT_SIMULATE_GAME" });
+  }, [state.phase, state.winnerId]);
 
   useLayoutEffect(() => {
     let cancelled = false;
     const snapshot = snapshotBeforeTurnRef.current;
     const playback = state.lastTurnPlayback;
-    if (!snapshot || !playback || playback.turnIndex !== state.turnIndex) {
+    if (!snapshot || !playback) {
+      return;
+    }
+    if (playback.playbackStamp !== state.playbackStamp) {
       return;
     }
     snapshotBeforeTurnRef.current = null;
@@ -213,20 +264,25 @@ export function useGame() {
         return;
       }
 
-      const orderLine = formatTurnOrderArrowLine(
-        playback.segments,
-        CHARACTER_BY_ID
-      );
+      const orderLine =
+        playback.turnOrderActorIds && playback.turnOrderActorIds.length > 0
+          ? formatTurnOrderFromActorIds(
+              playback.turnOrderActorIds,
+              CHARACTER_BY_ID
+            )
+          : formatTurnOrderArrowLine(playback.segments, CHARACTER_BY_ID);
 
-      await shineBanner(
-        {
-          variant: "turn",
-          headline: `Turn ${playback.turnIndex}`,
-          detail: orderLine,
-          accentDangoId: accentDangoIdForTurnIntro(playback.segments),
-        },
-        TURN_OPEN_HOLD_MS
-      );
+      if (playback.showTurnIntroBanner) {
+        await shineBanner(
+          {
+            variant: "turn",
+            headline: `Turn ${playback.turnIndex}`,
+            detail: orderLine,
+            accentDangoId: accentDangoIdForTurnIntro(playback.segments),
+          },
+          TURN_OPEN_HOLD_MS
+        );
+      }
 
       let logCursor = 0;
       let segmentIndex = 0;
@@ -426,13 +482,83 @@ export function useGame() {
     return () => {
       cancelled = true;
     };
-  }, [state.turnIndex, state.lastTurnPlayback]);
+  }, [state.playbackStamp, state.lastTurnPlayback]);
+
+  useEffect(() => {
+    if (
+      state.phase !== "finished" ||
+      !state.winnerId ||
+      isAnimating ||
+      state.lastTurnPlayback
+    ) {
+      return;
+    }
+    let cancelled = false;
+    const generationAtStart = animationGenerationRef.current;
+    const winnerId = state.winnerId;
+    void (async () => {
+      const winnerLabel =
+        CHARACTER_BY_ID[winnerId]?.displayName ?? winnerId;
+      setBroadcastPayload({
+        variant: "victory",
+        headline: `${winnerLabel} wins Dango Scramble`,
+        detail: "Lap complete · champion crowned",
+        accentDangoId: winnerId,
+      });
+      await delayMilliseconds(VICTORY_HOLD_MS);
+      if (
+        cancelled ||
+        generationAtStart !== animationGenerationRef.current
+      ) {
+        return;
+      }
+      setBroadcastPayload(null);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    state.phase,
+    state.winnerId,
+    state.lastTurnPlayback,
+    isAnimating,
+  ]);
 
   useEffect(() => {
     if (state.phase === "finished") {
+      setPlayTurnEnabled(false);
       setAutoPlayEnabled(false);
     }
   }, [state.phase]);
+
+  useEffect(() => {
+    if (!playTurnEnabled) {
+      return;
+    }
+    if (state.phase !== "running" || state.winnerId) {
+      setPlayTurnEnabled(false);
+      return;
+    }
+    if (isAnimating) {
+      return;
+    }
+    if (playTurnStartedRef.current && !state.pendingTurn) {
+      setPlayTurnEnabled(false);
+      return;
+    }
+    const timeoutId = window.setTimeout(() => {
+      playTurnStartedRef.current = true;
+      executeNextStep();
+    }, SINGLE_ACTION_PLAYBACK_GAP_MS);
+    return () => window.clearTimeout(timeoutId);
+  }, [
+    playTurnEnabled,
+    state.phase,
+    state.winnerId,
+    state.pendingTurn,
+    isAnimating,
+    executeNextStep,
+  ]);
 
   useEffect(() => {
     if (!autoPlayEnabled) {
@@ -445,16 +571,15 @@ export function useGame() {
       return;
     }
     const timeoutId = window.setTimeout(() => {
-      runFullTurn();
-    }, AUTO_PLAY_IDLE_GAP_MS);
+      executeNextStep();
+    }, SINGLE_ACTION_PLAYBACK_GAP_MS);
     return () => window.clearTimeout(timeoutId);
   }, [
     autoPlayEnabled,
     state.phase,
     state.winnerId,
-    state.turnIndex,
     isAnimating,
-    runFullTurn,
+    executeNextStep,
   ]);
 
   const rankingState = useMemo((): GameState => {
@@ -470,14 +595,18 @@ export function useGame() {
     pendingBasicIds,
     togglePendingBasicId,
     start,
-    runFullTurn,
+    playTurn,
+    stepAction: executeNextStep,
+    instantFullTurn,
+    instantSimulateGame,
     reset,
     boardEffects: BOARD_EFFECT_BY_CELL_INDEX,
     boardCells: playbackCells ?? state.cells,
     hoppingEntityIds,
     isAnimating,
+    playTurnEnabled,
     autoPlayEnabled,
-    setAutoPlayEnabled,
+    setAutoPlayEnabled: setUnifiedAutoPlayEnabled,
     broadcastPayload,
   };
 }

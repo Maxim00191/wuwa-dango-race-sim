@@ -8,12 +8,16 @@ export default function App() {
     pendingBasicIds,
     togglePendingBasicId,
     start,
-    runFullTurn,
+    playTurn,
+    stepAction,
+    instantFullTurn,
+    instantSimulateGame,
     reset,
     boardEffects,
     boardCells,
     hoppingEntityIds,
     isAnimating,
+    playTurnEnabled,
     autoPlayEnabled,
     setAutoPlayEnabled,
     broadcastPayload,
@@ -30,9 +34,13 @@ export default function App() {
       pendingBasicIds={pendingBasicIds}
       onToggleBasicId={togglePendingBasicId}
       onStart={start}
-      onNextTurn={runFullTurn}
+      onPlayTurn={playTurn}
+      onStepAction={stepAction}
+      onInstantTurn={instantFullTurn}
+      onInstantGame={instantSimulateGame}
       onReset={reset}
       isAnimating={isAnimating}
+      playTurnEnabled={playTurnEnabled}
       autoPlayEnabled={autoPlayEnabled}
       onAutoPlayEnabledChange={setAutoPlayEnabled}
     />

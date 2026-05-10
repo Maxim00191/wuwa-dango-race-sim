@@ -26,18 +26,13 @@ import type {
   GameAction,
   GameLogEntry,
   GameState,
+  PendingTurnResolution,
   PlaybackSegment,
   SkillHookContext,
   TravelDirection,
+  TurnQueueAttachment,
+  TurnRollPlan,
 } from "@/types/game";
-
-type TurnRollPlan = {
-  actorId: DangoId;
-  diceValue: number;
-  initialDiceValue: number;
-  entityPatches?: Partial<Record<DangoId, Partial<EntityRuntimeState>>>;
-  skillNarrative?: string;
-};
 
 function shuffleOrderStableCopy(ids: string[]): string[] {
   const copy = [...ids];
@@ -88,6 +83,8 @@ function createRunningSessionFromSelection(
     lastRollById: {},
     log: [],
     lastTurnPlayback: null,
+    pendingTurn: null,
+    playbackStamp: 0,
   };
 }
 
@@ -104,6 +101,8 @@ export function createInitialGameState(): GameState {
     lastRollById: {},
     log: [],
     lastTurnPlayback: null,
+    pendingTurn: null,
+    playbackStamp: 0,
   };
 }
 
@@ -705,16 +704,49 @@ function resolveTurnForEntity(
   return { state: afterEffectState, segments };
 }
 
-function runSingleTurnCore(
-  state: GameState,
-  boardEffectByCellIndex: Map<number, string | null>
-): GameState {
-  const playbackSegments: PlaybackSegment[] = [];
+function buildPendingTurnResolution(
+  orderedActors: DangoId[],
+  plansByActorId: Record<DangoId, TurnRollPlan | undefined>,
+  allInitialRollsById: Record<DangoId, number | undefined>,
+  allResolvedRollsById: Record<DangoId, number | undefined>
+): PendingTurnResolution {
+  return {
+    orderedActorIds: orderedActors,
+    plansByActorId,
+    allInitialRollsById,
+    allResolvedRollsById,
+    nextActorIndex: 0,
+    openingBannerConsumed: false,
+  };
+}
+
+function buildTurnQueueAttachment(
+  pending: PendingTurnResolution,
+  nextActorIndexAfterPlayback: number
+): TurnQueueAttachment {
+  const initialDiceByActorId: Record<DangoId, number | undefined> = {};
+  for (const actorId of pending.orderedActorIds) {
+    initialDiceByActorId[actorId] =
+      pending.plansByActorId[actorId]?.initialDiceValue;
+  }
+  return {
+    orderedActorIds: [...pending.orderedActorIds],
+    initialDiceByActorId,
+    nextActorIndexAfterPlayback,
+  };
+}
+
+function openNextTurnWithDicePlans(state: GameState): {
+  state: GameState;
+  pendingTurn: PendingTurnResolution;
+  openingSegments: PlaybackSegment[];
+} {
   let nextState = state;
+  const openingSegments: PlaybackSegment[] = [];
   if (nextState.abbyPendingTeleportToStart) {
     const abbyOriginCellIndex = findCellIndexForEntity(nextState.cells, ABBY_ID);
     if (abbyOriginCellIndex !== null) {
-      playbackSegments.push({
+      openingSegments.push({
         kind: "teleport",
         entityIds: [ABBY_ID],
         fromCell: abbyOriginCellIndex,
@@ -734,34 +766,192 @@ function runSingleTurnCore(
   const orderedActors = shuffleOrderStableCopy(nextState.entityOrder);
   const { plansByActorId, allInitialRollsById, allResolvedRollsById } =
     createTurnRollPlans(nextState, orderedActors);
-  for (const actorId of orderedActors) {
+  const pendingTurn = buildPendingTurnResolution(
+    orderedActors,
+    plansByActorId,
+    allInitialRollsById,
+    allResolvedRollsById
+  );
+  return { state: nextState, pendingTurn, openingSegments };
+}
+
+function applyStepAction(
+  state: GameState,
+  boardEffectByCellIndex: Map<number, string | null>
+): GameState {
+  if (state.phase !== "running" || state.winnerId) {
+    return state;
+  }
+
+  let working = state;
+  let pending = state.pendingTurn;
+  const openingSegments: PlaybackSegment[] = [];
+  let showTurnIntro = false;
+  let turnOrderForBanner: DangoId[] | undefined;
+
+  if (!pending) {
+    const opened = openNextTurnWithDicePlans(working);
+    working = opened.state;
+    pending = opened.pendingTurn;
+    openingSegments.push(...opened.openingSegments);
+    showTurnIntro = true;
+    turnOrderForBanner = [...pending.orderedActorIds];
+  }
+
+  const actorId = pending.orderedActorIds[pending.nextActorIndex];
+  if (actorId === undefined) {
+    return state;
+  }
+
+  const resolved = resolveTurnForEntity(
+    working,
+    actorId,
+    boardEffectByCellIndex,
+    pending.plansByActorId[actorId],
+    pending.allInitialRollsById,
+    pending.allResolvedRollsById
+  );
+  working = resolved.state;
+  const segments = [...openingSegments, ...resolved.segments];
+  const nextIndex = pending.nextActorIndex + 1;
+  const playbackStamp = state.playbackStamp + 1;
+
+  const queueAttachment = buildTurnQueueAttachment(pending, nextIndex);
+
+  if (working.phase === "finished") {
+    return {
+      ...working,
+      pendingTurn: null,
+      playbackStamp,
+      lastTurnPlayback: {
+        turnIndex: working.turnIndex,
+        segments,
+        playbackStamp,
+        showTurnIntroBanner: showTurnIntro,
+        turnOrderActorIds: turnOrderForBanner,
+        turnQueue: queueAttachment,
+      },
+    };
+  }
+
+  if (nextIndex >= pending.orderedActorIds.length) {
+    const finalized = evaluateAbbyResetScheduling({
+      ...working,
+      pendingTurn: null,
+    });
+    return {
+      ...finalized,
+      pendingTurn: null,
+      playbackStamp,
+      lastTurnPlayback: {
+        turnIndex: finalized.turnIndex,
+        segments,
+        playbackStamp,
+        showTurnIntroBanner: showTurnIntro,
+        turnOrderActorIds: turnOrderForBanner,
+        turnQueue: queueAttachment,
+      },
+    };
+  }
+
+  return {
+    ...working,
+    pendingTurn: {
+      ...pending,
+      nextActorIndex: nextIndex,
+      openingBannerConsumed: pending.openingBannerConsumed || showTurnIntro,
+    },
+    playbackStamp,
+    lastTurnPlayback: {
+      turnIndex: working.turnIndex,
+      segments,
+      playbackStamp,
+      showTurnIntroBanner: showTurnIntro,
+      turnOrderActorIds: turnOrderForBanner,
+      turnQueue: queueAttachment,
+    },
+  };
+}
+
+function applyInstantFullTurn(
+  state: GameState,
+  boardEffectByCellIndex: Map<number, string | null>
+): GameState {
+  if (state.phase !== "running" || state.winnerId) {
+    return state;
+  }
+
+  let working = state;
+
+  if (!working.pendingTurn) {
+    const opened = openNextTurnWithDicePlans(working);
+    working = { ...opened.state, pendingTurn: opened.pendingTurn };
+  }
+
+  while (working.pendingTurn && working.phase === "running" && !working.winnerId) {
+    const p = working.pendingTurn;
+    const actorId = p.orderedActorIds[p.nextActorIndex];
+    if (actorId === undefined) {
+      return state;
+    }
     const resolved = resolveTurnForEntity(
-      nextState,
+      working,
       actorId,
       boardEffectByCellIndex,
-      plansByActorId[actorId],
-      allInitialRollsById,
-      allResolvedRollsById
+      p.plansByActorId[actorId],
+      p.allInitialRollsById,
+      p.allResolvedRollsById
     );
-    nextState = resolved.state;
-    playbackSegments.push(...resolved.segments);
-    if (nextState.phase === "finished") {
+    working = resolved.state;
+    const nextIdx = p.nextActorIndex + 1;
+
+    if (working.phase === "finished") {
       return {
-        ...nextState,
-        lastTurnPlayback: {
-          turnIndex: nextState.turnIndex,
-          segments: playbackSegments,
-        },
+        ...working,
+        pendingTurn: null,
+        lastTurnPlayback: null,
       };
     }
+
+    if (nextIdx >= p.orderedActorIds.length) {
+      working = evaluateAbbyResetScheduling({
+        ...working,
+        pendingTurn: null,
+      });
+      return {
+        ...working,
+        pendingTurn: null,
+        lastTurnPlayback: null,
+      };
+    }
+
+    working = {
+      ...working,
+      pendingTurn: {
+        ...p,
+        nextActorIndex: nextIdx,
+        openingBannerConsumed: true,
+      },
+    };
   }
-  nextState = evaluateAbbyResetScheduling(nextState);
+
+  return working;
+}
+
+function applyInstantSimulateGame(
+  state: GameState,
+  boardEffectByCellIndex: Map<number, string | null>
+): GameState {
+  if (state.phase !== "running" || state.winnerId) {
+    return state;
+  }
+  let working = state;
+  while (working.phase === "running" && !working.winnerId) {
+    working = applyInstantFullTurn(working, boardEffectByCellIndex);
+  }
   return {
-    ...nextState,
-    lastTurnPlayback: {
-      turnIndex: nextState.turnIndex,
-      segments: playbackSegments,
-    },
+    ...working,
+    lastTurnPlayback: null,
   };
 }
 
@@ -785,14 +975,32 @@ export function reduceGameState(
     }
     return createRunningSessionFromSelection(action.selectedBasicIds);
   }
-  if (action.type === "RUN_FULL_TURN") {
+  if (action.type === "STEP_ACTION") {
     if (state.phase !== "running") {
       return state;
     }
     if (state.winnerId) {
       return state;
     }
-    return runSingleTurnCore(state, boardEffectByCellIndex);
+    return applyStepAction(state, boardEffectByCellIndex);
+  }
+  if (action.type === "INSTANT_FULL_TURN") {
+    if (state.phase !== "running") {
+      return state;
+    }
+    if (state.winnerId) {
+      return state;
+    }
+    return applyInstantFullTurn(state, boardEffectByCellIndex);
+  }
+  if (action.type === "INSTANT_SIMULATE_GAME") {
+    if (state.phase !== "running") {
+      return state;
+    }
+    if (state.winnerId) {
+      return state;
+    }
+    return applyInstantSimulateGame(state, boardEffectByCellIndex);
   }
   return state;
 }

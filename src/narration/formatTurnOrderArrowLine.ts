@@ -1,5 +1,14 @@
-import type { CharacterDefinition } from "@/types/game";
+import type { CharacterDefinition, DangoId } from "@/types/game";
 import type { PlaybackSegment } from "@/types/game";
+
+export function formatTurnOrderFromActorIds(
+  orderedActorIds: DangoId[],
+  characterById: Record<string, CharacterDefinition>
+): string {
+  return orderedActorIds
+    .map((id) => characterById[id]?.displayName ?? id)
+    .join(" → ");
+}
 
 export function formatTurnOrderArrowLine(
   segments: PlaybackSegment[],
