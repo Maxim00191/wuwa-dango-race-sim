@@ -1,0 +1,15 @@
+---
+description: Dango Scramble game engine, types, and hooks bridge
+globs: src/services/**/*.{ts,tsx},src/types/**/*.ts,src/constants/**/*.ts,src/hooks/**/*.ts
+alwaysApply: false
+---
+
+# Engine and domain
+
+- Keep **game rules, RNG, movement, stacks, and cell effects** in `src/services/`. Do not import React or browser-only APIs there.
+- Prefer **pure functions and a single reducer** (`reduceGameState` style) for transitions; UI dispatches actions through hooks.
+- **Characters** and **cell effects** stay **configuration + registry** (strategy objects). Add new behavior by registering handlers, not by branching on magic strings in components.
+- **Circular board math** lives in one module; all positions use **normalized cell indices** and explicit clockwise vs counter-clockwise steps.
+- **Types** in `src/types/` define contracts for state, actions, hooks, and effect contexts—extend types when adding features instead of loosening `any`.
+- `src/hooks/` should only **adapt** engine actions to React (`useReducer`, callbacks); avoid embedding rule logic in hooks.
+- Prefer **clear names** over comments; do not add explanatory comments unless the user asks for them.

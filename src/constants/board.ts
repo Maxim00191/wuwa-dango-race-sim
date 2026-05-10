@@ -1,0 +1,5 @@
+export const CELL_COUNT = 32;
+
+export const FINISH_LINE_CELL_INDEX = 1;
+
+export const LAP_DISTANCE_IN_CLOCKWISE_STEPS = CELL_COUNT;
