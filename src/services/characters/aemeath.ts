@@ -1,6 +1,7 @@
 import { ABBY_ID } from "@/constants/ids";
 import { characterParam, text } from "@/i18n";
 import { rollInclusive } from "@/services/characters/dice";
+import { clockwiseDistanceAhead } from "@/services/circular";
 import {
   findCellIndexForEntity,
   teleportEntitySliceCellsOnly,
@@ -9,10 +10,9 @@ import type {
   CharacterDefinition,
   DiceRollContext,
   DiceRollResult,
-  DangoId,
   GameState,
-  MovementStepHookContext,
-  MovementStepHookResult,
+  PostMovementHookContext,
+  SkillHookResolution,
 } from "@/types/game";
 
 const MIDPOINT_CELL_INDEX = 16;
@@ -26,45 +26,50 @@ function rollAemeathDice(
   return { diceValue: rollInclusive(1, 3) };
 }
 
-function findLeadingNonAbbyAheadOfAemeath(
-  context: MovementStepHookContext
-): DangoId | null {
-  const aemeathRankIndex = context.rankedRacerIds.indexOf(context.rollerId);
-  if (aemeathRankIndex <= 0) {
-    return null;
+function hasValidTeleportTarget(stackBottomToTop: string[]): boolean {
+  return stackBottomToTop.some((id) => id !== ABBY_ID);
+}
+
+function findNearestValidTargetCell(
+  state: GameState,
+  fromCellIndex: number
+): { cellIndex: number; distance: number } | null {
+  let nearestTarget: { cellIndex: number; distance: number } | null = null;
+  for (const [cellIndex, stackBottomToTop] of state.cells.entries()) {
+    if (!hasValidTeleportTarget(stackBottomToTop)) {
+      continue;
+    }
+    const distance = clockwiseDistanceAhead(fromCellIndex, cellIndex);
+    if (distance === 0) {
+      continue;
+    }
+    if (!nearestTarget || distance < nearestTarget.distance) {
+      nearestTarget = { cellIndex, distance };
+    }
   }
-  return (
-    context.rankedRacerIds
-      .slice(0, aemeathRankIndex)
-      .find((id) => id !== ABBY_ID) ?? null
-  );
+  return nearestTarget;
 }
 
 function resolveAemeathMidpointLeap(
   state: GameState,
-  context: MovementStepHookContext
-): MovementStepHookResult {
+  context: PostMovementHookContext
+): SkillHookResolution {
   const entity = state.entities[context.rollerId];
-  if (
-    !entity ||
-    entity.hasUsedMidpointLeap ||
-    context.toCellIndex !== MIDPOINT_CELL_INDEX
-  ) {
+  if (!entity || entity.hasUsedMidpointLeap) {
+    return { state };
+  }
+  if (!context.landingCells.includes(MIDPOINT_CELL_INDEX)) {
     return { state };
   }
   const originCellIndex = findCellIndexForEntity(state.cells, context.rollerId);
   if (originCellIndex === null) {
     return { state };
   }
-  const leadingNonAbbyId = findLeadingNonAbbyAheadOfAemeath(context);
-  if (leadingNonAbbyId === null) {
+  const nearestTarget = findNearestValidTargetCell(state, originCellIndex);
+  if (!nearestTarget) {
     return { state };
   }
-  const destinationCellIndex = findCellIndexForEntity(state.cells, leadingNonAbbyId);
-  if (destinationCellIndex === null) {
-    return { state };
-  }
-  const leadingEntity = state.entities[leadingNonAbbyId];
+  const destinationCellIndex = nearestTarget.cellIndex;
   const nextCells = teleportEntitySliceCellsOnly(
     state.cells,
     originCellIndex,
@@ -79,7 +84,7 @@ function resolveAemeathMidpointLeap(
       [context.rollerId]: {
         ...entity,
         cellIndex: destinationCellIndex,
-        raceDisplacement: leadingEntity?.raceDisplacement ?? entity.raceDisplacement,
+        raceDisplacement: entity.raceDisplacement + nearestTarget.distance,
         hasUsedMidpointLeap: true,
       },
     },
@@ -108,6 +113,6 @@ export const aemeathCharacter: CharacterDefinition = {
   travelDirection: "clockwise",
   activateAfterTurnIndex: 0,
   skillHooks: {
-    afterMovementStep: resolveAemeathMidpointLeap,
+    afterMovement: resolveAemeathMidpointLeap,
   },
 };

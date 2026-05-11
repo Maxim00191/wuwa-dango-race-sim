@@ -59,19 +59,23 @@ function delayMilliseconds(durationMs: number): Promise<void> {
 function accentDangoIdForTurnIntro(
   segments: PlaybackSegment[]
 ): DangoId | undefined {
-  const first = segments[0];
-  if (!first) {
-    return undefined;
-  }
-  if (first.kind === "teleport") {
-    return ABBY_ID;
-  }
-  if (first.kind === "idle" || first.kind === "hops") {
-    return first.actorId;
-  }
-  if (first.kind === "slide") {
-    const stack = first.travelingIds;
-    return stack.length > 0 ? stack[stack.length - 1]! : undefined;
+  for (const segment of segments) {
+    if (segment.kind === "teleport") {
+      return ABBY_ID;
+    }
+    if (
+      segment.kind === "idle" ||
+      segment.kind === "roll" ||
+      segment.kind === "skill" ||
+      segment.kind === "hops" ||
+      segment.kind === "cellEffect"
+    ) {
+      return segment.actorId;
+    }
+    if (segment.kind === "slide") {
+      const stack = segment.travelingIds;
+      return stack.length > 0 ? stack[stack.length - 1]! : undefined;
+    }
   }
   return undefined;
 }
@@ -209,7 +213,6 @@ export function useGame() {
       playback.segments,
       playback.sourceCells
     );
-    const incomingLogs = state.log.slice(playback.sourceLogLength);
     const generation = ++animationGenerationRef.current;
     let workingCells = cloneCellMap(playback.sourceCells);
     let workingEntities = cloneEntityMap(playback.sourceEntities);
@@ -326,7 +329,6 @@ export function useGame() {
         );
       }
 
-      let logCursor = 0;
       let segmentIndex = 0;
 
       if (playback.segments[0]?.kind === "teleport") {
@@ -334,20 +336,13 @@ export function useGame() {
           {
             variant: "teleport",
             headline: text("banner.teleport.abbyHeadline"),
-            detail: incomingLogs[logCursor]?.message ?? text("banner.teleport.abbyDetail"),
+            detail: text("banner.teleport.abbyDetail"),
             accentDangoId: ABBY_ID,
           },
           TELEPORT_BANNER_MS
         );
-        if (incomingLogs[logCursor]?.kind === "abbyTeleport") {
-          logCursor++;
-        }
         await runAtomicSteps(segmentChunks[0] ?? []);
         segmentIndex = 1;
-      }
-
-      if (incomingLogs[logCursor]?.kind === "turnHeader") {
-        logCursor++;
       }
 
       for (
@@ -369,14 +364,14 @@ export function useGame() {
                   : text("banner.teleport.stackHeadline", {
                       actor: characterParam(accentDangoId ?? ABBY_ID),
                     }),
-              detail: incomingLogs[logCursor]?.message ?? text("banner.teleport.stackDetail"),
+              detail:
+                accentDangoId === ABBY_ID
+                  ? text("banner.teleport.abbyDetail")
+                  : text("banner.teleport.stackDetail"),
               accentDangoId,
             },
             TELEPORT_BANNER_MS
           );
-          if (incomingLogs[logCursor]?.kind === "abbyTeleport") {
-            logCursor++;
-          }
           await runAtomicSteps(chunk);
           continue;
         }
@@ -394,11 +389,7 @@ export function useGame() {
               },
               IDLE_BANNER_MS
             );
-            if (incomingLogs[logCursor]?.kind === "standby") {
-              logCursor++;
-            }
           } else {
-            const rollValue = state.lastRollById[segment.actorId];
             await shineBanner(
               {
                 variant: "idle",
@@ -406,90 +397,67 @@ export function useGame() {
                   actor: characterParam(segment.actorId),
                 }),
                 detail:
-                  rollValue !== undefined
+                  segment.rollValue !== undefined
                     ? text("banner.idle.blockedDetailWithRoll", {
-                        value: rollValue,
+                        value: segment.rollValue,
                       })
                     : text("banner.idle.blockedDetail"),
                 accentDangoId: segment.actorId,
               },
               IDLE_BANNER_MS
             );
-            if (incomingLogs[logCursor]?.kind === "roll") {
-              logCursor++;
-            }
-            if (incomingLogs[logCursor]?.kind === "skillTrigger") {
-              logCursor++;
-            }
-            if (incomingLogs[logCursor]?.kind === "skipNotBottom") {
-              logCursor++;
-            }
           }
           continue;
         }
 
-        if (segment.kind === "hops") {
-          const rollValue = state.lastRollById[segment.actorId];
+        if (segment.kind === "roll") {
           await shineBanner(
             {
               variant: "roll",
-              headline:
-                rollValue !== undefined
-                  ? text("banner.roll.headline", {
-                      actor: characterParam(segment.actorId),
-                      value: rollValue,
-                    })
-                  : text("banner.roll.headlineFallback", {
-                      actor: characterParam(segment.actorId),
-                    }),
+              headline: text("banner.roll.headline", {
+                actor: characterParam(segment.actorId),
+                value: segment.value,
+              }),
               detail: text("banner.roll.detail"),
               accentDangoId: segment.actorId,
             },
             BANNER_READ_MS
           );
-          if (incomingLogs[logCursor]?.kind === "roll") {
-            logCursor++;
-          }
-          if (incomingLogs[logCursor]?.kind === "skillTrigger") {
-            const skillMessage = incomingLogs[logCursor]!.message;
-            logCursor++;
-            await shineBanner(
-              {
-                variant: "skill",
-                headline: skillMessage,
-                detail: text("banner.skill.detail"),
-                accentDangoId: segment.actorId,
-              },
-              SKILL_BANNER_READ_MS
-            );
-          }
-          if (incomingLogs[logCursor]?.kind === "move") {
-            logCursor++;
-          }
+          continue;
+        }
+
+        if (segment.kind === "skill") {
+          await shineBanner(
+            {
+              variant: "skill",
+              headline: segment.message,
+              detail: text("banner.skill.detail"),
+              accentDangoId: segment.actorId,
+            },
+            SKILL_BANNER_READ_MS
+          );
+          continue;
+        }
+
+        if (segment.kind === "hops") {
           await runAtomicSteps(chunk);
-          const upcomingSegment = playback.segments[segmentIndex + 1];
-          if (
-            upcomingSegment?.kind !== "slide" &&
-            incomingLogs[logCursor]?.kind === "cellEffect"
-          ) {
-            logCursor++;
-          }
+          continue;
+        }
+
+        if (segment.kind === "cellEffect") {
+          await shineBanner(
+            {
+              variant: "effect",
+              headline: text(`banner.effect.${segment.effectId}.headline`),
+              detail: segment.message,
+              accentDangoId: segment.actorId,
+            },
+            SLIDE_BANNER_MS
+          );
           continue;
         }
 
         if (segment.kind === "slide") {
-          await shineBanner(
-            {
-              variant: "slide",
-              headline: text("banner.slide.headline"),
-              detail: text("banner.slide.detail"),
-              accentDangoId: segment.travelingIds.at(-1),
-            },
-            SLIDE_BANNER_MS
-          );
-          if (incomingLogs[logCursor]?.kind === "cellEffect") {
-            logCursor++;
-          }
           await runAtomicSteps(chunk);
         }
       }
@@ -526,9 +494,7 @@ export function useGame() {
       cancelled = true;
     };
   }, [
-    state.lastRollById,
     state.lastTurnPlayback,
-    state.log,
     state.phase,
     state.playbackStamp,
     state.winnerId,

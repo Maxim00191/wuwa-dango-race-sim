@@ -337,7 +337,7 @@ export const zhCnDictionary: TranslationDictionary = {
       move: "{actor} 沿着{direction}轻快地跃进了 {steps} 格。",
       cellPropulsion: "踩中推进装置！该格上的整层团子都被向顺时针方向推进了 1 格。",
       cellHindrance: "触发阻遏装置！该格上的整层团子都被向逆时针方向推回了 1 格。",
-      cellRift: "卷入时空裂隙！该格的叠层顺序被重新打乱，但布大王仍稳稳压在最底层。",
+      cellRift: "卷入时空裂隙！该格的叠层顺序被重新打乱。",
       win: "{winner} 率先跑完一整圈，拿下了二周年的冠军桂冠！",
       turnHeader: "第 {turn} 回合开始，全场屏息以待。",
     },
@@ -346,7 +346,7 @@ export const zhCnDictionary: TranslationDictionary = {
       chisaUnderdog: "{actor} 触发逆境觉醒！额外爆发出 2 步的冲刺。",
       lynaeDouble: "{actor} 的技能闪耀！点数翻倍至 {value}。",
       lynaeStuck: "{actor} 的技能发生故障，本回合只能尴尬地留在原地。",
-      aemeathLeap: "{actor} 撕裂空间，直接跃迁到了领先队伍的层叠中！",
+      aemeathLeap: "{actor} 撕裂空间，直接跃迁到了前方最近的层叠中！",
     },
   },
   banner: {
@@ -373,6 +373,17 @@ export const zhCnDictionary: TranslationDictionary = {
     },
     skill: {
       detail: "共鸣技能高光时刻",
+    },
+    effect: {
+      propulsionDevice: {
+        headline: "推进装置触发！",
+      },
+      hindranceDevice: {
+        headline: "阻遏装置触发！",
+      },
+      timeRift: {
+        headline: "时空裂隙启动！",
+      },
     },
     slide: {
       headline: "格子机关触发",

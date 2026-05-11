@@ -111,11 +111,10 @@ const timeRiftEffect: CellEffectDefinition = {
   apply: (state, context) => {
     const nextCells = cloneCellMap(state.cells);
     const cellIndex = context.destinationCellIndex;
-    const previous = nextCells.get(cellIndex);
-    if (!previous) {
+    if (context.stackBottomToTop.length === 0) {
       return { state };
     }
-    nextCells.set(cellIndex, shuffleStackBottomToTop(previous));
+    nextCells.set(cellIndex, shuffleStackBottomToTop(context.stackBottomToTop));
     return { state: { ...state, cells: nextCells } };
   },
 };

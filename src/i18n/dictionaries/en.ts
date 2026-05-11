@@ -367,7 +367,7 @@ export const enDictionary: TranslationDictionary = {
       cellHindrance:
         "Hit a Hindrance Device! The entire stack on that tile is pushed 1 tile counter-clockwise.",
       cellRift:
-        "Caught in a Time Rift! The stack order on that tile is reshuffled, but Abby stays at the bottom.",
+        "Caught in a Time Rift! The stack order on that tile is reshuffled.",
       win: "{winner} crosses the 32-step mark and claims the 2nd Anniversary Crown!",
       turnHeader: "Turn {turn} commences. The crowd holds its breath.",
     },
@@ -377,7 +377,7 @@ export const enDictionary: TranslationDictionary = {
       lynaeDouble: "{actor}'s skill flares up! The roll doubles to {value}.",
       lynaeStuck: "{actor}'s skill misfired. Stuck awkwardly in place for this turn.",
       aemeathLeap:
-        "{actor} tears through space, leaping directly into the leading stack!",
+        "{actor} tears through space, leaping into the nearest stack ahead!",
     },
   },
   banner: {
@@ -405,6 +405,17 @@ export const enDictionary: TranslationDictionary = {
     },
     skill: {
       detail: "Resonance Skill Activated",
+    },
+    effect: {
+      propulsionDevice: {
+        headline: "Propulsion Device activated!",
+      },
+      hindranceDevice: {
+        headline: "Hindrance Device activated!",
+      },
+      timeRift: {
+        headline: "Time Rift activated!",
+      },
     },
     slide: {
       headline: "Cell Effect Triggered",

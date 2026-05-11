@@ -11,7 +11,15 @@ import {
 } from "@/services/colorUtils";
 
 export type BroadcastBannerPayload = {
-  variant: "turn" | "roll" | "skill" | "idle" | "teleport" | "slide" | "victory";
+  variant:
+    | "turn"
+    | "roll"
+    | "skill"
+    | "idle"
+    | "teleport"
+    | "slide"
+    | "effect"
+    | "victory";
   headline: TranslatableContent;
   detail?: TranslatableContent;
   accentDangoId?: DangoId;
@@ -37,6 +45,8 @@ const variantShell: Record<
     "border-fuchsia-400/55 bg-fuchsia-50/96 shadow-xl shadow-fuchsia-900/15 ring-1 ring-fuchsia-400/40 dark:border-fuchsia-500/45 dark:bg-fuchsia-950/90 dark:shadow-fuchsia-950/50 dark:ring-fuchsia-400/40",
   slide:
     "border-emerald-400/55 bg-emerald-50/96 shadow-xl shadow-emerald-900/15 ring-1 ring-emerald-400/35 dark:border-emerald-500/45 dark:bg-emerald-950/90 dark:shadow-emerald-950/50 dark:ring-emerald-400/35",
+  effect:
+    "border-violet-400/60 bg-violet-50/96 shadow-xl shadow-violet-900/15 ring-1 ring-violet-400/40 dark:border-violet-500/50 dark:bg-violet-950/90 dark:shadow-violet-950/50 dark:ring-violet-400/40",
   victory:
     "border-amber-300/80 bg-gradient-to-br from-amber-500/95 via-orange-600/95 to-rose-700/95 shadow-2xl shadow-amber-900/25 ring-2 ring-amber-300/70 dark:from-amber-600/95 dark:via-orange-700/95 dark:to-rose-800/95 dark:shadow-amber-950/70 dark:ring-amber-200/70",
 };
@@ -48,6 +58,7 @@ const headlineClass: Record<BroadcastBannerPayload["variant"], string> = {
   idle: "text-sm font-semibold leading-snug text-slate-800 dark:text-slate-50 sm:text-base",
   teleport: "text-sm font-bold leading-snug text-fuchsia-950 dark:text-fuchsia-50 sm:text-base",
   slide: "text-sm font-bold leading-snug text-emerald-950 dark:text-emerald-50 sm:text-base",
+  effect: "text-sm font-bold leading-snug text-violet-950 dark:text-violet-50 sm:text-base",
   victory:
     "text-lg font-black leading-tight tracking-tight text-white drop-shadow-md sm:text-xl",
 };

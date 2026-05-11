@@ -44,7 +44,12 @@ export function expandPlaybackToAtomicSteps(
   let cells = cloneCellMap(initialCells);
   const atomic: AtomicPlaybackStep[] = [];
   for (const segment of segments) {
-    if (segment.kind === "idle") {
+    if (
+      segment.kind === "idle" ||
+      segment.kind === "roll" ||
+      segment.kind === "skill" ||
+      segment.kind === "cellEffect"
+    ) {
       continue;
     }
     if (segment.kind === "hops") {
@@ -116,7 +121,12 @@ export function expandPlaybackToSegmentAtomicChunks(
   const chunks: AtomicPlaybackStep[][] = [];
   for (const segment of segments) {
     const chunk: AtomicPlaybackStep[] = [];
-    if (segment.kind === "idle") {
+    if (
+      segment.kind === "idle" ||
+      segment.kind === "roll" ||
+      segment.kind === "skill" ||
+      segment.kind === "cellEffect"
+    ) {
       chunks.push(chunk);
       continue;
     }

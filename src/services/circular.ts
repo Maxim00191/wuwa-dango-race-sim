@@ -14,13 +14,20 @@ export function addCounterClockwise(fromCellIndex: number, steps: number): numbe
   return normalizeCellIndex(fromCellIndex - steps);
 }
 
+export function clockwiseDistanceAhead(
+  fromCellIndex: number,
+  toCellIndex: number
+): number {
+  const from = normalizeCellIndex(fromCellIndex) - 1;
+  const to = normalizeCellIndex(toCellIndex) - 1;
+  return (to - from + CELL_COUNT) % CELL_COUNT;
+}
+
 export function clockwiseDistanceBetweenInclusive(
   fromCellIndex: number,
   toCellIndex: number
 ): number {
-  const from = fromCellIndex - 1;
-  const to = toCellIndex - 1;
-  return (to - from + CELL_COUNT) % CELL_COUNT;
+  return clockwiseDistanceAhead(fromCellIndex, toCellIndex);
 }
 
 export function clockwiseProgressFromFinishLine(cellIndex: number): number {

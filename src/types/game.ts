@@ -24,10 +24,31 @@ export type SkillHookContext = {
   cellIndex: CellIndex;
 };
 
+export type SkillHookResolution = {
+  state: GameState;
+  segments?: PlaybackSegment[];
+  skillNarrative?: LocalizedText;
+};
+
 export type SkillHookHandler = (
   state: GameState,
   context: SkillHookContext
-) => GameState;
+) => SkillHookResolution;
+
+export type PostMovementHookContext = {
+  turnIndex: number;
+  rollerId: DangoId;
+  diceValue: number;
+  startCellIndex: CellIndex;
+  endCellIndex: CellIndex;
+  travelDirection: TravelDirection;
+  landingCells: CellIndex[];
+};
+
+export type PostMovementHookHandler = (
+  state: GameState,
+  context: PostMovementHookContext
+) => SkillHookResolution;
 
 export type MovementEvaluationContext = {
   turnIndex: number;
@@ -76,7 +97,7 @@ export type MovementStepHookHandler = (
 
 export type CharacterSkillHooks = {
   afterDiceRoll?: SkillHookHandler;
-  afterMovement?: SkillHookHandler;
+  afterMovement?: PostMovementHookHandler;
   afterHalfwayCrossing?: SkillHookHandler;
   resolveMovement?: MovementEvaluationHookHandler;
   afterMovementStep?: MovementStepHookHandler;
@@ -166,6 +187,19 @@ export type PlaybackIdleSegment = {
   kind: "idle";
   actorId: DangoId;
   reason: "standby" | "skipNotBottom";
+  rollValue?: number;
+};
+
+export type PlaybackRollSegment = {
+  kind: "roll";
+  actorId: DangoId;
+  value: number;
+};
+
+export type PlaybackSkillSegment = {
+  kind: "skill";
+  actorId: DangoId;
+  message: LocalizedText;
 };
 
 export type PlaybackHopsSegment = {
@@ -191,11 +225,21 @@ export type PlaybackSlideSegment = {
   toCell: CellIndex;
 };
 
+export type PlaybackCellEffectSegment = {
+  kind: "cellEffect";
+  actorId: DangoId;
+  effectId: string;
+  message: LocalizedText;
+};
+
 export type PlaybackSegment =
   | PlaybackIdleSegment
+  | PlaybackRollSegment
+  | PlaybackSkillSegment
   | PlaybackHopsSegment
   | PlaybackTeleportSegment
-  | PlaybackSlideSegment;
+  | PlaybackSlideSegment
+  | PlaybackCellEffectSegment;
 
 export type TurnQueueAttachment = {
   orderedActorIds: DangoId[];
@@ -211,7 +255,6 @@ export type TurnPlaybackPlan = {
   sourceEntities: Record<DangoId, EntityRuntimeState>;
   settledCells?: Map<CellIndex, DangoId[]>;
   settledEntities?: Record<DangoId, EntityRuntimeState>;
-  sourceLogLength: number;
   presentationMode: "animated" | "settled";
   showTurnIntroBanner: boolean;
   turnOrderActorIds?: DangoId[];

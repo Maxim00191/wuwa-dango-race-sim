@@ -290,16 +290,20 @@ export function GameShell({
               presentation={turnQueuePresentation}
             />
           </div>
-          <div className="min-h-0 min-w-0 py-4">
-            <div className="relative h-full min-h-[clamp(22rem,46vh,40rem)] min-w-0 overflow-hidden rounded-[2rem] border border-slate-200/80 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.85),_rgba(226,232,240,0.8)_38%,_rgba(148,163,184,0.28)_100%)] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.65),0_24px_60px_rgba(15,23,42,0.12)] dark:border-slate-700/70 dark:bg-[radial-gradient(circle_at_top,_rgba(30,41,59,0.95),_rgba(15,23,42,0.94)_38%,_rgba(2,6,23,0.96)_100%)] dark:shadow-[inset_0_1px_0_rgba(148,163,184,0.16),0_28px_80px_rgba(2,6,23,0.55)]">
-              <div className="relative h-full w-full overflow-hidden rounded-[1.55rem] bg-white/35 dark:bg-slate-950/20">
-                <CircularBoard
-                  boardCells={boardCells}
-                  boardEffects={boardEffects}
-                  hoppingEntityIds={hoppingEntityIds}
-                />
-                <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center px-2">
-                  <BroadcastBanner payload={broadcastPayload} />
+          <div className="flex min-h-[clamp(22rem,46vh,40rem)] min-w-0 items-center justify-center py-4">
+            <div className="relative w-full min-w-0 max-w-[72rem]">
+              <div className="relative aspect-[48/35] w-full overflow-hidden rounded-[2rem] border border-slate-200/80 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.85),_rgba(226,232,240,0.8)_38%,_rgba(148,163,184,0.28)_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.65),0_24px_60px_rgba(15,23,42,0.12)] dark:border-slate-700/70 dark:bg-[radial-gradient(circle_at_top,_rgba(30,41,59,0.95),_rgba(15,23,42,0.94)_38%,_rgba(2,6,23,0.96)_100%)] dark:shadow-[inset_0_1px_0_rgba(148,163,184,0.16),0_28px_80px_rgba(2,6,23,0.55)]">
+                <div className="absolute inset-0 p-3">
+                  <div className="relative h-full w-full overflow-hidden rounded-[1.55rem] bg-white/35 dark:bg-slate-950/20">
+                    <CircularBoard
+                      boardCells={boardCells}
+                      boardEffects={boardEffects}
+                      hoppingEntityIds={hoppingEntityIds}
+                    />
+                    <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center px-4 pt-4">
+                      <BroadcastBanner payload={broadcastPayload} />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

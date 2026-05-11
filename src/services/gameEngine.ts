@@ -12,6 +12,7 @@ import { characterParam, directionParam, text, type LocalizedText } from "@/i18n
 import {
   addClockwise,
   addCounterClockwise,
+  buildStepLandingCells,
   clockwiseProgressFromFinishLine,
 } from "@/services/circular";
 import {
@@ -324,31 +325,57 @@ function teleportAbbyToStartLine(state: GameState): GameState {
 function applySkillHookAfterDice(
   state: GameState,
   context: SkillHookContext
-): GameState {
+): {
+  state: GameState;
+  segments: PlaybackSegment[];
+  skillNarrative?: LocalizedText;
+} {
   const character = CHARACTER_BY_ID[context.rollerId];
   if (!character) {
-    return state;
+    return { state, segments: [] };
   }
   const handler = character.skillHooks.afterDiceRoll;
   if (!handler) {
-    return state;
+    return { state, segments: [] };
   }
-  return handler(state, context);
+  const resolution = handler(state, context);
+  return {
+    state: resolution.state,
+    segments: resolution.segments ?? [],
+    skillNarrative: resolution.skillNarrative,
+  };
 }
 
 function applySkillHookAfterMovement(
   state: GameState,
-  context: SkillHookContext
-): GameState {
+  context: {
+    turnIndex: number;
+    rollerId: DangoId;
+    diceValue: number;
+    startCellIndex: number;
+    endCellIndex: number;
+    travelDirection: TravelDirection;
+    landingCells: number[];
+  }
+): {
+  state: GameState;
+  segments: PlaybackSegment[];
+  skillNarrative?: LocalizedText;
+} {
   const character = CHARACTER_BY_ID[context.rollerId];
   if (!character) {
-    return state;
+    return { state, segments: [] };
   }
   const handler = character.skillHooks.afterMovement;
   if (!handler) {
-    return state;
+    return { state, segments: [] };
   }
-  return handler(state, context);
+  const resolution = handler(state, context);
+  return {
+    state: resolution.state,
+    segments: resolution.segments ?? [],
+    skillNarrative: resolution.skillNarrative,
+  };
 }
 
 function resolveMovementDiceValue(
@@ -525,6 +552,85 @@ function executeStepwiseMovement(
   return { state: nextState, segments };
 }
 
+function resolvePostMovementPhase(
+  state: GameState,
+  actingEntityId: DangoId,
+  diceValue: number,
+  movementOriginCellIndex: number,
+  travelDirection: TravelDirection,
+  boardEffectByCellIndex: Map<number, string | null>
+): { state: GameState; segments: PlaybackSegment[] } {
+  let nextState = state;
+  const segments: PlaybackSegment[] = [];
+  const postMovementCellIndex = findCellIndexForEntity(
+    nextState.cells,
+    actingEntityId
+  );
+  if (postMovementCellIndex === null) {
+    return { state: nextState, segments };
+  }
+  const skillOutcome = applySkillHookAfterMovement(nextState, {
+    turnIndex: state.turnIndex,
+    rollerId: actingEntityId,
+    diceValue,
+    startCellIndex: movementOriginCellIndex,
+    endCellIndex: postMovementCellIndex,
+    travelDirection,
+    landingCells: buildStepLandingCells(
+      movementOriginCellIndex,
+      diceValue,
+      travelDirection
+    ),
+  });
+  nextState = skillOutcome.state;
+  segments.push(...skillOutcome.segments);
+  if (skillOutcome.skillNarrative) {
+    nextState = appendLog(nextState, {
+      kind: "skillTrigger",
+      message: skillOutcome.skillNarrative,
+    });
+  }
+  if (diceValue <= 0) {
+    return { state: nextState, segments };
+  }
+  const finalCellIndex = findCellIndexForEntity(nextState.cells, actingEntityId);
+  if (finalCellIndex === null) {
+    return { state: nextState, segments };
+  }
+  const finalStack = nextState.cells.get(finalCellIndex) ?? [];
+  const effectOutcome = resolveCellEffectIfPresent(nextState, boardEffectByCellIndex, {
+    turnIndex: state.turnIndex,
+    moverId: actingEntityId,
+    destinationCellIndex: finalCellIndex,
+    stackBottomToTop: finalStack,
+    moverTravelDirection: travelDirection,
+  });
+  let afterEffectState = effectOutcome?.state ?? nextState;
+  if (effectOutcome) {
+    const effectMessage = text(CELL_EFFECT_LOG_KEY_BY_ID[effectOutcome.effectId]);
+    segments.push({
+      kind: "cellEffect",
+      actorId: actingEntityId,
+      effectId: effectOutcome.effectId,
+      message: effectMessage,
+    });
+    afterEffectState = appendLog(afterEffectState, {
+      kind: "cellEffect",
+      message: effectMessage,
+    });
+  }
+  if (effectOutcome?.shift) {
+    segments.push({
+      kind: "slide",
+      travelingIds: effectOutcome.shift.travelingIds,
+      direction: effectOutcome.shift.direction,
+      fromCell: effectOutcome.shift.fromCell,
+      toCell: effectOutcome.shift.toCell,
+    });
+  }
+  return { state: afterEffectState, segments };
+}
+
 function createTurnRollPlans(
   state: GameState,
   orderedActors: DangoId[]
@@ -626,12 +732,22 @@ function resolveTurnForEntity(
       value: plan.initialDiceValue,
     }),
   });
+  segments.push({
+    kind: "roll",
+    actorId: actingEntityId,
+    value: plan.initialDiceValue,
+  });
   for (const narrative of [plan.skillNarrative, movementOutcome.skillNarrative]) {
     if (!narrative) {
       continue;
     }
     nextState = appendLog(nextState, {
       kind: "skillTrigger",
+      message: narrative,
+    });
+    segments.push({
+      kind: "skill",
+      actorId: actingEntityId,
       message: narrative,
     });
   }
@@ -643,11 +759,25 @@ function resolveTurnForEntity(
       findCellIndexForEntity(nextState.cells, actingEntityId) ??
         FINISH_LINE_CELL_INDEX,
   };
-  nextState = applySkillHookAfterDice(nextState, diceContext);
+  const afterDiceOutcome = applySkillHookAfterDice(nextState, diceContext);
+  nextState = afterDiceOutcome.state;
+  segments.push(...afterDiceOutcome.segments);
+  if (afterDiceOutcome.skillNarrative) {
+    nextState = appendLog(nextState, {
+      kind: "skillTrigger",
+      message: afterDiceOutcome.skillNarrative,
+    });
+    segments.push({
+      kind: "skill",
+      actorId: actingEntityId,
+      message: afterDiceOutcome.skillNarrative,
+    });
+  }
   const activeCellIndex = findCellIndexForEntity(nextState.cells, actingEntityId);
   if (activeCellIndex === null) {
     return { state: nextState, segments };
   }
+  const movementOriginCellIndex = activeCellIndex;
   const activeStack = nextState.cells.get(activeCellIndex)!;
   const actorIndexInStack = activeStack.indexOf(actingEntityId);
   if (actorIndexInStack === -1) {
@@ -663,6 +793,7 @@ function resolveTurnForEntity(
           kind: "idle",
           actorId: actingEntityId,
           reason: "skipNotBottom",
+          rollValue: plan.initialDiceValue,
         },
       ],
     };
@@ -683,53 +814,16 @@ function resolveTurnForEntity(
       direction: directionParam(character.travelDirection),
     }),
   });
-  const destinationStackCellIndex = findCellIndexForEntity(
-    nextState.cells,
-    actingEntityId
+  const postMovementOutcome = resolvePostMovementPhase(
+    nextState,
+    actingEntityId,
+    resolvedMovementStepCount,
+    movementOriginCellIndex,
+    character.travelDirection,
+    boardEffectByCellIndex
   );
-  if (destinationStackCellIndex === null) {
-    return { state: nextState, segments };
-  }
-  const destinationStack =
-    nextState.cells.get(destinationStackCellIndex) ?? [];
-  const movementContext: SkillHookContext = {
-    turnIndex: state.turnIndex,
-    rollerId: actingEntityId,
-    diceValue: resolvedMovementStepCount,
-    cellIndex: destinationStackCellIndex,
-  };
-  nextState = applySkillHookAfterMovement(nextState, movementContext);
-  const refreshedStack =
-    nextState.cells.get(destinationStackCellIndex) ?? destinationStack;
-  const shouldResolveCellEffect = resolvedMovementStepCount > 0;
-  const effectOutcome = shouldResolveCellEffect
-    ? resolveCellEffectIfPresent(nextState, boardEffectByCellIndex, {
-        turnIndex: state.turnIndex,
-        moverId: actingEntityId,
-        destinationCellIndex: destinationStackCellIndex,
-        stackBottomToTop: refreshedStack,
-        moverTravelDirection: character.travelDirection,
-      })
-    : null;
-  let afterEffectState = effectOutcome?.state ?? nextState;
-  if (effectOutcome?.shift) {
-    segments.push({
-      kind: "slide",
-      travelingIds: effectOutcome.shift.travelingIds,
-      direction: effectOutcome.shift.direction,
-      fromCell: effectOutcome.shift.fromCell,
-      toCell: effectOutcome.shift.toCell,
-    });
-    afterEffectState = appendLog(afterEffectState, {
-      kind: "cellEffect",
-      message: text(CELL_EFFECT_LOG_KEY_BY_ID[effectOutcome.effectId]),
-    });
-  } else if (effectOutcome) {
-    afterEffectState = appendLog(afterEffectState, {
-      kind: "cellEffect",
-      message: text(CELL_EFFECT_LOG_KEY_BY_ID[effectOutcome.effectId]),
-    });
-  }
+  const afterEffectState = postMovementOutcome.state;
+  segments.push(...postMovementOutcome.segments);
   const winnerId = pickWinnerBasicDangoId(afterEffectState);
   if (winnerId) {
     const finished = appendLog(afterEffectState, {
@@ -800,7 +894,6 @@ function createTurnPlaybackPlan(
     playbackStamp: options.playbackStamp,
     sourceCells: cloneCellMap(sourceState.cells),
     sourceEntities: cloneEntityMap(sourceState.entities),
-    sourceLogLength: sourceState.log.length,
     presentationMode: options.presentationMode ?? "animated",
     showTurnIntroBanner: options.showTurnIntroBanner,
     turnOrderActorIds: options.turnOrderActorIds,
