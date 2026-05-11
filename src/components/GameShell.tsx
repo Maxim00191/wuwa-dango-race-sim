@@ -1,13 +1,11 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, type ReactNode } from "react";
 import { TurnQueueViewer } from "@/components/TurnQueueViewer";
 import {
   BroadcastBanner,
   type BroadcastBannerPayload,
 } from "@/components/BroadcastBanner";
 import { CircularBoard } from "@/components/CircularBoard";
-import { DangoPicker } from "@/components/DangoPicker";
-import { ABBY_ID, ACTIVE_BASIC_DANGO_COUNT } from "@/constants/ids";
-import { CHARACTER_BY_ID, CHARACTER_LIST } from "@/services/characters";
+import { CHARACTER_BY_ID } from "@/services/characters";
 import {
   accentFillHexForDango,
   contrastingInkHexForFill,
@@ -24,9 +22,14 @@ type GameShellProps = {
   boardCells: Map<number, DangoId[]>;
   boardEffects: Map<number, string | null>;
   hoppingEntityIds: Set<DangoId>;
-  pendingBasicIds: DangoId[];
-  onToggleBasicId: (id: DangoId) => void;
-  onStart: () => void;
+  idleParticipantIds: DangoId[];
+  headerEyebrow: string;
+  headerTitle: string;
+  headerDescription: string;
+  sessionLabel: string;
+  setupPanel?: ReactNode;
+  showSetupPanel?: boolean;
+  startControls: ReactNode;
   onPlayTurn: () => void;
   onStepAction: () => void;
   onInstantTurn: () => void;
@@ -45,9 +48,14 @@ export function GameShell({
   boardCells,
   boardEffects,
   hoppingEntityIds,
-  pendingBasicIds,
-  onToggleBasicId,
-  onStart,
+  idleParticipantIds,
+  headerEyebrow,
+  headerTitle,
+  headerDescription,
+  sessionLabel,
+  setupPanel,
+  showSetupPanel = false,
+  startControls,
   onPlayTurn,
   onStepAction,
   onInstantTurn,
@@ -58,25 +66,18 @@ export function GameShell({
   autoPlayEnabled,
   onAutoPlayEnabledChange,
 }: GameShellProps) {
-  const rosterBasics = useMemo(
-    () => CHARACTER_LIST.filter((character) => character.role === "basic"),
-    []
-  );
   const racerParticipantIds = useMemo(() => {
     if (state.phase === "idle") {
-      return [...pendingBasicIds, ABBY_ID];
+      return idleParticipantIds;
     }
     return orderedRacerIdsForLeaderboard(rankingState);
-  }, [pendingBasicIds, rankingState, state.phase]);
+  }, [idleParticipantIds, rankingState, state.phase]);
   const racerOrderFlipKey = racerParticipantIds.join("\u0001");
   const rankListRef = useListFlipAnimation<HTMLUListElement>(racerOrderFlipKey);
   const turnQueuePresentation = usePersistentTurnQueuePresentation(
     state,
     isAnimating
   );
-  const startDisabled =
-    state.phase !== "idle" ||
-    pendingBasicIds.length !== ACTIVE_BASIC_DANGO_COUNT;
   const nextTurnDisabled =
     state.phase !== "running" ||
     Boolean(state.winnerId) ||
@@ -139,15 +140,15 @@ export function GameShell({
     <div className="flex min-h-screen w-full flex-col gap-8 px-4 py-8 text-slate-900 dark:text-slate-100 sm:px-6 md:px-10 lg:px-14 xl:px-16 2xl:px-24">
       <header className="flex w-full flex-col gap-3">
         <p className="text-lg font-bold tracking-tight text-slate-800 dark:text-slate-100 md:text-xl">
-          Lap around the arena
+          {headerEyebrow}
         </p>
         <div className="flex flex-wrap items-end justify-between gap-6 gap-y-4">
           <div className="min-w-0 flex-1">
             <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50 md:text-4xl">
-              Dango Derby
+              {headerTitle}
             </h1>
             <p className="mt-2 max-w-none text-sm font-normal text-slate-500 dark:text-slate-400 md:text-base lg:text-lg">
-              Hop, stack, and scramble your way around 32 cozy steps! Dodge the grumpy Abby, ride on your friends, and be the first to cross the finish line!
+              {headerDescription}
             </p>
           </div>
           <div className="flex flex-wrap items-end gap-6">
@@ -156,14 +157,7 @@ export function GameShell({
                 Watch & play
               </p>
               <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={onStart}
-                  disabled={startDisabled}
-                  className="rounded-full bg-emerald-500 px-5 py-2 text-sm font-semibold text-emerald-950 shadow-lg shadow-emerald-900/40 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
-                >
-                  Start the race
-                </button>
+                {startControls}
                 <button
                   type="button"
                   onClick={onStepAction}
@@ -246,13 +240,7 @@ export function GameShell({
         </div>
       </header>
 
-      {state.phase === "idle" ? (
-        <DangoPicker
-          rosterBasics={rosterBasics}
-          selectedBasicIds={pendingBasicIds}
-          onToggleBasicId={onToggleBasicId}
-        />
-      ) : null}
+      {showSetupPanel ? setupPanel : null}
 
       <div className="grid w-full gap-8 lg:grid-cols-[minmax(0,2.3fr)_minmax(0,1fr)] lg:gap-10 xl:grid-cols-[minmax(0,2.85fr)_minmax(0,1fr)] xl:gap-12 2xl:grid-cols-[minmax(0,3.1fr)_minmax(0,1fr)]">
         <section className="flex min-w-0 flex-col rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-md shadow-slate-900/10 backdrop-blur dark:border-slate-800 dark:bg-slate-900/60 dark:shadow-2xl dark:shadow-slate-950/60 lg:min-h-[min(72vh,780px)] xl:p-8">
@@ -264,11 +252,7 @@ export function GameShell({
                 </p>
                 <p className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
                   Turn {Math.max(state.turnIndex, 0)}
-                  {state.phase === "idle"
-                    ? " · Ready when you are"
-                    : state.phase === "running"
-                      ? " · Race on!"
-                      : " · Race wrapped"}
+                  {` · ${sessionLabel}`}
                 </p>
               </div>
               {state.winnerId ? (
@@ -294,7 +278,7 @@ export function GameShell({
           <div className="mt-6 shrink-0 grid gap-4 text-sm text-slate-600 dark:text-slate-300 sm:grid-cols-3">
             <LegendSwatch
               label="Finish line"
-              description="Pass cell 1 again and your lap counter ticks—almost home!"
+              description="Winning still needs a full 32-step lap, even if someone starts a few cells behind the line."
               borderClass="border-amber-300"
             />
             <LegendSwatch

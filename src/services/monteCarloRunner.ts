@@ -1,10 +1,12 @@
-import type { HeadlessSimulationOutcome } from "@/services/gameEngine";
-import { simulateHeadlessFullGame } from "@/services/gameEngine";
-import type { DangoId } from "@/types/game";
+import type {
+  HeadlessSimulationOutcome,
+  HeadlessSimulationScenario,
+} from "@/services/gameEngine";
+import { simulateHeadlessScenario } from "@/services/gameEngine";
 
 export type MonteCarloRunnerControls = {
   totalRuns: number;
-  selectedBasicIds: DangoId[];
+  scenario: HeadlessSimulationScenario;
   boardEffectByCellIndex: Map<number, string | null>;
   onProgress: (completedGames: number, totalGames: number) => void;
   onOutcome: (outcome: HeadlessSimulationOutcome) => void;
@@ -24,7 +26,7 @@ export async function runMonteCarloBatch(
 ): Promise<void> {
   const {
     totalRuns,
-    selectedBasicIds,
+    scenario,
     boardEffectByCellIndex,
     onProgress,
     onOutcome,
@@ -43,8 +45,8 @@ export async function runMonteCarloBatch(
       if (shouldAbort?.()) {
         return;
       }
-      const outcome = simulateHeadlessFullGame(
-        selectedBasicIds,
+      const outcome = simulateHeadlessScenario(
+        scenario,
         boardEffectByCellIndex
       );
       onOutcome(outcome);

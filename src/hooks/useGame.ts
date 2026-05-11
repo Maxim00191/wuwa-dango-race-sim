@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { ABBY_ID, ACTIVE_BASIC_DANGO_COUNT } from "@/constants/ids";
+import { ABBY_ID } from "@/constants/ids";
 import { BOARD_CELL_EFFECT_LOOKUP } from "@/services/boardCellEffectLookup";
 import {
   applyAtomicCellsStep,
@@ -17,17 +17,19 @@ import {
 } from "@/services/boardPlayback";
 import { CHARACTER_BY_ID } from "@/services/characters";
 import {
-  resolvePersistedOrSmartDefaultLineup,
-  writePersistedLineupSelection,
-} from "@/services/savedLineup";
-import {
   createInitialGameState,
   isValidBasicSelection,
   reduceGameState,
 } from "@/services/gameEngine";
 import { cloneCellMap, cloneEntityMap } from "@/services/stateCells";
 import type { BroadcastBannerPayload } from "@/components/BroadcastBanner";
-import type { DangoId, GameAction, GameState, PlaybackSegment } from "@/types/game";
+import type {
+  DangoId,
+  GameAction,
+  GameState,
+  PlaybackSegment,
+  RaceSetup,
+} from "@/types/game";
 import {
   formatTurnOrderArrowLine,
   formatTurnOrderFromActorIds,
@@ -76,9 +78,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 export function useGame() {
   const initialState = useMemo(() => createInitialGameState(), []);
   const [state, dispatch] = useReducer(gameReducer, initialState);
-  const [pendingBasicIds, setPendingBasicIds] = useState<DangoId[]>(() =>
-    resolvePersistedOrSmartDefaultLineup()
-  );
   const [playbackCells, setPlaybackCells] = useState<
     Map<number, DangoId[]> | null
   >(null);
@@ -93,34 +92,20 @@ export function useGame() {
   const [autoPlayEnabled, setAutoPlayEnabled] = useState(false);
   const [broadcastPayload, setBroadcastPayload] =
     useState<BroadcastBannerPayload | null>(null);
-  const snapshotBeforeTurnRef = useRef<GameState | null>(null);
   const isAnimatingRef = useRef(false);
   const animationGenerationRef = useRef(0);
   const playTurnStartedRef = useRef(false);
 
-  const togglePendingBasicId = useCallback((id: DangoId) => {
-    setPendingBasicIds((previous) => {
-      if (previous.includes(id)) {
-        return previous.filter((existing) => existing !== id);
-      }
-      if (previous.length >= ACTIVE_BASIC_DANGO_COUNT) {
-        return previous;
-      }
-      return [...previous, id];
-    });
-  }, []);
-
-  const start = useCallback(() => {
-    if (!isValidBasicSelection(pendingBasicIds)) {
+  const start = useCallback((setup: RaceSetup) => {
+    if (!isValidBasicSelection(setup.selectedBasicIds)) {
       return;
     }
-    dispatch({ type: "START", selectedBasicIds: pendingBasicIds });
-  }, [pendingBasicIds]);
+    dispatch({ type: "START", setup });
+  }, []);
 
   const reset = useCallback(() => {
     animationGenerationRef.current += 1;
     isAnimatingRef.current = false;
-    snapshotBeforeTurnRef.current = null;
     setPlaybackCells(null);
     setPlaybackEntities(null);
     setHoppingEntityIds(new Set());
@@ -129,12 +114,7 @@ export function useGame() {
     setBroadcastPayload(null);
     setAutoPlayEnabled(false);
     dispatch({ type: "RESET" });
-    setPendingBasicIds(resolvePersistedOrSmartDefaultLineup());
   }, []);
-
-  useEffect(() => {
-    writePersistedLineupSelection(pendingBasicIds);
-  }, [pendingBasicIds]);
 
   const executeNextStep = useCallback(() => {
     if (isAnimatingRef.current) {
@@ -143,9 +123,6 @@ export function useGame() {
     if (state.phase !== "running" || state.winnerId) {
       return;
     }
-    snapshotBeforeTurnRef.current = state;
-    setPlaybackCells(cloneCellMap(state.cells));
-    setPlaybackEntities(cloneEntityMap(state.entities));
     isAnimatingRef.current = true;
     setIsAnimating(true);
     dispatch({ type: "STEP_ACTION" });
@@ -195,25 +172,61 @@ export function useGame() {
 
   useLayoutEffect(() => {
     let cancelled = false;
-    const snapshot = snapshotBeforeTurnRef.current;
     const playback = state.lastTurnPlayback;
-    if (!snapshot || !playback) {
+    if (!playback) {
       return;
     }
     if (playback.playbackStamp !== state.playbackStamp) {
       return;
     }
-    snapshotBeforeTurnRef.current = null;
     const segmentChunks = expandPlaybackToSegmentAtomicChunks(
       playback.segments,
-      snapshot.cells
+      playback.sourceCells
     );
-    const incomingLogs = state.log.slice(snapshot.log.length);
+    const incomingLogs = state.log.slice(playback.sourceLogLength);
     const generation = ++animationGenerationRef.current;
-    let workingCells = cloneCellMap(snapshot.cells);
-    let workingEntities = cloneEntityMap(snapshot.entities);
+    let workingCells = cloneCellMap(playback.sourceCells);
+    let workingEntities = cloneEntityMap(playback.sourceEntities);
     setPlaybackCells(workingCells);
     setPlaybackEntities(workingEntities);
+    if (playback.presentationMode === "settled") {
+      if (playback.settledCells && playback.settledEntities) {
+        workingCells = cloneCellMap(playback.settledCells);
+        workingEntities = cloneEntityMap(playback.settledEntities);
+      } else {
+        for (const chunk of segmentChunks) {
+          for (const step of chunk) {
+            workingCells = applyAtomicCellsStep(workingCells, step);
+            workingEntities = applyAtomicStepToEntities(workingEntities, step);
+          }
+        }
+      }
+      setPlaybackCells(cloneCellMap(workingCells));
+      setPlaybackEntities(cloneEntityMap(workingEntities));
+      setHoppingEntityIds(new Set());
+      void (async () => {
+        if (state.phase === "finished" && state.winnerId) {
+          const winnerLabel =
+            CHARACTER_BY_ID[state.winnerId]?.displayName ?? state.winnerId;
+          setBroadcastPayload({
+            variant: "victory",
+            headline: `${winnerLabel} wins the scramble!`,
+            detail: "Full lap done—big sparkle energy today",
+            accentDangoId: state.winnerId,
+          });
+          await delayMilliseconds(VICTORY_HOLD_MS);
+          if (cancelled || generation !== animationGenerationRef.current) {
+            return;
+          }
+        }
+        setPlaybackCells(null);
+        setPlaybackEntities(null);
+        setBroadcastPayload(null);
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }
     void (async () => {
       const guard = () =>
         !cancelled && generation === animationGenerationRef.current;
@@ -479,7 +492,14 @@ export function useGame() {
     return () => {
       cancelled = true;
     };
-  }, [state.playbackStamp, state.lastTurnPlayback]);
+  }, [
+    state.lastRollById,
+    state.lastTurnPlayback,
+    state.log,
+    state.phase,
+    state.playbackStamp,
+    state.winnerId,
+  ]);
 
   useEffect(() => {
     if (
@@ -589,8 +609,6 @@ export function useGame() {
   return {
     state,
     rankingState,
-    pendingBasicIds,
-    togglePendingBasicId,
     start,
     playTurn,
     stepAction: executeNextStep,

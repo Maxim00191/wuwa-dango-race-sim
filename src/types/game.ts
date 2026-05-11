@@ -4,6 +4,12 @@ export type DangoId = string;
 
 export type TravelDirection = "clockwise" | "counterClockwise";
 
+export type RaceMode =
+  | "normal"
+  | "tournamentPreliminary"
+  | "tournamentFinal"
+  | "customFinal";
+
 export type DiceRollContext = {
   turnIndex: number;
   rollerId: DangoId;
@@ -99,6 +105,19 @@ export type BoardCellDefinition = {
 
 export type GamePhase = "idle" | "running" | "finished";
 
+export type RaceStartingStack = {
+  cellIndex: CellIndex;
+  stackBottomToTop: DangoId[];
+};
+
+export type RaceSetup = {
+  mode: RaceMode;
+  label: string;
+  shortLabel: string;
+  selectedBasicIds: DangoId[];
+  startingStacks: RaceStartingStack[];
+};
+
 export type GameLogEntryKind =
   | "turnHeader"
   | "roll"
@@ -170,6 +189,12 @@ export type TurnPlaybackPlan = {
   turnIndex: number;
   segments: PlaybackSegment[];
   playbackStamp: number;
+  sourceCells: Map<CellIndex, DangoId[]>;
+  sourceEntities: Record<DangoId, EntityRuntimeState>;
+  settledCells?: Map<CellIndex, DangoId[]>;
+  settledEntities?: Record<DangoId, EntityRuntimeState>;
+  sourceLogLength: number;
+  presentationMode: "animated" | "settled";
   showTurnIntroBanner: boolean;
   turnOrderActorIds?: DangoId[];
   turnQueue?: TurnQueueAttachment;
@@ -194,6 +219,9 @@ export type PendingTurnResolution = {
 
 export type GameState = {
   phase: GamePhase;
+  mode: RaceMode | null;
+  label: string | null;
+  shortLabel: string | null;
   turnIndex: number;
   cells: Map<CellIndex, DangoId[]>;
   entityOrder: DangoId[];
@@ -227,7 +255,7 @@ export type CharacterDefinition = {
 
 export type GameAction =
   | { type: "INITIALIZE" }
-  | { type: "START"; selectedBasicIds: DangoId[] }
+  | { type: "START"; setup: RaceSetup }
   | { type: "STEP_ACTION" }
   | { type: "INSTANT_FULL_TURN" }
   | { type: "INSTANT_SIMULATE_GAME" }

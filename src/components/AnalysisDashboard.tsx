@@ -8,28 +8,12 @@ type AnalysisDashboardProps = {
   onNavigateSimulation: () => void;
 };
 
-function pickDominantBasicIdFromWinTallies(
-  winsByBasicId: Record<string, number>
-): DangoId | null {
+function pickDominantBasicId(tallies: Record<string, number>): DangoId | null {
   let bestId: DangoId | null = null;
   let bestWins = -1;
-  for (const [basicId, wins] of Object.entries(winsByBasicId)) {
+  for (const [basicId, wins] of Object.entries(tallies)) {
     if (wins > bestWins) {
       bestWins = wins;
-      bestId = basicId;
-    }
-  }
-  return bestId;
-}
-
-function pickDominantBasicIdFromCarrierTallies(
-  carrierByBasicId: Record<string, number>
-): DangoId | null {
-  let bestId: DangoId | null = null;
-  let bestObservations = -1;
-  for (const [basicId, observations] of Object.entries(carrierByBasicId)) {
-    if (observations > bestObservations) {
-      bestObservations = observations;
       bestId = basicId;
     }
   }
@@ -67,14 +51,24 @@ export function AnalysisDashboard({
   }
 
   const averageTurnsToWin = snapshot.sumTurns / snapshot.totalRuns;
-  const dominantWinnerId = pickDominantBasicIdFromWinTallies(
-    snapshot.winsByBasicId
+  const averagePreliminaryTurns =
+    snapshot.scenarioKind === "tournament"
+      ? snapshot.sumPreliminaryTurns / snapshot.totalRuns
+      : null;
+  const averageFinalTurns = snapshot.sumFinalTurns / snapshot.totalRuns;
+  const dominantWinnerId = pickDominantBasicId(snapshot.winsByBasicId);
+  const dominantPreliminaryWinnerId = pickDominantBasicId(
+    snapshot.preliminaryWinsByBasicId
   );
-  const dominantCarrierId = pickDominantBasicIdFromCarrierTallies(
+  const dominantCarrierId = pickDominantBasicId(
     snapshot.stackCarrierObservationSumByBasicId
   );
   const dominantWinnerLabel = dominantWinnerId
     ? CHARACTER_BY_ID[dominantWinnerId]?.displayName ?? dominantWinnerId
+    : "—";
+  const dominantPreliminaryWinnerLabel = dominantPreliminaryWinnerId
+    ? CHARACTER_BY_ID[dominantPreliminaryWinnerId]?.displayName ??
+      dominantPreliminaryWinnerId
     : "—";
   const dominantCarrierLabel = dominantCarrierId
     ? CHARACTER_BY_ID[dominantCarrierId]?.displayName ?? dominantCarrierId
@@ -94,11 +88,12 @@ export function AnalysisDashboard({
             After the marathon
           </p>
           <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50 md:text-4xl">
-            How your picks shook out
+            {snapshot.scenarioLabel}
           </h2>
           <p className="max-w-2xl text-sm font-normal text-slate-500 dark:text-slate-400 md:text-base">
-            From {snapshot.totalRuns.toLocaleString()} pretend races with this same
-            lineup—numbers are here to hug, not scold.
+            From {snapshot.totalRuns.toLocaleString()} simulated runs with this same
+            lineup. Tournament batches include both rounds; final-only batches start
+            from the configured finals order.
           </p>
         </div>
         <button
@@ -112,24 +107,32 @@ export function AnalysisDashboard({
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricHighlightCard
-          label="Typical turns to a win"
+          label={
+            snapshot.scenarioKind === "tournament"
+              ? "Typical turns per tournament"
+              : "Typical turns to a win"
+          }
           value={averageTurnsToWin.toFixed(1)}
-          hint="Kind of the comfy middle across every finished game"
+          hint={
+            snapshot.scenarioKind === "tournament"
+              ? "Average total turns across preliminaries plus finals"
+              : "Average total turns for this race setup"
+          }
         />
         <MetricHighlightCard
           label="Speediest finish"
           value={String(minTurnsDisplay)}
-          hint="Shortest race in this batch—nice and brisk"
+          hint="Shortest complete run in this batch"
         />
         <MetricHighlightCard
           label="Longest slog"
           value={String(maxTurnsDisplay)}
-          hint="Some scrumbles really took their time"
+          hint="Longest complete run in this batch"
         />
         <MetricHighlightCard
           label="How many scrumbles"
           value={snapshot.totalRuns.toLocaleString()}
-          hint="Tiny races we laughed through together"
+          hint="Total simulated runs in this snapshot"
         />
       </section>
 
@@ -138,14 +141,16 @@ export function AnalysisDashboard({
           <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
             <div>
               <p className="text-base font-bold tracking-tight text-slate-800 dark:text-slate-100">
-                Win hugs per dango
+                {snapshot.scenarioKind === "tournament"
+                  ? "Championships per dango"
+                  : "Wins per dango"}
               </p>
               <p className="mt-1 text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
-                Who carried how often
+                Final winners across the batch
               </p>
             </div>
             <span className="text-xs font-normal text-slate-500 dark:text-slate-500">
-              Slice of wins · whole gang included
+              Title share from the selected scenario
             </span>
           </div>
           <div className="space-y-5">
@@ -186,48 +191,75 @@ export function AnalysisDashboard({
         <div className="flex flex-col gap-6">
           <div className="rounded-3xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-6 shadow-md shadow-slate-900/10 dark:border-slate-800 dark:from-slate-900/90 dark:to-slate-950/90 dark:shadow-xl md:p-8">
             <p className="text-base font-bold tracking-tight text-slate-800 dark:text-slate-100">
-              Snack-sized chart
+              Pace split
             </p>
             <p className="mt-2 text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
-              Win donut (rough & charming)
+              {snapshot.scenarioKind === "tournament"
+                ? "Where tournament time went"
+                : "Winner share donut"}
             </p>
-            <div className="mt-6 flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:justify-center">
-              <WinShareDonut
-                basicIds={snapshot.selectedBasicIds}
-                winsByBasicId={snapshot.winsByBasicId}
-                totalRuns={snapshot.totalRuns}
-              />
-              <ul className="w-full space-y-3 text-sm sm:max-w-xs">
-                {snapshot.selectedBasicIds.map((basicId) => {
-                  const wins = snapshot.winsByBasicId[basicId] ?? 0;
-                  const slicePercent =
-                    snapshot.totalRuns > 0
-                      ? (wins / snapshot.totalRuns) * 100
-                      : 0;
-                  const character = CHARACTER_BY_ID[basicId];
-                  const accentHex = accentFillHexForDango(basicId);
-                  return (
-                    <li
-                      key={`legend-${basicId}`}
-                      className="flex items-center justify-between gap-3"
-                    >
-                      <span className="flex items-center gap-2">
-                        <span
-                          className="h-2.5 w-2.5 shrink-0 rounded-full ring-2 ring-slate-900/10 dark:ring-white/10"
-                          style={{ backgroundColor: accentHex }}
-                        />
-                        <span className="font-normal text-slate-600 dark:text-slate-400">
-                          {character?.displayName ?? basicId}
+            {snapshot.scenarioKind === "tournament" ? (
+              <div className="mt-6 space-y-5">
+                <TimelineMetric
+                  label="Preliminary share"
+                  value={averagePreliminaryTurns?.toFixed(1) ?? "0.0"}
+                  percent={
+                    snapshot.sumTurns > 0
+                      ? (snapshot.sumPreliminaryTurns / snapshot.sumTurns) * 100
+                      : 0
+                  }
+                  accentClass="from-emerald-400 to-teal-400"
+                />
+                <TimelineMetric
+                  label="Final share"
+                  value={averageFinalTurns.toFixed(1)}
+                  percent={
+                    snapshot.sumTurns > 0
+                      ? (snapshot.sumFinalTurns / snapshot.sumTurns) * 100
+                      : 0
+                  }
+                  accentClass="from-violet-500 to-fuchsia-500"
+                />
+              </div>
+            ) : (
+              <div className="mt-6 flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:justify-center">
+                <WinShareDonut
+                  basicIds={snapshot.selectedBasicIds}
+                  winsByBasicId={snapshot.winsByBasicId}
+                  totalRuns={snapshot.totalRuns}
+                />
+                <ul className="w-full space-y-3 text-sm sm:max-w-xs">
+                  {snapshot.selectedBasicIds.map((basicId) => {
+                    const wins = snapshot.winsByBasicId[basicId] ?? 0;
+                    const slicePercent =
+                      snapshot.totalRuns > 0
+                        ? (wins / snapshot.totalRuns) * 100
+                        : 0;
+                    const character = CHARACTER_BY_ID[basicId];
+                    const accentHex = accentFillHexForDango(basicId);
+                    return (
+                      <li
+                        key={`legend-${basicId}`}
+                        className="flex items-center justify-between gap-3"
+                      >
+                        <span className="flex items-center gap-2">
+                          <span
+                            className="h-2.5 w-2.5 shrink-0 rounded-full ring-2 ring-slate-900/10 dark:ring-white/10"
+                            style={{ backgroundColor: accentHex }}
+                          />
+                          <span className="font-normal text-slate-600 dark:text-slate-400">
+                            {character?.displayName ?? basicId}
+                          </span>
                         </span>
-                      </span>
-                      <span className="font-mono text-xs font-normal text-slate-500 dark:text-slate-500">
-                        {Math.round(slicePercent * 10) / 10}%
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
+                        <span className="font-mono text-xs font-normal text-slate-500 dark:text-slate-500">
+                          {Math.round(slicePercent * 10) / 10}%
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
           </div>
 
           <div className="rounded-3xl border border-fuchsia-200/70 bg-fuchsia-50/95 p-6 shadow-md shadow-fuchsia-900/10 dark:border-fuchsia-900/40 dark:bg-fuchsia-950/25 dark:shadow-lg md:p-8">
@@ -237,30 +269,74 @@ export function AnalysisDashboard({
             <ul className="mt-4 space-y-4 text-sm font-normal leading-relaxed text-fuchsia-950/95 dark:text-fuchsia-50/95">
               <li>
                 <span className="font-semibold tracking-tight text-slate-900 dark:text-slate-50">
-                  Crowns galore:
+                  Champion favorite:
                 </span>{" "}
-                {dominantWinnerLabel} nabbed the most outright wins this batch—
-                give them an extra cheer.
+                {dominantWinnerLabel} finished on top most often in this batch.
+              </li>
+              {snapshot.scenarioKind === "tournament" ? (
+                <li>
+                  <span className="font-semibold tracking-tight text-slate-900 dark:text-slate-50">
+                    Preliminary pace-setter:
+                  </span>{" "}
+                  {dominantPreliminaryWinnerLabel} topped the opening round more
+                  than anyone else.
+                </li>
+              ) : null}
+              <li>
+                <span className="font-semibold tracking-tight text-slate-900 dark:text-slate-50">
+                  Stack carrier:
+                </span>{" "}
+                {dominantCarrierLabel} spent the most observations riding at the top
+                of a stack.
               </li>
               <li>
                 <span className="font-semibold tracking-tight text-slate-900 dark:text-slate-50">
-                  Stack sweetheart:
+                  Pace:
                 </span>{" "}
-                {dominantCarrierLabel} kept landing on top of the pile most
-                often—where all the cozy chaos gathers.
-              </li>
-              <li>
-                <span className="font-semibold tracking-tight text-slate-900 dark:text-slate-50">
-                  Pace vibes:
-                </span>{" "}
-                finishes stretched from {minTurnsDisplay} to {maxTurnsDisplay}{" "}
-                turns, averaging {averageTurnsToWin.toFixed(1)}—every race had its
-                own mood.
+                runs stretched from {minTurnsDisplay} to {maxTurnsDisplay} turns,
+                averaging {averageTurnsToWin.toFixed(1)} overall
+                {snapshot.scenarioKind === "tournament" &&
+                averagePreliminaryTurns !== null
+                  ? ` with ${averagePreliminaryTurns.toFixed(1)} in prelims and ${averageFinalTurns.toFixed(1)} in finals`
+                  : ""}.
               </li>
             </ul>
           </div>
         </div>
       </section>
+    </div>
+  );
+}
+
+type TimelineMetricProps = {
+  label: string;
+  value: string;
+  percent: number;
+  accentClass: string;
+};
+
+function TimelineMetric({
+  label,
+  value,
+  percent,
+  accentClass,
+}: TimelineMetricProps) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-3 text-sm">
+        <span className="font-semibold tracking-tight text-slate-900 dark:text-slate-50">
+          {label}
+        </span>
+        <span className="font-mono text-xs text-slate-500 dark:text-slate-400">
+          {value} avg turns · {Math.round(percent * 10) / 10}%
+        </span>
+      </div>
+      <div className="h-3 overflow-hidden rounded-full bg-slate-200 ring-1 ring-slate-300 dark:bg-slate-950/80 dark:ring-slate-800">
+        <div
+          className={`h-full rounded-full bg-gradient-to-r ${accentClass}`}
+          style={{ width: `${Math.max(0, Math.min(percent, 100))}%` }}
+        />
+      </div>
     </div>
   );
 }

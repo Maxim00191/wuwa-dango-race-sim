@@ -1,4 +1,7 @@
-import { LAP_DISTANCE_IN_CLOCKWISE_STEPS } from "@/constants/board";
+import {
+  FINISH_LINE_CELL_INDEX,
+  LAP_DISTANCE_IN_CLOCKWISE_STEPS,
+} from "@/constants/board";
 import {
   ABBY_ID,
   ACTIVE_BASIC_DANGO_COUNT,
@@ -13,9 +16,16 @@ import {
 import { resolveCellEffectIfPresent } from "@/services/cellEffects";
 import { orderedRacerIdsForLeaderboard } from "@/services/racerRanking";
 import {
+  createNormalRaceSetup,
+  createTournamentFinalRaceSetup,
+  createTournamentPreliminaryRaceSetup,
+  deriveBasicPlacementsFromRace,
+} from "@/services/raceSetup";
+import {
   applyCellIndexForMembers,
   applyMovementDeltaForMembers,
   cloneCellMap,
+  cloneEntityMap,
   findCellIndexForEntity,
   mergeWithAbbyBottomRule,
   relocateActorLedPortionCellsOnly,
@@ -28,7 +38,9 @@ import type {
   GameState,
   PendingTurnResolution,
   PlaybackSegment,
+  RaceSetup,
   SkillHookContext,
+  TurnPlaybackPlan,
   TravelDirection,
   TurnQueueAttachment,
   TurnRollPlan,
@@ -58,26 +70,44 @@ export function isValidBasicSelection(ids: DangoId[]): boolean {
   return ids.every((id) => SELECTABLE_BASIC_ID_SET.has(id));
 }
 
-function createRunningSessionFromSelection(
-  selectedBasicIds: DangoId[]
-): GameState {
+function createRunningSessionFromSetup(setup: RaceSetup): GameState {
   const entities: GameState["entities"] = {};
-  for (const id of selectedBasicIds) {
-    entities[id] = { id, cellIndex: 1, raceDisplacement: 0 };
+  for (const id of setup.selectedBasicIds) {
+    entities[id] = {
+      id,
+      cellIndex: FINISH_LINE_CELL_INDEX,
+      raceDisplacement: 0,
+    };
   }
-  entities[ABBY_ID] = { id: ABBY_ID, cellIndex: 1, raceDisplacement: 0 };
-  const startingStackBottomToTop = [
-    ABBY_ID,
-    ...shuffleOrderStableCopy([...selectedBasicIds]),
-  ];
-  const cells = new Map<number, DangoId[]>([[1, startingStackBottomToTop]]);
+  entities[ABBY_ID] = {
+    id: ABBY_ID,
+    cellIndex: FINISH_LINE_CELL_INDEX,
+    raceDisplacement: 0,
+  };
+  const cells = new Map<number, DangoId[]>();
+  for (const { cellIndex, stackBottomToTop } of setup.startingStacks) {
+    cells.set(cellIndex, [...stackBottomToTop]);
+    for (const entityId of stackBottomToTop) {
+      const runtime = entities[entityId];
+      if (!runtime) {
+        continue;
+      }
+      entities[entityId] = {
+        ...runtime,
+        cellIndex,
+      };
+    }
+  }
   return {
     phase: "running",
+    mode: setup.mode,
+    label: setup.label,
+    shortLabel: setup.shortLabel,
     turnIndex: 0,
     cells,
-    entityOrder: shuffleOrderStableCopy([...selectedBasicIds, ABBY_ID]),
+    entityOrder: shuffleOrderStableCopy([...setup.selectedBasicIds, ABBY_ID]),
     entities,
-    activeBasicIds: [...selectedBasicIds],
+    activeBasicIds: [...setup.selectedBasicIds],
     winnerId: null,
     abbyPendingTeleportToStart: false,
     lastRollById: {},
@@ -91,6 +121,9 @@ function createRunningSessionFromSelection(
 export function createInitialGameState(): GameState {
   return {
     phase: "idle",
+    mode: null,
+    label: null,
+    shortLabel: null,
     turnIndex: 0,
     cells: new Map(),
     entityOrder: [],
@@ -249,7 +282,7 @@ function teleportAbbyToStartLine(state: GameState): GameState {
   } else {
     nextCells.set(originCellIndex, stackWithoutAbby);
   }
-  const destinationCellIndex = 1;
+  const destinationCellIndex = FINISH_LINE_CELL_INDEX;
   const existingAtDestination = nextCells.get(destinationCellIndex) ?? [];
   nextCells.set(
     destinationCellIndex,
@@ -595,7 +628,8 @@ function resolveTurnForEntity(
     rollerId: actingEntityId,
     diceValue: resolvedMovementStepCount,
     cellIndex:
-      findCellIndexForEntity(nextState.cells, actingEntityId) ?? 1,
+      findCellIndexForEntity(nextState.cells, actingEntityId) ??
+        FINISH_LINE_CELL_INDEX,
   };
   nextState = applySkillHookAfterDice(nextState, diceContext);
   const activeCellIndex = findCellIndexForEntity(nextState.cells, actingEntityId);
@@ -736,6 +770,32 @@ function buildTurnQueueAttachment(
   };
 }
 
+function createTurnPlaybackPlan(
+  sourceState: GameState,
+  options: {
+    turnIndex: number;
+    segments: PlaybackSegment[];
+    playbackStamp: number;
+    showTurnIntroBanner: boolean;
+    turnOrderActorIds?: DangoId[];
+    turnQueue?: TurnQueueAttachment;
+    presentationMode?: TurnPlaybackPlan["presentationMode"];
+  }
+): TurnPlaybackPlan {
+  return {
+    turnIndex: options.turnIndex,
+    segments: options.segments,
+    playbackStamp: options.playbackStamp,
+    sourceCells: cloneCellMap(sourceState.cells),
+    sourceEntities: cloneEntityMap(sourceState.entities),
+    sourceLogLength: sourceState.log.length,
+    presentationMode: options.presentationMode ?? "animated",
+    showTurnIntroBanner: options.showTurnIntroBanner,
+    turnOrderActorIds: options.turnOrderActorIds,
+    turnQueue: options.turnQueue,
+  };
+}
+
 function openNextTurnWithDicePlans(state: GameState): {
   state: GameState;
   pendingTurn: PendingTurnResolution;
@@ -750,7 +810,7 @@ function openNextTurnWithDicePlans(state: GameState): {
         kind: "teleport",
         entityIds: [ABBY_ID],
         fromCell: abbyOriginCellIndex,
-        toCell: 1,
+        toCell: FINISH_LINE_CELL_INDEX,
       });
     }
     nextState = teleportAbbyToStartLine(nextState);
@@ -823,14 +883,14 @@ function applyStepAction(
       ...working,
       pendingTurn: null,
       playbackStamp,
-      lastTurnPlayback: {
+      lastTurnPlayback: createTurnPlaybackPlan(state, {
         turnIndex: working.turnIndex,
         segments,
         playbackStamp,
         showTurnIntroBanner: showTurnIntro,
         turnOrderActorIds: turnOrderForBanner,
         turnQueue: queueAttachment,
-      },
+      }),
     };
   }
 
@@ -843,14 +903,14 @@ function applyStepAction(
       ...finalized,
       pendingTurn: null,
       playbackStamp,
-      lastTurnPlayback: {
+      lastTurnPlayback: createTurnPlaybackPlan(state, {
         turnIndex: finalized.turnIndex,
         segments,
         playbackStamp,
         showTurnIntroBanner: showTurnIntro,
         turnOrderActorIds: turnOrderForBanner,
         turnQueue: queueAttachment,
-      },
+      }),
     };
   }
 
@@ -862,14 +922,14 @@ function applyStepAction(
       openingBannerConsumed: pending.openingBannerConsumed || showTurnIntro,
     },
     playbackStamp,
-    lastTurnPlayback: {
+    lastTurnPlayback: createTurnPlaybackPlan(state, {
       turnIndex: working.turnIndex,
       segments,
       playbackStamp,
       showTurnIntroBanner: showTurnIntro,
       turnOrderActorIds: turnOrderForBanner,
       turnQueue: queueAttachment,
-    },
+    }),
   };
 }
 
@@ -947,17 +1007,39 @@ function applyInstantSimulateGame(
   }
   let working = state;
   while (working.phase === "running" && !working.winnerId) {
-    working = applyInstantFullTurn(working, boardEffectByCellIndex);
+    working = applyStepAction(working, boardEffectByCellIndex);
+  }
+  if (!working.lastTurnPlayback) {
+    return working;
   }
   return {
     ...working,
-    lastTurnPlayback: null,
+    lastTurnPlayback: {
+      ...working.lastTurnPlayback,
+      presentationMode: "settled",
+      settledCells: cloneCellMap(working.cells),
+      settledEntities: cloneEntityMap(working.entities),
+    },
   };
 }
 
+export type HeadlessSimulationScenario =
+  | {
+      kind: "singleRace";
+      setup: RaceSetup;
+    }
+  | {
+      kind: "tournament";
+      selectedBasicIds: DangoId[];
+    };
+
 export type HeadlessSimulationOutcome = {
+  scenarioKind: HeadlessSimulationScenario["kind"];
   winnerBasicId: DangoId | null;
   turnsAtFinish: number;
+  preliminaryTurnsAtFinish: number;
+  finalTurnsAtFinish: number;
+  preliminaryWinnerBasicId: DangoId | null;
   stackCarrierObservationCountByBasicId: Record<string, number>;
 };
 
@@ -974,21 +1056,90 @@ function tallyBasicStackTopsAcrossCells(
   }
 }
 
-export function simulateHeadlessFullGame(
-  selectedBasicIds: DangoId[],
+type HeadlessRaceResult = {
+  state: GameState;
+  stackCarrierObservationCountByBasicId: Record<string, number>;
+};
+
+function simulateHeadlessRace(
+  setup: RaceSetup,
   boardEffectByCellIndex: Map<number, string | null>
-): HeadlessSimulationOutcome {
-  let working = createRunningSessionFromSelection(selectedBasicIds);
+): HeadlessRaceResult {
+  let working = createRunningSessionFromSetup(setup);
   const stackCarrierObservationCountByBasicId: Record<string, number> = {};
   while (working.phase === "running" && !working.winnerId) {
     working = applyInstantFullTurn(working, boardEffectByCellIndex);
     tallyBasicStackTopsAcrossCells(working, stackCarrierObservationCountByBasicId);
   }
   return {
-    winnerBasicId: working.winnerId,
-    turnsAtFinish: working.turnIndex,
+    state: working,
     stackCarrierObservationCountByBasicId,
   };
+}
+
+function mergeTallies(
+  source: Record<string, number>,
+  target: Record<string, number>
+): Record<string, number> {
+  const merged = { ...target };
+  for (const [basicId, observationCount] of Object.entries(source)) {
+    merged[basicId] = (merged[basicId] ?? 0) + observationCount;
+  }
+  return merged;
+}
+
+export function simulateHeadlessScenario(
+  scenario: HeadlessSimulationScenario,
+  boardEffectByCellIndex: Map<number, string | null>
+): HeadlessSimulationOutcome {
+  if (scenario.kind === "singleRace") {
+    const race = simulateHeadlessRace(scenario.setup, boardEffectByCellIndex);
+    return {
+      scenarioKind: scenario.kind,
+      winnerBasicId: race.state.winnerId,
+      turnsAtFinish: race.state.turnIndex,
+      preliminaryTurnsAtFinish: 0,
+      finalTurnsAtFinish: race.state.turnIndex,
+      preliminaryWinnerBasicId: null,
+      stackCarrierObservationCountByBasicId:
+        race.stackCarrierObservationCountByBasicId,
+    };
+  }
+
+  const preliminaryRace = simulateHeadlessRace(
+    createTournamentPreliminaryRaceSetup(scenario.selectedBasicIds),
+    boardEffectByCellIndex
+  );
+  const finalPlacements = deriveBasicPlacementsFromRace(preliminaryRace.state);
+  const finalRace = simulateHeadlessRace(
+    createTournamentFinalRaceSetup(finalPlacements),
+    boardEffectByCellIndex
+  );
+  return {
+    scenarioKind: scenario.kind,
+    winnerBasicId: finalRace.state.winnerId,
+    turnsAtFinish: preliminaryRace.state.turnIndex + finalRace.state.turnIndex,
+    preliminaryTurnsAtFinish: preliminaryRace.state.turnIndex,
+    finalTurnsAtFinish: finalRace.state.turnIndex,
+    preliminaryWinnerBasicId: preliminaryRace.state.winnerId,
+    stackCarrierObservationCountByBasicId: mergeTallies(
+      preliminaryRace.stackCarrierObservationCountByBasicId,
+      finalRace.stackCarrierObservationCountByBasicId
+    ),
+  };
+}
+
+export function simulateHeadlessFullGame(
+  selectedBasicIds: DangoId[],
+  boardEffectByCellIndex: Map<number, string | null>
+): HeadlessSimulationOutcome {
+  return simulateHeadlessScenario(
+    {
+      kind: "singleRace",
+      setup: createNormalRaceSetup(selectedBasicIds),
+    },
+    boardEffectByCellIndex
+  );
 }
 
 export function reduceGameState(
@@ -1003,13 +1154,13 @@ export function reduceGameState(
     return createInitialGameState();
   }
   if (action.type === "START") {
-    if (state.phase !== "idle") {
+    if (state.phase === "running") {
       return state;
     }
-    if (!isValidBasicSelection(action.selectedBasicIds)) {
+    if (!isValidBasicSelection(action.setup.selectedBasicIds)) {
       return state;
     }
-    return createRunningSessionFromSelection(action.selectedBasicIds);
+    return createRunningSessionFromSetup(action.setup);
   }
   if (action.type === "STEP_ACTION") {
     if (state.phase !== "running") {

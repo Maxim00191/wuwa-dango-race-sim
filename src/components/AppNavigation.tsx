@@ -1,6 +1,6 @@
 import { ThemeToggle } from "@/components/ThemeToggle";
 
-type WorkspaceView = "simulation" | "analysis";
+export type WorkspaceView = "normal" | "tournament" | "analysis";
 
 type AppNavigationProps = {
   activeView: WorkspaceView;
@@ -31,14 +31,25 @@ export function AppNavigation({
           <div className="flex shrink-0 gap-1 rounded-full border border-slate-200 bg-slate-100/90 p-1 shadow-inner shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-900/80 dark:shadow-slate-950/50">
             <button
               type="button"
-              onClick={() => onSelectView("simulation")}
+              onClick={() => onSelectView("normal")}
               className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                activeView === "simulation"
+                activeView === "normal"
                   ? "bg-emerald-500 text-emerald-950 shadow-lg shadow-emerald-900/30"
                   : "text-slate-600 hover:bg-slate-200 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
               }`}
             >
-              Simulation
+              Normal Mode
+            </button>
+            <button
+              type="button"
+              onClick={() => onSelectView("tournament")}
+              className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                activeView === "tournament"
+                  ? "bg-violet-500 text-violet-950 shadow-lg shadow-violet-900/30"
+                  : "text-slate-600 hover:bg-slate-200 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+              }`}
+            >
+              Tournament Mode
             </button>
             <button
               type="button"
