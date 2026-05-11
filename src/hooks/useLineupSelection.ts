@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { ACTIVE_BASIC_DANGO_COUNT } from "@/constants/ids";
+import { isValidBasicSelection } from "@/services/gameEngine";
 import {
   resolvePersistedOrSmartDefaultLineup,
   writePersistedLineupSelection,
@@ -27,13 +28,20 @@ export function useLineupSelection() {
     setSelectedBasicIds([]);
   }, []);
 
+  const setLineup = useCallback((ids: DangoId[]) => {
+    if (!isValidBasicSelection(ids)) {
+      return;
+    }
+    setSelectedBasicIds([...ids]);
+  }, []);
+
   useEffect(() => {
     writePersistedLineupSelection(selectedBasicIds);
   }, [selectedBasicIds]);
 
   return {
     selectedBasicIds,
-    setSelectedBasicIds,
+    setLineup,
     toggleSelectedBasicId,
     clearSelectedBasicIds,
   };

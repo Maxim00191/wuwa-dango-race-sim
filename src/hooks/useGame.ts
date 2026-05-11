@@ -331,7 +331,11 @@ export function useGame() {
 
       let segmentIndex = 0;
 
-      if (playback.segments[0]?.kind === "teleport") {
+      if (
+        playback.segments[0]?.kind === "teleport" &&
+        playback.segments[0].entityIds.length === 1 &&
+        playback.segments[0].entityIds[0] === ABBY_ID
+      ) {
         await shineBanner(
           {
             variant: "teleport",

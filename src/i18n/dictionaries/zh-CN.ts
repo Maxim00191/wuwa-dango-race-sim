@@ -22,6 +22,12 @@ export const zhCnDictionary: TranslationDictionary = {
     hiyuki: "绯雪",
     phoebe: "菲比",
     cartethyia: "卡提希娅",
+    jinhsi: "今夕",
+    changli: "长离",
+    calcharo: "卡卡罗",
+    augusta: "奥古斯塔",
+    iuno: "尤诺",
+    phrolova: "弗洛洛",
     abby: "布大王",
   },
   attributes: {
@@ -177,6 +183,31 @@ export const zhCnDictionary: TranslationDictionary = {
     available: "可选",
     locked: "已满",
     attributeEmpty: "暂无角色",
+    modes: {
+      attribute: "按属性",
+      group: "按编组",
+      attributeHint: "按属性逐个挑选，自由组建六人阵容。",
+      groupHint: "一键载入官方六人预设编组。",
+    },
+    groups: {
+      selectAction: "选择 {group}",
+      active: "当前阵容",
+      ready: "可用",
+      comingSoon: "敬请期待",
+      placeholderName: "预留席位",
+      a: {
+        label: "编组 A",
+        description: "陆·赫斯、西格莉卡、达妮娅、绯雪、菲比、卡提希娅",
+      },
+      b: {
+        label: "编组 B",
+        description: "莫宁、珂莱塔、守岸人、琳奈、千咲、爱弥斯",
+      },
+      c: {
+        label: "编组 C",
+        description: "今夕、长离、卡卡罗、奥古斯塔、尤诺、弗洛洛",
+      },
+    },
   },
   monteCarlo: {
     runBatch: "运行 {count} 次",
@@ -390,6 +421,12 @@ export const zhCnDictionary: TranslationDictionary = {
         "{actor} 掉到末位，进入翻盘状态。",
       cartethyiaComebackBoost:
         "{actor} 的翻盘状态爆发，额外获得 2 格移动。",
+      jinhsiStackAscend:
+        "{actor} 瞬间跃上了层叠最上方，占住了最高点。",
+      changliActLastNextRound:
+        "{actor} 收束节奏，下回合将压轴行动。",
+      calcharoLastPlaceBoost:
+        "{actor} 身处末位却骤然爆发，额外获得 3 格移动。",
     },
   },
   banner: {

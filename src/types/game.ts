@@ -4,6 +4,8 @@ export type CellIndex = number;
 
 export type DangoId = string;
 
+export type LineupGroupId = "A" | "B" | "C";
+
 export type Attribute =
   | "Fusion"
   | "Glacio"
@@ -18,6 +20,7 @@ export type EntitySkillState = {
   previousRoll?: number;
   hasMetAbby?: boolean;
   comebackActive?: boolean;
+  actLastNextRound?: boolean;
 };
 
 export type TravelDirection = "clockwise" | "counterClockwise";
@@ -132,9 +135,11 @@ export type MovementStepHookHandler = (
 ) => MovementStepHookResult;
 
 export type CharacterSkillHooks = {
+  beforeTurn?: SkillHookHandler;
   afterDiceRoll?: SkillHookHandler;
   afterMovement?: PostMovementHookHandler;
   afterMovementResolution?: PostMovementHookHandler;
+  afterTurn?: SkillHookHandler;
   afterHalfwayCrossing?: SkillHookHandler;
   afterTurnRolls?: TurnRollPreparationHookHandler;
   resolveMovement?: MovementEvaluationHookHandler;

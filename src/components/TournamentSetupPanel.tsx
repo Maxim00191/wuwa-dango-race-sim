@@ -10,6 +10,7 @@ import type { BasicCharacterDefinition, DangoId } from "@/types/game";
 type TournamentSetupPanelProps = {
   rosterBasics: BasicCharacterDefinition[];
   selectedBasicIds: DangoId[];
+  onSetLineup: (ids: DangoId[]) => void;
   onToggleBasicId: (id: DangoId) => void;
   onClearSelections: () => void;
   finalPlacements: DangoId[];
@@ -65,6 +66,7 @@ function reorderPlacements(
 export function TournamentSetupPanel({
   rosterBasics,
   selectedBasicIds,
+  onSetLineup,
   onToggleBasicId,
   onClearSelections,
   finalPlacements,
@@ -184,6 +186,7 @@ export function TournamentSetupPanel({
       <DangoPicker
         rosterBasics={rosterBasics}
         selectedBasicIds={selectedBasicIds}
+        onSetLineup={onSetLineup}
         onToggleBasicId={onToggleBasicId}
         onClearSelections={onClearSelections}
       />

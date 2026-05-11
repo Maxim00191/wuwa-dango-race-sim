@@ -2,27 +2,22 @@ import {
   ACTIVE_BASIC_DANGO_COUNT,
   SELECTABLE_BASIC_DANGO_IDS,
 } from "@/constants/ids";
+import { LINEUP_GROUPS } from "@/constants/lineupGroups";
 import { CHARACTER_BY_ID } from "@/services/characters";
 import { isValidBasicSelection } from "@/services/gameEngine";
 import type { DangoId } from "@/types/game";
 
 export const SAVED_LINEUP_STORAGE_KEY = "dango_scramble_saved_lineup";
 
-const NAMED_LINEUP_PRIORITY: readonly string[] = [
-  "mornye",
-  "carlotta",
-  "shorekeeper",
-  "lynae",
-  "chisa",
-  "aemeath",
-];
+const DEFAULT_GROUP_LINEUP =
+  LINEUP_GROUPS.find((group) => group.id === "B")?.characterIds ?? [];
 
 export function buildSmartDefaultPendingBasicIds(): DangoId[] {
   const allowed = new Set<string>(SELECTABLE_BASIC_DANGO_IDS);
   const picked: DangoId[] = [];
   const taken = new Set<string>();
 
-  for (const id of NAMED_LINEUP_PRIORITY) {
+  for (const id of DEFAULT_GROUP_LINEUP) {
     if (!allowed.has(id) || taken.has(id)) {
       continue;
     }

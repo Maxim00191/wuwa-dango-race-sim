@@ -1,13 +1,19 @@
 import { abbyCharacter } from "@/services/characters/abby";
 import { aemeathCharacter } from "@/services/characters/aemeath";
+import { augustaCharacter } from "@/services/characters/augusta";
+import { calcharoCharacter } from "@/services/characters/calcharo";
 import { carlottaCharacter } from "@/services/characters/carlotta";
 import { cartethyiaCharacter } from "@/services/characters/cartethyia";
+import { changliCharacter } from "@/services/characters/changli";
 import { chisaCharacter } from "@/services/characters/chisa";
 import { deniaCharacter } from "@/services/characters/denia";
 import { hiyukiCharacter } from "@/services/characters/hiyuki";
+import { iunoCharacter } from "@/services/characters/iuno";
+import { jinhsiCharacter } from "@/services/characters/jinhsi";
 import { lynaeCharacter } from "@/services/characters/lynae";
 import { luukHerssenCharacter } from "@/services/characters/luukHerssen";
 import { mornyeCharacter } from "@/services/characters/mornye";
+import { phrolovaCharacter } from "@/services/characters/phrolova";
 import { phoebeCharacter } from "@/services/characters/phoebe";
 import { shorekeeperCharacter } from "@/services/characters/shorekeeper";
 import { sigrikaCharacter } from "@/services/characters/sigrika";
@@ -25,6 +31,12 @@ export const CHARACTER_LIST: CharacterDefinition[] = [
   hiyukiCharacter,
   sigrikaCharacter,
   cartethyiaCharacter,
+  jinhsiCharacter,
+  changliCharacter,
+  calcharoCharacter,
+  augustaCharacter,
+  iunoCharacter,
+  phrolovaCharacter,
   shorekeeperCharacter,
   phoebeCharacter,
   luukHerssenCharacter,

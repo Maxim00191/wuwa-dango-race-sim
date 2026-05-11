@@ -15,4 +15,10 @@ export const SELECTABLE_BASIC_DANGO_IDS = [
   "luukHerssen",
   "lynae",
   "chisa",
+  "jinhsi",
+  "changli",
+  "calcharo",
+  "augusta",
+  "iuno",
+  "phrolova",
 ] as const;

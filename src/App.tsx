@@ -311,6 +311,7 @@ export default function App() {
               <DangoPicker
                 rosterBasics={rosterBasics}
                 selectedBasicIds={lineup.selectedBasicIds}
+                onSetLineup={lineup.setLineup}
                 onToggleBasicId={lineup.toggleSelectedBasicId}
                 onClearSelections={lineup.clearSelectedBasicIds}
               />
@@ -386,6 +387,7 @@ export default function App() {
               <TournamentSetupPanel
                 rosterBasics={rosterBasics}
                 selectedBasicIds={lineup.selectedBasicIds}
+                onSetLineup={lineup.setLineup}
                 onToggleBasicId={lineup.toggleSelectedBasicId}
                 onClearSelections={lineup.clearSelectedBasicIds}
                 finalPlacements={tournament.finalPlacements}

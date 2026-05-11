@@ -22,6 +22,12 @@ export const enDictionary: TranslationDictionary = {
     hiyuki: "Hiyuki",
     phoebe: "Phoebe",
     cartethyia: "Cartethyia",
+    jinhsi: "Jinhsi",
+    changli: "Changli",
+    calcharo: "Calcharo",
+    augusta: "Augusta",
+    iuno: "Iuno",
+    phrolova: "Phrolova",
     abby: "Abby",
   },
   attributes: {
@@ -184,6 +190,33 @@ export const enDictionary: TranslationDictionary = {
     available: "Available",
     locked: "Full",
     attributeEmpty: "No dangos yet",
+    modes: {
+      attribute: "By Attribute",
+      group: "By Group",
+      attributeHint: "Build a custom six-dango lineup one pick at a time.",
+      groupHint: "Load an official six-dango roster in a single click.",
+    },
+    groups: {
+      selectAction: "Select Group {group}",
+      active: "Current lineup",
+      ready: "Ready",
+      comingSoon: "Coming Soon",
+      placeholderName: "Reserved Slot",
+      a: {
+        label: "Group A",
+        description:
+          "Luuk Herssen, Sigrika, Denia, Hiyuki, Phoebe, Cartethyia",
+      },
+      b: {
+        label: "Group B",
+        description:
+          "Mornye, Carlotta, Shorekeeper, Lynae, Chisa, Aemeath",
+      },
+      c: {
+        label: "Group C",
+        description: "Jinhsi, Changli, Calcharo, Augusta, Iuno, Phrolova",
+      },
+    },
   },
   monteCarlo: {
     runBatch: "Run {count} times",
@@ -421,6 +454,12 @@ export const enDictionary: TranslationDictionary = {
         "{actor} drops to last place and enters Comeback state.",
       cartethyiaComebackBoost:
         "{actor}'s Comeback erupts for 2 extra steps.",
+      jinhsiStackAscend:
+        "{actor} surges through the stack and claims the highest perch.",
+      changliActLastNextRound:
+        "{actor} delays her momentum and will act last next round.",
+      calcharoLastPlaceBoost:
+        "{actor} claws back from last place and gains 3 extra steps.",
     },
   },
   banner: {

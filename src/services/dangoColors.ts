@@ -21,17 +21,23 @@ const BASIC_ACCENT_PALETTE = [
 ] as const;
 
 const DANGO_ACCENT_OVERRIDES: Partial<Record<DangoId, string>> = {
-  aemeath: "#f9a8d4",
+  aemeath: "#E67690",
   cartethyia: "#d4b483",
-  carlotta: "#ffffff",
-  chisa: "#020617",
-  denia: "#fbcfe8",
-  hiyuki: "#fffafa",
-  lynae: "#d6b48f",
-  luukHerssen: "#fde68a",
-  mornye: "#c7d2fe",
+  carlotta: "#FFDBDB",
+  chisa: "#4B000A",
+  denia: "#FFACDB",
+  augusta: "#FF2F00",
+  calcharo: "#c0c6cf",
+  changli: "#FF5972",
+  hiyuki: "#CFCFFF",
+  iuno: "#13328E",
+  jinhsi: "#eceff4",
+  lynae: "#DCC1A4",
+  luukHerssen: "#FFE374",
+  mornye: "#9B9CFF",
+  phrolova: "#7AB57FDE",
   phoebe: "#eab308",
-  shorekeeper: "#3b82f6",
+  shorekeeper: "#468DFF",
   sigrika: "#fb923c",
 };
 
