@@ -168,6 +168,14 @@ export const enDictionary: TranslationDictionary = {
   },
   monteCarlo: {
     runBatch: "Run {count} times",
+    useCustomNumber: "Use custom number",
+    customRunsLabel: "Custom runs",
+    customRunsUnit: "runs",
+    customRunsPlaceholder: "5000",
+    customRunsHint: "Enter any positive whole number.",
+    customRunsInvalid: "Use a positive whole number.",
+    stop: "Stop simulation",
+    stopping: "Stopping...",
     progress: "Progress",
     standingBy: "Standing by",
     lineupIncomplete:

@@ -28,6 +28,7 @@ import {
   createNormalRaceSetup,
   createTournamentFinalRaceSetup,
 } from "@/services/raceSetup";
+import type { DangoId } from "@/types/game";
 import type {
   MonteCarloAggregateSnapshot,
   MonteCarloScenarioKind,
@@ -55,9 +56,11 @@ export default function App() {
     completedGames: number;
     totalGames: number;
   } | null>(null);
+  const [monteCarloIsStopping, setMonteCarloIsStopping] = useState(false);
   const [monteCarloSnapshot, setMonteCarloSnapshot] =
     useState<MonteCarloAggregateSnapshot | null>(null);
   const monteCarloRunIdRef = useRef(0);
+  const monteCarloAbortControllerRef = useRef<AbortController | null>(null);
 
   const rosterBasics = useMemo(
     () => CHARACTER_LIST.filter((character) => character.role === "basic"),
@@ -94,7 +97,7 @@ export default function App() {
     async (options: {
       totalGames: number;
       scenario: HeadlessSimulationScenario;
-      selectedBasicIds: string[];
+      selectedBasicIds: DangoId[];
       scenarioKind: MonteCarloScenarioKind;
       scenarioLabel: LocalizedText;
       returnView: Exclude<WorkspaceView, "analysis">;
@@ -107,43 +110,71 @@ export default function App() {
         scenarioLabel,
         returnView,
       } = options;
-      if (!isValidBasicSelection(selectedBasicIds)) {
+      if (
+        !Number.isSafeInteger(totalGames) ||
+        totalGames < 1 ||
+        !isValidBasicSelection(selectedBasicIds)
+      ) {
         return;
       }
+      monteCarloAbortControllerRef.current?.abort();
       const runId = (monteCarloRunIdRef.current += 1);
+      const abortController = new AbortController();
+      monteCarloAbortControllerRef.current = abortController;
+      setMonteCarloIsStopping(false);
       setMonteCarloProgress({ completedGames: 0, totalGames });
       const aggregate = createEmptyMonteCarloAggregate(
         selectedBasicIds,
         scenarioKind,
         scenarioLabel
       );
-      await runMonteCarloBatch({
-        totalRuns: totalGames,
-        scenario,
-        boardEffectByCellIndex: normalGame.boardEffects,
-        onProgress: (completedGames, totalGamesBatch) => {
-          if (monteCarloRunIdRef.current === runId) {
-            setMonteCarloProgress({
-              completedGames,
-              totalGames: totalGamesBatch,
-            });
-          }
-        },
-        onOutcome: (outcome) => {
-          absorbHeadlessOutcomeIntoAggregate(aggregate, outcome);
-        },
-        shouldAbort: () => monteCarloRunIdRef.current !== runId,
-      });
+      try {
+        await runMonteCarloBatch({
+          totalRuns: totalGames,
+          scenario,
+          boardEffectByCellIndex: normalGame.boardEffects,
+          onProgress: (completedGames, totalGamesBatch) => {
+            if (monteCarloRunIdRef.current === runId) {
+              setMonteCarloProgress({
+                completedGames,
+                totalGames: totalGamesBatch,
+              });
+            }
+          },
+          onOutcome: (outcome) => {
+            absorbHeadlessOutcomeIntoAggregate(aggregate, outcome);
+          },
+          signal: abortController.signal,
+          shouldAbort: () => monteCarloRunIdRef.current !== runId,
+        });
+      } finally {
+        if (monteCarloAbortControllerRef.current === abortController) {
+          monteCarloAbortControllerRef.current = null;
+        }
+      }
       if (monteCarloRunIdRef.current !== runId) {
         return;
       }
       setMonteCarloProgress(null);
+      setMonteCarloIsStopping(false);
+      if (aggregate.totalRuns === 0) {
+        return;
+      }
       setMonteCarloSnapshot(aggregate);
       setAnalysisReturnView(returnView);
       setWorkspaceView("analysis");
     },
     [normalGame.boardEffects]
   );
+
+  const abortMonteCarloRun = useCallback(() => {
+    const controller = monteCarloAbortControllerRef.current;
+    if (!controller || controller.signal.aborted) {
+      return;
+    }
+    setMonteCarloIsStopping(true);
+    controller.abort();
+  }, []);
 
   const requestNormalMonteCarloBatch = useCallback(
     async (_scenarioId: string, totalGames: number) => {
@@ -208,12 +239,9 @@ export default function App() {
   );
 
   const normalMonteCarloRunDisabled =
-    !isValidBasicSelection(resolvedNormalLineupBasicIds) ||
-    Boolean(monteCarloProgress) ||
-    normalGame.isAnimating;
+    !isValidBasicSelection(resolvedNormalLineupBasicIds) || normalGame.isAnimating;
   const tournamentMonteCarloRunDisabled =
     !isValidBasicSelection(resolvedTournamentLineupBasicIds) ||
-    Boolean(monteCarloProgress) ||
     tournament.race.isAnimating;
   const normalStartDisabled =
     normalGame.state.phase === "running" ||
@@ -257,6 +285,7 @@ export default function App() {
             lineupBasicIds={resolvedNormalLineupBasicIds}
             runDisabled={normalMonteCarloRunDisabled}
             progress={monteCarloProgress}
+            isStopping={monteCarloIsStopping}
             scenarioOptions={[
               {
                 id: "normalRace",
@@ -267,6 +296,7 @@ export default function App() {
             selectedScenarioId="normalRace"
             onSelectedScenarioChange={() => {}}
             onRunBatch={requestNormalMonteCarloBatch}
+            onAbortRun={abortMonteCarloRun}
           />
           <GameShell
             state={normalGame.state}
@@ -320,6 +350,7 @@ export default function App() {
             lineupBasicIds={resolvedTournamentLineupBasicIds}
             runDisabled={tournamentMonteCarloRunDisabled}
             progress={monteCarloProgress}
+            isStopping={monteCarloIsStopping}
             scenarioOptions={[
               {
                 id: "tournament",
@@ -339,6 +370,7 @@ export default function App() {
               )
             }
             onRunBatch={requestTournamentMonteCarloBatch}
+            onAbortRun={abortMonteCarloRun}
           />
           <GameShell
             state={tournament.race.state}
