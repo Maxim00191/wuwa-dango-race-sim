@@ -31,6 +31,7 @@ Thumbs.db
 *.tsbuildinfo
 coverage/
 .cursor/
+.cursor/*
 
 # Vite
 vite.config.ts.timestamp-*
