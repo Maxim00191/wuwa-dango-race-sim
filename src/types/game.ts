@@ -1,3 +1,5 @@
+import type { LocalizedText } from "@/i18n";
+
 export type CellIndex = number;
 
 export type DangoId = string;
@@ -40,7 +42,7 @@ export type MovementEvaluationContext = {
 export type MovementEvaluationResult = {
   diceValue: number;
   entityPatches?: Partial<Record<DangoId, Partial<EntityRuntimeState>>>;
-  skillNarrative?: string;
+  skillNarrative?: LocalizedText;
 };
 
 export type MovementEvaluationHookHandler = (
@@ -64,7 +66,7 @@ export type MovementStepHookContext = {
 export type MovementStepHookResult = {
   state: GameState;
   segments?: PlaybackSegment[];
-  skillNarrative?: string;
+  skillNarrative?: LocalizedText;
 };
 
 export type MovementStepHookHandler = (
@@ -112,8 +114,8 @@ export type RaceStartingStack = {
 
 export type RaceSetup = {
   mode: RaceMode;
-  label: string;
-  shortLabel: string;
+  label: LocalizedText;
+  shortLabel: LocalizedText;
   selectedBasicIds: DangoId[];
   startingStacks: RaceStartingStack[];
 };
@@ -133,7 +135,7 @@ export type GameLogEntryKind =
 
 export type GameLogEntry = {
   kind: GameLogEntryKind;
-  message: string;
+  message: LocalizedText;
 };
 
 export type EntityRuntimeState = {
@@ -205,7 +207,7 @@ export type TurnRollPlan = {
   diceValue: number;
   initialDiceValue: number;
   entityPatches?: Partial<Record<DangoId, Partial<EntityRuntimeState>>>;
-  skillNarrative?: string;
+  skillNarrative?: LocalizedText;
 };
 
 export type PendingTurnResolution = {
@@ -220,8 +222,8 @@ export type PendingTurnResolution = {
 export type GameState = {
   phase: GamePhase;
   mode: RaceMode | null;
-  label: string | null;
-  shortLabel: string | null;
+  label: LocalizedText | null;
+  shortLabel: LocalizedText | null;
   turnIndex: number;
   cells: Map<CellIndex, DangoId[]>;
   entityOrder: DangoId[];
@@ -240,7 +242,7 @@ export type DiceRollResult = {
   diceValue: number;
   initialDiceValue?: number;
   entityPatches?: Partial<Record<DangoId, Partial<EntityRuntimeState>>>;
-  skillNarrative?: string;
+  skillNarrative?: LocalizedText;
 };
 
 export type CharacterDefinition = {

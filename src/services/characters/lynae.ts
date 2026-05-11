@@ -1,4 +1,5 @@
 import { rollInclusive } from "@/services/characters/dice";
+import { characterParam, text } from "@/i18n";
 import type {
   CharacterDefinition,
   DiceRollContext,
@@ -21,14 +22,19 @@ function rollLynaeUnstableDice(
     return {
       diceValue: initialDiceValue * 2,
       initialDiceValue,
-      skillNarrative: `Lynae's Skill! Roll doubled to ${initialDiceValue * 2}!`,
+      skillNarrative: text("simulation.skills.lynaeDouble", {
+        actor: characterParam("lynae"),
+        value: initialDiceValue * 2,
+      }),
     };
   }
   if (unstableRoll < LYNAE_DOUBLE_CHANCE + LYNAE_STUCK_CHANCE) {
     return {
       diceValue: 0,
       initialDiceValue,
-      skillNarrative: "Lynae's Skill! She got stuck and cannot move!",
+      skillNarrative: text("simulation.skills.lynaeStuck", {
+        actor: characterParam("lynae"),
+      }),
     };
   }
   return { diceValue: initialDiceValue, initialDiceValue };

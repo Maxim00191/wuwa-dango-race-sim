@@ -1,4 +1,3 @@
-import { CHARACTER_BY_ID } from "@/services/characters";
 import {
   accentFillHexForDango,
   contrastingInkHexForFill,
@@ -8,15 +7,6 @@ import type {
   PlacementCountMatrix,
   PlacementCountVector,
 } from "@/types/monteCarlo";
-
-export const POSITION_LABELS = [
-  "1st",
-  "2nd",
-  "3rd",
-  "4th",
-  "5th",
-  "6th",
-] as const;
 
 export type PlacementRowDatum = {
   basicId: DangoId;
@@ -74,14 +64,6 @@ export function formatPercent(
   return `${value.toFixed(fractionDigits)}%`;
 }
 
-export function getDangoLabel(basicId: DangoId): string {
-  return CHARACTER_BY_ID[basicId]?.displayName ?? basicId;
-}
-
-export function getPlacementLabel(placementIndex: number): string {
-  return POSITION_LABELS[placementIndex] ?? `#${placementIndex + 1}`;
-}
-
 export function colorWithAlpha(hex: string, alpha: number): string {
   const rgb = parseHexTriplet(hex);
   if (!rgb) {
@@ -92,7 +74,8 @@ export function colorWithAlpha(hex: string, alpha: number): string {
 
 export function derivePlacementRow(
   basicId: DangoId,
-  counts: PlacementCountVector
+  counts: PlacementCountVector,
+  getLabel: (basicId: DangoId) => string
 ): PlacementRowDatum {
   const total = sumCounts(counts);
   const accentHex = accentFillHexForDango(basicId);
@@ -100,7 +83,7 @@ export function derivePlacementRow(
   if (total === 0) {
     return {
       basicId,
-      label: getDangoLabel(basicId),
+      label: getLabel(basicId),
       accentHex,
       accentInkHex: contrastingInkHexForFill(accentHex),
       counts,
@@ -153,7 +136,7 @@ export function derivePlacementRow(
   );
   return {
     basicId,
-    label: getDangoLabel(basicId),
+    label: getLabel(basicId),
     accentHex,
     accentInkHex: contrastingInkHexForFill(accentHex),
     counts,
@@ -172,10 +155,15 @@ export function derivePlacementRow(
 
 export function derivePlacementRows(
   basicIds: DangoId[],
-  placementCountsByBasicId: Record<string, PlacementCountVector>
+  placementCountsByBasicId: Record<string, PlacementCountVector>,
+  getLabel: (basicId: DangoId) => string
 ): PlacementRowDatum[] {
   return basicIds.map((basicId) =>
-    derivePlacementRow(basicId, placementCountsByBasicId[basicId] ?? [])
+    derivePlacementRow(
+      basicId,
+      placementCountsByBasicId[basicId] ?? [],
+      getLabel
+    )
   );
 }
 

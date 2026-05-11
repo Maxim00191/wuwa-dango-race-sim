@@ -1,11 +1,11 @@
 import { memo, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { CELL_COUNT, FINISH_LINE_CELL_INDEX } from "@/constants/board";
 import { ACTIVE_BASIC_DANGO_COUNT } from "@/constants/ids";
+import { useTranslation } from "@/i18n/LanguageContext";
 import {
   angleForCellIndex,
   ellipsePointFromAngle,
 } from "@/services/boardLayout";
-import { CHARACTER_BY_ID } from "@/services/characters";
 import {
   accentFillHexForDango,
   contrastingInkHexForFill,
@@ -30,8 +30,11 @@ const CELL_INDEX_LABEL_BAND =
 
 const MAX_TOTEM_DEPTH_FOR_ORBIT = ACTIVE_BASIC_DANGO_COUNT;
 
-function displayNameForEntity(entityId: DangoId): string {
-  const name = CHARACTER_BY_ID[entityId]?.displayName ?? entityId;
+function displayNameForEntity(
+  entityId: DangoId,
+  getCharacterName: (id: DangoId) => string
+): string {
+  const name = getCharacterName(entityId);
   const trimmed = name.trim();
   return trimmed.length > 0 ? trimmed : entityId;
 }
@@ -73,6 +76,7 @@ function CircularBoardComponent({
   boardEffects,
   hoppingEntityIds,
 }: CircularBoardProps) {
+  const { getCharacterName, t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const [viewportPixels, setViewportPixels] = useState({
     width: 960,
@@ -214,7 +218,7 @@ function CircularBoardComponent({
         viewBox={`0 0 ${viewWidth} ${viewHeight}`}
         className="h-full w-full text-slate-900 dark:text-slate-100"
         role="img"
-        aria-label="Elliptical race board with thirty-two cells"
+        aria-label={t("game.board.ariaLabel")}
       >
         <defs>
           <style>{`
@@ -356,7 +360,7 @@ html:not(.dark) #finishChecker > rect:nth-child(5) { fill: #cbd5e1; }
             ty,
           }) => {
             const isHopping = hoppingEntityIds.has(entityId);
-            const displayName = displayNameForEntity(entityId);
+            const displayName = displayNameForEntity(entityId, getCharacterName);
             const accentFill = accentFillHexForDango(entityId);
             const labelFill = contrastingInkHexForFill(accentFill);
             const nameLines = splitDisplayNameIntoLines(displayName);

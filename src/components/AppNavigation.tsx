@@ -1,4 +1,6 @@
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useTranslation } from "@/i18n/LanguageContext";
 
 export type WorkspaceView = "normal" | "tournament" | "analysis";
 
@@ -15,16 +17,18 @@ export function AppNavigation({
   isDarkTheme,
   onToggleTheme,
 }: AppNavigationProps) {
+  const { t } = useTranslation();
+
   return (
     <nav className="sticky top-0 z-50 border-b border-slate-200/90 bg-white/85 backdrop-blur-md dark:border-slate-800/90 dark:bg-slate-950/85">
       <div className="mx-auto flex w-full max-w-[1920px] items-center justify-between gap-4 px-4 py-3 sm:px-6 md:px-10 lg:px-14 xl:px-16 2xl:px-24">
         <div className="flex min-w-0 items-center gap-3">
           <span className="text-sm font-bold tracking-tight text-slate-900 dark:text-slate-50">
-            Dango Scramble
+            {t("nav.brand")}
           </span>
           <span className="hidden text-slate-400 dark:text-slate-600 sm:inline">·</span>
           <span className="hidden truncate text-sm font-medium text-slate-500 dark:text-slate-400 sm:inline">
-            Cute lap races & cozy number-crunching
+            {t("nav.tagline")}
           </span>
         </div>
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
@@ -38,7 +42,7 @@ export function AppNavigation({
                   : "text-slate-600 hover:bg-slate-200 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
               }`}
             >
-              Normal Mode
+              {t("nav.views.normal")}
             </button>
             <button
               type="button"
@@ -49,7 +53,7 @@ export function AppNavigation({
                   : "text-slate-600 hover:bg-slate-200 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
               }`}
             >
-              Tournament Mode
+              {t("nav.views.tournament")}
             </button>
             <button
               type="button"
@@ -60,9 +64,10 @@ export function AppNavigation({
                   : "text-slate-600 hover:bg-slate-200 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
               }`}
             >
-              Analysis
+              {t("nav.views.analysis")}
             </button>
           </div>
+          <LanguageSwitcher />
           <ThemeToggle isDark={isDarkTheme} onToggle={onToggleTheme} />
         </div>
       </div>

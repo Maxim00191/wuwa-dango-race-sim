@@ -9,6 +9,8 @@ import { GameShell } from "@/components/GameShell";
 import { MonteCarloPanel } from "@/components/MonteCarloPanel";
 import { TournamentSetupPanel } from "@/components/TournamentSetupPanel";
 import { ABBY_ID } from "@/constants/ids";
+import { text, type LocalizedText } from "@/i18n";
+import { useTranslation } from "@/i18n/LanguageContext";
 import { useGame } from "@/hooks/useGame";
 import { useLineupSelection } from "@/hooks/useLineupSelection";
 import { useTheme } from "@/hooks/useTheme";
@@ -39,6 +41,7 @@ function arraysEqual(left: string[], right: string[]): boolean {
 }
 
 export default function App() {
+  const { t, tText } = useTranslation();
   const lineup = useLineupSelection();
   const normalGame = useGame();
   const tournament = useTournament(lineup.selectedBasicIds);
@@ -93,7 +96,7 @@ export default function App() {
       scenario: HeadlessSimulationScenario;
       selectedBasicIds: string[];
       scenarioKind: MonteCarloScenarioKind;
-      scenarioLabel: string;
+      scenarioLabel: LocalizedText;
       returnView: Exclude<WorkspaceView, "analysis">;
     }) => {
       const {
@@ -152,7 +155,7 @@ export default function App() {
         },
         selectedBasicIds: resolvedNormalLineupBasicIds,
         scenarioKind: "normalRace",
-        scenarioLabel: "Normal Race Monte Carlo",
+        scenarioLabel: text("normal.monteCarlo.scenario.analysisLabel"),
         returnView: "normal",
       });
     },
@@ -170,7 +173,7 @@ export default function App() {
           },
           selectedBasicIds: resolvedTournamentLineupBasicIds,
           scenarioKind: "tournament",
-          scenarioLabel: "Full Tournament Monte Carlo",
+          scenarioLabel: text("tournament.monteCarlo.scenarios.tournament.analysisLabel"),
           returnView: "tournament",
         });
         return;
@@ -191,8 +194,8 @@ export default function App() {
         selectedBasicIds: finalSetup.selectedBasicIds,
         scenarioKind: "final",
         scenarioLabel: useOfficialTournamentFinal
-          ? "Tournament Final Monte Carlo"
-          : "Custom Final Monte Carlo",
+          ? text("tournament.monteCarlo.scenarios.final.officialAnalysisLabel")
+          : text("tournament.monteCarlo.scenarios.final.customAnalysisLabel"),
         returnView: "tournament",
       });
     },
@@ -220,16 +223,22 @@ export default function App() {
     tournament.race.state.phase === "running" || tournament.race.isAnimating;
   const normalSessionLabel =
     normalGame.state.phase === "idle"
-      ? "Ready for a normal race"
-      : normalGame.state.label ?? "Normal Race";
+      ? t("normal.session.idle")
+      : normalGame.state.label
+        ? tText(normalGame.state.label)
+        : t("normal.session.fallback");
   const tournamentSessionLabel =
     tournament.race.state.phase === "running"
-      ? tournament.race.state.label ?? "Tournament Race"
+      ? tournament.race.state.label
+        ? tText(tournament.race.state.label)
+        : t("tournament.session.raceFallback")
       : tournament.race.state.phase === "finished"
         ? tournament.race.state.mode === "tournamentPreliminary"
-          ? "Preliminary Complete"
-          : tournament.race.state.label ?? "Final Complete"
-        : tournament.sessionLabel;
+          ? t("tournament.session.preliminaryComplete")
+          : tournament.race.state.label
+            ? tText(tournament.race.state.label)
+            : t("tournament.session.finalComplete")
+        : tText(tournament.sessionLabel);
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
@@ -242,17 +251,17 @@ export default function App() {
       {workspaceView === "normal" ? (
         <>
           <MonteCarloPanel
-            heading="Lots of practice laps"
-            title="Replay this normal race lineup at speed"
-            description="Simulate the selected six-dango lineup from the standard start so you can compare likely winners and race pace."
+            heading={t("normal.monteCarlo.heading")}
+            title={t("normal.monteCarlo.title")}
+            description={t("normal.monteCarlo.description")}
             lineupBasicIds={resolvedNormalLineupBasicIds}
             runDisabled={normalMonteCarloRunDisabled}
             progress={monteCarloProgress}
             scenarioOptions={[
               {
                 id: "normalRace",
-                label: "Normal race",
-                description: "Every run starts from the usual full-stack opener.",
+                label: t("normal.monteCarlo.scenario.label"),
+                description: t("normal.monteCarlo.scenario.description"),
               },
             ]}
             selectedScenarioId="normalRace"
@@ -267,9 +276,9 @@ export default function App() {
             boardEffects={normalGame.boardEffects}
             hoppingEntityIds={normalGame.hoppingEntityIds}
             idleParticipantIds={idleParticipantIds}
-            headerEyebrow="Normal mode"
-            headerTitle="Dango Derby"
-            headerDescription="Hop, stack, and scramble around the loop in the standard one-race format."
+            headerEyebrow={t("normal.shell.eyebrow")}
+            headerTitle={t("normal.shell.title")}
+            headerDescription={t("normal.shell.description")}
             sessionLabel={normalSessionLabel}
             setupPanel={
               <DangoPicker
@@ -288,7 +297,7 @@ export default function App() {
                 disabled={normalStartDisabled}
                 className="rounded-full bg-emerald-500 px-5 py-2 text-sm font-semibold text-emerald-950 shadow-lg shadow-emerald-900/40 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
               >
-                Start normal race
+                {t("normal.shell.start")}
               </button>
             }
             onPlayTurn={normalGame.playTurn}
@@ -305,22 +314,22 @@ export default function App() {
       ) : workspaceView === "tournament" ? (
         <>
           <MonteCarloPanel
-            heading="Bracket forecasting"
-            title="Simulate whole tournaments or just the final"
-            description="Stress-test both rounds together, or run final-only batches from the current finals order."
+            heading={t("tournament.monteCarlo.heading")}
+            title={t("tournament.monteCarlo.title")}
+            description={t("tournament.monteCarlo.description")}
             lineupBasicIds={resolvedTournamentLineupBasicIds}
             runDisabled={tournamentMonteCarloRunDisabled}
             progress={monteCarloProgress}
             scenarioOptions={[
               {
                 id: "tournament",
-                label: "Full tournament",
-                description: "Run a preliminary, seed the final from placements, then crown a champion.",
+                label: t("tournament.monteCarlo.scenarios.tournament.label"),
+                description: t("tournament.monteCarlo.scenarios.tournament.description"),
               },
               {
                 id: "final",
-                label: "Current finals setup",
-                description: "Skip the preliminary and simulate only the current finals order.",
+                label: t("tournament.monteCarlo.scenarios.final.label"),
+                description: t("tournament.monteCarlo.scenarios.final.description"),
               },
             ]}
             selectedScenarioId={selectedTournamentMonteCarloScenarioId}
@@ -339,9 +348,9 @@ export default function App() {
             boardEffects={tournament.race.boardEffects}
             hoppingEntityIds={tournament.race.hoppingEntityIds}
             idleParticipantIds={idleParticipantIds}
-            headerEyebrow="Tournament mode"
-            headerTitle="Dango Cup"
-            headerDescription="Run a preliminary, seed the final from placements, or jump straight into a custom final arrangement."
+            headerEyebrow={t("tournament.shell.eyebrow")}
+            headerTitle={t("tournament.shell.title")}
+            headerDescription={t("tournament.shell.description")}
             sessionLabel={tournamentSessionLabel}
             setupPanel={
               <TournamentSetupPanel

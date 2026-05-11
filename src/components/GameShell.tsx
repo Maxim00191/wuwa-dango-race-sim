@@ -5,6 +5,7 @@ import {
   type BroadcastBannerPayload,
 } from "@/components/BroadcastBanner";
 import { CircularBoard } from "@/components/CircularBoard";
+import { useTranslation } from "@/i18n/LanguageContext";
 import { CHARACTER_BY_ID } from "@/services/characters";
 import {
   accentFillHexForDango,
@@ -66,6 +67,7 @@ export function GameShell({
   autoPlayEnabled,
   onAutoPlayEnabledChange,
 }: GameShellProps) {
+  const { getCharacterName, t, tText } = useTranslation();
   const racerParticipantIds = useMemo(() => {
     if (state.phase === "idle") {
       return idleParticipantIds;
@@ -154,7 +156,7 @@ export function GameShell({
           <div className="flex flex-wrap items-end gap-6">
             <div className="flex flex-col gap-2">
               <p className="text-sm font-bold tracking-tight text-slate-700 dark:text-slate-200">
-                Watch & play
+                {t("game.controls.watch")}
               </p>
               <div className="flex flex-wrap gap-2">
                 {startControls}
@@ -164,7 +166,7 @@ export function GameShell({
                   disabled={nextTurnDisabled}
                   className="rounded-full bg-violet-500 px-5 py-2 text-sm font-semibold text-violet-950 shadow-lg shadow-violet-900/40 transition hover:bg-violet-400 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
                 >
-                  Next step
+                  {t("game.controls.step")}
                 </button>
                 <button
                   type="button"
@@ -172,7 +174,9 @@ export function GameShell({
                   disabled={playTurnDisabled}
                   className="rounded-full bg-sky-500 px-5 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-sky-900/40 transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
                 >
-                  {playTurnEnabled ? "Playing…" : "Play this turn"}
+                  {playTurnEnabled
+                    ? t("game.controls.playingTurn")
+                    : t("game.controls.playTurn")}
                 </button>
                 {autoPlayEnabled ? (
                   <span
@@ -187,7 +191,7 @@ export function GameShell({
                       disabled={autoRunDisabled}
                       className="relative z-10 rounded-full bg-white px-5 py-2 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900 dark:disabled:bg-slate-800 dark:disabled:text-slate-500"
                     >
-                      Pause auto-run
+                      {t("game.controls.pauseAuto")}
                     </button>
                   </span>
                 ) : (
@@ -200,7 +204,7 @@ export function GameShell({
                       disabled={autoRunDisabled}
                       className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900 dark:disabled:bg-slate-800 dark:disabled:text-slate-500"
                     >
-                      Auto-run
+                      {t("game.controls.autoRun")}
                     </button>
                   </span>
                 )}
@@ -209,13 +213,13 @@ export function GameShell({
                   onClick={onReset}
                   className="rounded-full bg-rose-600 px-5 py-2 text-sm font-semibold text-rose-50 shadow-lg shadow-rose-950/35 transition hover:bg-rose-500"
                 >
-                  Clear & restart
+                  {t("game.controls.reset")}
                 </button>
               </div>
             </div>
             <div className="flex flex-col gap-2">
               <p className="text-sm font-bold tracking-tight text-slate-700 dark:text-slate-200">
-                Quick runs
+                {t("game.controls.quickRuns")}
               </p>
               <div className="flex flex-wrap gap-2">
                 <button
@@ -224,7 +228,7 @@ export function GameShell({
                   disabled={instantDisabled}
                   className="rounded-full bg-fuchsia-600 px-5 py-2 text-sm font-semibold text-fuchsia-50 shadow-lg shadow-fuchsia-950/40 transition hover:bg-fuchsia-500 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
                 >
-                  Zip one turn
+                  {t("game.controls.instantTurn")}
                 </button>
                 <button
                   type="button"
@@ -232,7 +236,7 @@ export function GameShell({
                   disabled={instantDisabled}
                   className="rounded-full bg-rose-600 px-5 py-2 text-sm font-semibold text-rose-50 shadow-lg shadow-rose-950/40 transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
                 >
-                  Zip whole race
+                  {t("game.controls.instantGame")}
                 </button>
               </div>
             </div>
@@ -248,16 +252,18 @@ export function GameShell({
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-base font-bold tracking-tight text-slate-800 dark:text-slate-100">
-                  On the track
+                  {t("game.board.panelTitle")}
                 </p>
                 <p className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
-                  Turn {Math.max(state.turnIndex, 0)}
+                  {t("game.board.turnLabel", {
+                    turn: Math.max(state.turnIndex, 0),
+                  })}
                   {` · ${sessionLabel}`}
                 </p>
               </div>
               {state.winnerId ? (
                 <div className="rounded-full bg-amber-400/25 px-4 py-2 text-sm font-semibold text-amber-900 ring-1 ring-amber-500/50 dark:bg-amber-400/15 dark:text-amber-200 dark:ring-amber-400/40">
-                  We have a winner!
+                  {t("game.board.winnerBadge")}
                 </div>
               ) : null}
             </div>
@@ -277,18 +283,18 @@ export function GameShell({
           </div>
           <div className="mt-6 shrink-0 grid gap-4 text-sm text-slate-600 dark:text-slate-300 sm:grid-cols-3">
             <LegendSwatch
-              label="Finish line"
-              description="Winning still needs a full 32-step lap, even if someone starts a few cells behind the line."
+              label={t("game.board.legend.finishLine.label")}
+              description={t("game.board.legend.finishLine.description")}
               borderClass="border-amber-300"
             />
             <LegendSwatch
-              label="Sparkly cells"
-              description="Purple rings sometimes give the stack a surprise nudge."
+              label={t("game.board.legend.sparklyCells.label")}
+              description={t("game.board.legend.sparklyCells.description")}
               borderClass="border-purple-400"
             />
             <LegendSwatch
-              label="Stacks"
-              description="Everyone piles neatly upward—no sideways wobble."
+              label={t("game.board.legend.stacks.label")}
+              description={t("game.board.legend.stacks.description")}
               borderClass="border-slate-500"
             />
           </div>
@@ -297,7 +303,7 @@ export function GameShell({
         <aside className="flex min-w-0 flex-col gap-6 xl:min-w-[18rem]">
           <section className="rounded-3xl border border-slate-200 bg-white/95 p-6 shadow-md shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-900/70 dark:shadow-xl dark:shadow-slate-950/60 xl:p-8">
             <p className="text-base font-bold tracking-tight text-slate-800 dark:text-slate-100">
-              Your racers
+              {t("game.racers.title")}
             </p>
             <ul
               ref={rankListRef}
@@ -335,12 +341,12 @@ export function GameShell({
                       ) : null}
                       <div>
                         <p className="font-semibold tracking-tight text-slate-900 dark:text-slate-50">
-                          {character.displayName}
+                          {getCharacterName(character.id)}
                         </p>
                         <p className="text-xs font-normal text-slate-500 dark:text-slate-500">
                           {character.role === "boss"
-                            ? "Boss seat · bigger dice · chases counter-clockwise"
-                            : "Dango · lighter dice · hops clockwise"}
+                            ? t("game.racers.bossRole")
+                            : t("game.racers.basicRole")}
                         </p>
                       </div>
                     </div>
@@ -349,7 +355,7 @@ export function GameShell({
                         ● {runtime?.raceDisplacement ?? 0}
                       </p>
                       <p className="text-[11px] font-normal text-slate-500 dark:text-slate-500">
-                        dice {roll ?? "—"}
+                        {t("game.racers.dice", { value: roll ?? "—" })}
                       </p>
                     </div>
                   </li>
@@ -361,22 +367,23 @@ export function GameShell({
           <section className="flex max-h-[420px] flex-col rounded-3xl border border-slate-200 bg-white/95 p-6 shadow-md shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-950/70 dark:shadow-xl dark:shadow-slate-950/60 xl:max-h-[min(58vh,560px)] xl:p-8 2xl:max-h-[min(62vh,640px)]">
             <div className="mb-3 flex items-center justify-between gap-3">
               <p className="text-base font-bold tracking-tight text-slate-800 dark:text-slate-100">
-                Race diary
+                {t("game.diary.title")}
               </p>
               <span className="text-[11px] font-normal text-slate-500 dark:text-slate-500">
-                {state.log.length}{" "}
-                {state.log.length === 1 ? "note" : "notes"}
+                {state.log.length === 1
+                  ? t("common.notes.one", { count: state.log.length })
+                  : t("common.notes.other", { count: state.log.length })}
               </span>
             </div>
             <div className="flex-1 space-y-3 overflow-y-auto pr-2 text-sm leading-relaxed text-slate-700 dark:text-slate-200">
               {state.log.length === 0 ? (
                 <p className="font-normal text-slate-500 dark:text-slate-500">
-                  Little updates pop in here every time you play a turn.
+                  {t("game.diary.empty")}
                 </p>
               ) : (
                 state.log.map((entry, index) => (
                   <p key={`${entry.kind}-${index}`} className="border-b border-slate-200 pb-3 font-normal text-slate-600 last:border-none dark:border-slate-800 dark:text-slate-400">
-                    {entry.message}
+                    {tText(entry.message)}
                   </p>
                 ))
               )}

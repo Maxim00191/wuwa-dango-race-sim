@@ -1,4 +1,5 @@
 import { ACTIVE_BASIC_DANGO_COUNT } from "@/constants/ids";
+import { useTranslation } from "@/i18n/LanguageContext";
 import type { CharacterDefinition, DangoId } from "@/types/game";
 
 type DangoPickerProps = {
@@ -12,6 +13,7 @@ export function DangoPicker({
   selectedBasicIds,
   onToggleBasicId,
 }: DangoPickerProps) {
+  const { getCharacterName, t } = useTranslation();
   const selectedSet = new Set(selectedBasicIds);
   const remainingSlots = ACTIVE_BASIC_DANGO_COUNT - selectedBasicIds.length;
 
@@ -20,14 +22,13 @@ export function DangoPicker({
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-base font-bold tracking-tight text-slate-800 dark:text-slate-100">
-            Who's running
+            {t("lineup.heading")}
           </p>
           <p className="mt-1 text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
-            Pick {ACTIVE_BASIC_DANGO_COUNT} dangos you want cheering on
+            {t("lineup.title", { count: ACTIVE_BASIC_DANGO_COUNT })}
           </p>
           <p className="mt-1 text-xs font-normal text-slate-500 dark:text-slate-400">
-            Tap faces to invite them in or out—Abby hops in as boss when you
-            start.
+            {t("lineup.description")}
           </p>
         </div>
         <div
@@ -37,8 +38,20 @@ export function DangoPicker({
               : "bg-slate-200 text-slate-700 ring-slate-400 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-600"
           }`}
         >
-          {selectedBasicIds.length} / {ACTIVE_BASIC_DANGO_COUNT} ready
-          {remainingSlots > 0 ? ` · ${remainingSlots} spot${remainingSlots === 1 ? "" : "s"} open` : ""}
+          {remainingSlots > 0
+            ? t("lineup.statusOpen", {
+                selected: selectedBasicIds.length,
+                total: ACTIVE_BASIC_DANGO_COUNT,
+                remaining: remainingSlots,
+                spots:
+                  remainingSlots === 1
+                    ? t("lineup.spotsOne")
+                    : t("lineup.spotsOther"),
+              })
+            : t("lineup.statusReady", {
+                selected: selectedBasicIds.length,
+                total: ACTIVE_BASIC_DANGO_COUNT,
+              })}
         </div>
       </div>
       <div className="mt-5 flex flex-wrap gap-2">
@@ -61,7 +74,7 @@ export function DangoPicker({
                     : "cursor-not-allowed border border-transparent bg-slate-100/80 text-slate-400 dark:bg-slate-900/40 dark:text-slate-600"
               }`}
             >
-              {character.displayName}
+              {getCharacterName(character.id)}
             </button>
           );
         })}

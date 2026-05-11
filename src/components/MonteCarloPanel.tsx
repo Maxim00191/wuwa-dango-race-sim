@@ -1,5 +1,5 @@
 import { ACTIVE_BASIC_DANGO_COUNT } from "@/constants/ids";
-import { CHARACTER_BY_ID } from "@/services/characters";
+import { useTranslation } from "@/i18n/LanguageContext";
 import type { DangoId } from "@/types/game";
 
 export type MonteCarloScenarioOption = {
@@ -35,6 +35,7 @@ export function MonteCarloPanel({
   onSelectedScenarioChange,
   onRunBatch,
 }: MonteCarloPanelProps) {
+  const { getCharacterName, t } = useTranslation();
   const lineupComplete = lineupBasicIds.length === ACTIVE_BASIC_DANGO_COUNT;
   const progressRatio =
     progress && progress.totalGames > 0
@@ -58,8 +59,7 @@ export function MonteCarloPanel({
           <div className="flex flex-wrap gap-2 pt-1">
             {lineupComplete ? (
               lineupBasicIds.map((basicId) => {
-                const character = CHARACTER_BY_ID[basicId];
-                const label = character?.displayName ?? basicId;
+                const label = getCharacterName(basicId);
                 return (
                   <span
                     key={basicId}
@@ -71,8 +71,9 @@ export function MonteCarloPanel({
               })
             ) : (
               <span className="text-sm font-normal text-amber-700 dark:text-amber-400/85">
-                Choose all {ACTIVE_BASIC_DANGO_COUNT} dangos first—then we can
-                spam races together!
+                {t("monteCarlo.lineupIncomplete", {
+                  count: ACTIVE_BASIC_DANGO_COUNT,
+                })}
               </span>
             )}
           </div>
@@ -111,19 +112,21 @@ export function MonteCarloPanel({
                 onClick={() => onRunBatch(selectedScenarioId, batchSize)}
                 className="rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-fuchsia-950/40 transition hover:from-violet-500 hover:to-fuchsia-500 disabled:cursor-not-allowed disabled:from-slate-300 disabled:to-slate-300 disabled:text-slate-500 disabled:shadow-none dark:disabled:from-slate-700 dark:disabled:to-slate-700"
               >
-                Run {batchSize.toLocaleString()}
+                {t("monteCarlo.runBatch", {
+                  count: batchSize.toLocaleString(),
+                })}
               </button>
             ))}
           </div>
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
               <span className="text-sm font-bold tracking-tight text-slate-700 dark:text-slate-200">
-                How far along
+                {t("monteCarlo.progress")}
               </span>
               <span className="font-mono font-normal text-slate-500 dark:text-slate-400">
                 {progress
                   ? `${progress.completedGames.toLocaleString()} / ${progress.totalGames.toLocaleString()} (${progressPercentRounded}%)`
-                  : "Standing by"}
+                  : t("monteCarlo.standingBy")}
               </span>
             </div>
             <div className="relative h-3 overflow-hidden rounded-full bg-slate-200 ring-1 ring-slate-300/90 dark:bg-slate-800 dark:ring-slate-700/80">

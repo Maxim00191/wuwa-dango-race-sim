@@ -1,15 +1,21 @@
+import { useTranslation } from "@/i18n/LanguageContext";
+
 type ThemeToggleProps = {
   isDark: boolean;
   onToggle: () => void;
 };
 
 export function ThemeToggle({ isDark, onToggle }: ThemeToggleProps) {
+  const { t } = useTranslation();
+
   return (
     <button
       type="button"
       onClick={onToggle}
-      aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
-      title={isDark ? "Light mode" : "Dark mode"}
+      aria-label={
+        isDark ? t("theme.switchToLightAria") : t("theme.switchToDarkAria")
+      }
+      title={isDark ? t("theme.lightTitle") : t("theme.darkTitle")}
       className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-amber-600 shadow-md shadow-slate-900/10 transition hover:border-slate-300 hover:bg-slate-50 hover:text-amber-500 dark:border-slate-700 dark:bg-slate-900/90 dark:text-amber-300 dark:shadow-slate-950/50 dark:hover:border-slate-600 dark:hover:bg-slate-800 dark:hover:text-amber-200"
     >
       {isDark ? <SunIcon /> : <MoonIcon />}

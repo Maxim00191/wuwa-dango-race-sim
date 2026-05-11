@@ -1,4 +1,4 @@
-import { CHARACTER_BY_ID } from "@/services/characters";
+import { useTranslation } from "@/i18n/LanguageContext";
 import {
   accentFillHexForDango,
   contrastingInkHexForFill,
@@ -11,6 +11,7 @@ type TurnQueueViewerProps = {
 };
 
 export function TurnQueueViewer({ presentation }: TurnQueueViewerProps) {
+  const { getCharacterName, t } = useTranslation();
   const queueListRef = useListFlipAnimation<HTMLDivElement>(
     presentation?.orderedActorIds.join("\u0001") ?? ""
   );
@@ -33,7 +34,7 @@ export function TurnQueueViewer({ presentation }: TurnQueueViewerProps) {
   return (
     <div className="mt-4 w-full min-w-0">
       <p className="mb-2 text-base font-bold tracking-tight text-slate-800 dark:text-slate-100">
-        This turn's hopping order
+        {t("game.queue.title")}
       </p>
       <div className="relative pb-6">
         <div
@@ -44,8 +45,7 @@ export function TurnQueueViewer({ presentation }: TurnQueueViewerProps) {
           }}
         >
           {orderedActorIds.map((actorId, queueIndex) => {
-            const character = CHARACTER_BY_ID[actorId];
-            const displayName = character?.displayName ?? actorId;
+            const displayName = getCharacterName(actorId);
             const rollValue = initialDiceByActorId[actorId];
             const rollLabel =
               rollValue === undefined ? "—" : String(rollValue);

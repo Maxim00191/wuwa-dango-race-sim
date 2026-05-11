@@ -1,5 +1,6 @@
 import { FINISH_LINE_CELL_INDEX } from "@/constants/board";
 import { ABBY_ID } from "@/constants/ids";
+import { text, type LocalizedText } from "@/i18n";
 import { addCounterClockwise } from "@/services/circular";
 import { orderedRacerIdsForLeaderboard } from "@/services/racerRanking";
 import type {
@@ -23,8 +24,8 @@ function shuffleOrderStableCopy(ids: DangoId[]): DangoId[] {
 
 function createRaceSetup(
   mode: RaceMode,
-  label: string,
-  shortLabel: string,
+  label: LocalizedText,
+  shortLabel: LocalizedText,
   selectedBasicIds: DangoId[],
   startingStacks: RaceStartingStack[]
 ): RaceSetup {
@@ -49,8 +50,8 @@ function buildNormalStartingStacks(selectedBasicIds: DangoId[]): RaceStartingSta
 export function createNormalRaceSetup(selectedBasicIds: DangoId[]): RaceSetup {
   return createRaceSetup(
     "normal",
-    "Normal Race",
-    "Normal",
+    text("simulation.labels.normalRace"),
+    text("simulation.labels.normalRace"),
     selectedBasicIds,
     buildNormalStartingStacks(selectedBasicIds)
   );
@@ -61,8 +62,8 @@ export function createTournamentPreliminaryRaceSetup(
 ): RaceSetup {
   return createRaceSetup(
     "tournamentPreliminary",
-    "Tournament Preliminary",
-    "Preliminary",
+    text("simulation.labels.tournamentPreliminary"),
+    text("simulation.labels.tournamentPreliminary"),
     selectedBasicIds,
     buildNormalStartingStacks(selectedBasicIds)
   );
@@ -154,8 +155,8 @@ function buildFinalStartingStacks(placements: DangoId[]): RaceStartingStack[] {
 
 function createFinalRaceSetup(
   mode: RaceMode,
-  label: string,
-  shortLabel: string,
+  label: LocalizedText,
+  shortLabel: LocalizedText,
   placements: DangoId[]
 ): RaceSetup {
   const selectedBasicIds = sanitizeFinalPlacements(placements, placements);
@@ -173,8 +174,8 @@ export function createTournamentFinalRaceSetup(
 ): RaceSetup {
   return createFinalRaceSetup(
     "tournamentFinal",
-    "Tournament Final",
-    "Final",
+    text("simulation.labels.tournamentFinal"),
+    text("simulation.labels.tournamentFinal"),
     placements
   );
 }
@@ -182,8 +183,8 @@ export function createTournamentFinalRaceSetup(
 export function createCustomFinalRaceSetup(placements: DangoId[]): RaceSetup {
   return createFinalRaceSetup(
     "customFinal",
-    "Custom Final",
-    "Custom Final",
+    text("simulation.labels.customFinal"),
+    text("simulation.labels.customFinal"),
     placements
   );
 }

@@ -1,4 +1,5 @@
 import { ABBY_ID } from "@/constants/ids";
+import { characterParam, text } from "@/i18n";
 import { rollInclusive } from "@/services/characters/dice";
 import {
   findCellIndexForEntity,
@@ -93,7 +94,9 @@ function resolveAemeathMidpointLeap(
         toCell: destinationCellIndex,
       },
     ],
-    skillNarrative: "Aemeath's Skill! Midpoint leap reaches the leading stack!",
+    skillNarrative: text("simulation.skills.aemeathLeap", {
+      actor: characterParam("aemeath"),
+    }),
   };
 }
 

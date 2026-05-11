@@ -7,6 +7,8 @@ import {
   useRef,
   useState,
 } from "react";
+import { characterParam, text } from "@/i18n";
+import { useTranslation } from "@/i18n/LanguageContext";
 import { ABBY_ID } from "@/constants/ids";
 import { BOARD_CELL_EFFECT_LOOKUP } from "@/services/boardCellEffectLookup";
 import {
@@ -15,7 +17,6 @@ import {
   expandPlaybackToSegmentAtomicChunks,
   type AtomicPlaybackStep,
 } from "@/services/boardPlayback";
-import { CHARACTER_BY_ID } from "@/services/characters";
 import {
   createInitialGameState,
   isValidBasicSelection,
@@ -76,6 +77,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 }
 
 export function useGame() {
+  const { getCharacterName, t } = useTranslation();
+  const translationHelpersRef = useRef({ getCharacterName, t });
   const initialState = useMemo(() => createInitialGameState(), []);
   const [state, dispatch] = useReducer(gameReducer, initialState);
   const [playbackCells, setPlaybackCells] = useState<
@@ -95,6 +98,10 @@ export function useGame() {
   const isAnimatingRef = useRef(false);
   const animationGenerationRef = useRef(0);
   const playTurnStartedRef = useRef(false);
+
+  useEffect(() => {
+    translationHelpersRef.current = { getCharacterName, t };
+  }, [getCharacterName, t]);
 
   const start = useCallback((setup: RaceSetup) => {
     if (!isValidBasicSelection(setup.selectedBasicIds)) {
@@ -206,12 +213,12 @@ export function useGame() {
       setHoppingEntityIds(new Set());
       void (async () => {
         if (state.phase === "finished" && state.winnerId) {
-          const winnerLabel =
-            CHARACTER_BY_ID[state.winnerId]?.displayName ?? state.winnerId;
           setBroadcastPayload({
             variant: "victory",
-            headline: `${winnerLabel} wins the scramble!`,
-            detail: "Full lap done—big sparkle energy today",
+            headline: text("banner.victory.headline", {
+              winner: characterParam(state.winnerId),
+            }),
+            detail: text("banner.victory.detail"),
             accentDangoId: state.winnerId,
           });
           await delayMilliseconds(VICTORY_HOLD_MS);
@@ -278,15 +285,21 @@ export function useGame() {
         playback.turnOrderActorIds && playback.turnOrderActorIds.length > 0
           ? formatTurnOrderFromActorIds(
               playback.turnOrderActorIds,
-              CHARACTER_BY_ID
+              translationHelpersRef.current.getCharacterName
             )
-          : formatTurnOrderArrowLine(playback.segments, CHARACTER_BY_ID);
+          : formatTurnOrderArrowLine(
+              playback.segments,
+              translationHelpersRef.current.getCharacterName,
+              translationHelpersRef.current.t("banner.bonusSlide")
+            );
 
       if (playback.showTurnIntroBanner) {
         await shineBanner(
           {
             variant: "turn",
-            headline: `Turn ${playback.turnIndex} — off we go`,
+            headline: text("banner.turn.headline", {
+              turn: playback.turnIndex,
+            }),
             detail: orderLine,
             accentDangoId: accentDangoIdForTurnIntro(playback.segments),
           },
@@ -301,9 +314,8 @@ export function useGame() {
         await shineBanner(
           {
             variant: "teleport",
-            headline: "Abby boops back to the start",
-            detail:
-              incomingLogs[logCursor]?.message ?? "Boss girl finds her footing again",
+            headline: text("banner.teleport.abbyHeadline"),
+            detail: incomingLogs[logCursor]?.message ?? text("banner.teleport.abbyDetail"),
             accentDangoId: ABBY_ID,
           },
           TELEPORT_BANNER_MS
@@ -329,21 +341,16 @@ export function useGame() {
 
         if (segment.kind === "teleport") {
           const accentDangoId = segment.entityIds[segment.entityIds.length - 1];
-          const name =
-            accentDangoId === ABBY_ID
-              ? CHARACTER_BY_ID[ABBY_ID]?.displayName ?? "Abby"
-              : accentDangoId
-                ? CHARACTER_BY_ID[accentDangoId]?.displayName ?? accentDangoId
-                : "The stack";
           await shineBanner(
             {
               variant: "teleport",
               headline:
                 accentDangoId === ABBY_ID
-                  ? "Abby boops back to the start"
-                  : `${name} springs to a friendlier stack`,
-              detail:
-                incomingLogs[logCursor]?.message ?? "Everyone lands soft",
+                  ? text("banner.teleport.abbyHeadline")
+                  : text("banner.teleport.stackHeadline", {
+                      actor: characterParam(accentDangoId ?? ABBY_ID),
+                    }),
+              detail: incomingLogs[logCursor]?.message ?? text("banner.teleport.stackDetail"),
               accentDangoId,
             },
             TELEPORT_BANNER_MS
@@ -356,14 +363,14 @@ export function useGame() {
         }
 
         if (segment.kind === "idle") {
-          const name =
-            CHARACTER_BY_ID[segment.actorId]?.displayName ?? segment.actorId;
           if (segment.reason === "standby") {
             await shineBanner(
               {
                 variant: "idle",
-                headline: `${name} is warming up off-track`,
-                detail: "They'll hop in once the pace picks up",
+                headline: text("banner.idle.standbyHeadline", {
+                  actor: characterParam(segment.actorId),
+                }),
+                detail: text("banner.idle.standbyDetail"),
                 accentDangoId: segment.actorId,
               },
               IDLE_BANNER_MS
@@ -376,11 +383,15 @@ export function useGame() {
             await shineBanner(
               {
                 variant: "idle",
-                headline: `${name} lets someone else lead here`,
+                headline: text("banner.idle.blockedHeadline", {
+                  actor: characterParam(segment.actorId),
+                }),
                 detail:
                   rollValue !== undefined
-                    ? `Rolled ${rollValue}, but a friend is anchoring this spot`
-                    : "Another racer is holding this stack together",
+                    ? text("banner.idle.blockedDetailWithRoll", {
+                        value: rollValue,
+                      })
+                    : text("banner.idle.blockedDetail"),
                 accentDangoId: segment.actorId,
               },
               IDLE_BANNER_MS
@@ -399,17 +410,20 @@ export function useGame() {
         }
 
         if (segment.kind === "hops") {
-          const name =
-            CHARACTER_BY_ID[segment.actorId]?.displayName ?? segment.actorId;
           const rollValue = state.lastRollById[segment.actorId];
           await shineBanner(
             {
               variant: "roll",
               headline:
                 rollValue !== undefined
-                  ? `${name} rolled a ${rollValue}!`
-                  : `${name} rolls`,
-              detail: "Watch the little hops unfold",
+                  ? text("banner.roll.headline", {
+                      actor: characterParam(segment.actorId),
+                      value: rollValue,
+                    })
+                  : text("banner.roll.headlineFallback", {
+                      actor: characterParam(segment.actorId),
+                    }),
+              detail: text("banner.roll.detail"),
               accentDangoId: segment.actorId,
             },
             BANNER_READ_MS
@@ -424,7 +438,7 @@ export function useGame() {
               {
                 variant: "skill",
                 headline: skillMessage,
-                detail: "Sparkly skill moment",
+                detail: text("banner.skill.detail"),
                 accentDangoId: segment.actorId,
               },
               SKILL_BANNER_READ_MS
@@ -448,8 +462,8 @@ export function useGame() {
           await shineBanner(
             {
               variant: "slide",
-              headline: "Sparkly cell bonus",
-              detail: "The whole pile gets a cheerful shove",
+              headline: text("banner.slide.headline"),
+              detail: text("banner.slide.detail"),
               accentDangoId: segment.travelingIds.at(-1),
             },
             SLIDE_BANNER_MS
@@ -466,13 +480,13 @@ export function useGame() {
       }
 
       if (state.phase === "finished" && state.winnerId) {
-        const winnerLabel =
-          CHARACTER_BY_ID[state.winnerId]?.displayName ?? state.winnerId;
         await shineBanner(
           {
             variant: "victory",
-            headline: `${winnerLabel} wins the scramble!`,
-            detail: "Full lap done—big sparkle energy today",
+            headline: text("banner.victory.headline", {
+              winner: characterParam(state.winnerId),
+            }),
+            detail: text("banner.victory.detail"),
             accentDangoId: state.winnerId,
           },
           VICTORY_HOLD_MS
@@ -514,12 +528,12 @@ export function useGame() {
     const generationAtStart = animationGenerationRef.current;
     const winnerId = state.winnerId;
     void (async () => {
-      const winnerLabel =
-        CHARACTER_BY_ID[winnerId]?.displayName ?? winnerId;
       setBroadcastPayload({
         variant: "victory",
-        headline: `${winnerLabel} wins the scramble!`,
-        detail: "Full lap done—big sparkle energy today",
+        headline: text("banner.victory.headline", {
+          winner: characterParam(winnerId),
+        }),
+        detail: text("banner.victory.detail"),
         accentDangoId: winnerId,
       });
       await delayMilliseconds(VICTORY_HOLD_MS);

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { text } from "@/i18n";
 import { useGame } from "@/hooks/useGame";
 import { isValidBasicSelection } from "@/services/gameEngine";
 import {
@@ -173,9 +174,9 @@ export function useTournament(selectedBasicIds: DangoId[]) {
       return race.state.shortLabel;
     }
     if (preliminaryPlacements) {
-      return "Finals Ready";
+      return text("simulation.labels.finalsReady");
     }
-    return "Tournament Setup";
+    return text("simulation.labels.tournamentSetup");
   }, [preliminaryPlacements, race.state.shortLabel]);
 
   return {

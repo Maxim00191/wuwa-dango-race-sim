@@ -1,3 +1,4 @@
+import type { LocalizedText } from "@/i18n";
 import type { HeadlessSimulationOutcome } from "@/services/gameEngine";
 import type { DangoId } from "@/types/game";
 import type {
@@ -88,7 +89,7 @@ function createPlacementIndexByBasicId(
 export function createEmptyMonteCarloAggregate(
   selectedBasicIds: DangoId[],
   scenarioKind: MonteCarloScenarioKind,
-  scenarioLabel: string
+  scenarioLabel: LocalizedText
 ): MonteCarloAggregateSnapshot {
   const participantCount = selectedBasicIds.length;
   return {

@@ -1,10 +1,10 @@
 import { useMemo } from "react";
+import { useTranslation } from "@/i18n/LanguageContext";
 import type { MonteCarloAggregateSnapshot } from "@/types/monteCarlo";
 import {
   colorWithAlpha,
   derivePlacementRows,
   formatPercent,
-  getPlacementLabel,
   type PlacementRowDatum,
 } from "@/components/analysis/analytics";
 
@@ -74,21 +74,22 @@ function WinRateOverview({
   rows: PlacementRowDatum[];
   scenarioKind: MonteCarloAggregateSnapshot["scenarioKind"];
 }) {
+  const { t } = useTranslation();
   return (
     <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-md shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-900/60 dark:shadow-2xl dark:shadow-slate-950/60">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-base font-bold tracking-tight text-slate-800 dark:text-slate-100">
-            Win rate overview
+            {t("analysis.overview.winRateEyebrow")}
           </p>
           <h3 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
             {scenarioKind === "tournament"
-              ? "Who lifts the trophy most often"
-              : "Who closes the race most often"}
+              ? t("analysis.overview.winRateTitleTournament")
+              : t("analysis.overview.winRateTitleRace")}
           </h3>
         </div>
         <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-950/70 dark:text-slate-300">
-          Final placements only
+          {t("analysis.overview.finalOnly")}
         </span>
       </div>
       <div className="mt-6 space-y-4">
@@ -108,7 +109,11 @@ function WinRateOverview({
               </div>
               <div className="flex flex-wrap items-center gap-3 text-xs font-semibold text-slate-500 dark:text-slate-400">
                 <span>{formatPercent(row.winRate)}</span>
-                <span>Avg finish {row.meanPlacement.toFixed(2)}</span>
+                <span>
+                  {t("analysis.overview.averageFinish", {
+                    value: row.meanPlacement.toFixed(2),
+                  })}
+                </span>
               </div>
             </div>
             <div className="h-3 overflow-hidden rounded-full bg-slate-200 ring-1 ring-slate-300/70 dark:bg-slate-950/80 dark:ring-slate-700/80">
@@ -129,20 +134,20 @@ function WinRateOverview({
 }
 
 function StabilitySpotlight({ rows }: { rows: PlacementRowDatum[] }) {
+  const { t } = useTranslation();
   const highestStability = pickHighestStability(rows);
   const swingiest = pickSwingiest(rows);
   return (
     <section className="grid gap-4">
       <div className="rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-900 to-slate-800 p-6 text-slate-50 shadow-md shadow-slate-900/20 dark:border-slate-700 dark:from-slate-900 dark:to-slate-950">
         <p className="text-base font-bold tracking-tight text-slate-100">
-          Stability lens
+          {t("analysis.overview.stabilityLensEyebrow")}
         </p>
         <h3 className="mt-1 text-2xl font-bold tracking-tight text-white">
-          How repeatable each dango feels
+          {t("analysis.overview.stabilityLensTitle")}
         </h3>
         <p className="mt-3 text-sm text-slate-300">
-          Higher stability means a tighter spread of finishes. Lower stability means
-          wider swings between great and poor results.
+          {t("analysis.overview.stabilityLensDescription")}
         </p>
       </div>
       {[highestStability, swingiest].map((row, index) => {
@@ -158,7 +163,9 @@ function StabilitySpotlight({ rows }: { rows: PlacementRowDatum[] }) {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
-                  {isStableCard ? "Most stable" : "Most volatile"}
+                  {isStableCard
+                    ? t("analysis.overview.mostStable")
+                    : t("analysis.overview.mostVolatile")}
                 </p>
                 <h4 className="mt-2 text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
                   {row.label}
@@ -177,7 +184,7 @@ function StabilitySpotlight({ rows }: { rows: PlacementRowDatum[] }) {
             <div className="mt-5 grid gap-3 sm:grid-cols-3">
               <div className="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-slate-950/70">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-500">
-                  Avg finish
+                  {t("analysis.overview.averageFinishShort")}
                 </p>
                 <p className="mt-2 text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
                   {row.meanPlacement.toFixed(2)}
@@ -185,7 +192,7 @@ function StabilitySpotlight({ rows }: { rows: PlacementRowDatum[] }) {
               </div>
               <div className="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-slate-950/70">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-500">
-                  Std dev
+                  {t("analysis.overview.standardDeviation")}
                 </p>
                 <p className="mt-2 text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
                   {row.standardDeviation.toFixed(2)}
@@ -193,7 +200,7 @@ function StabilitySpotlight({ rows }: { rows: PlacementRowDatum[] }) {
               </div>
               <div className="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-slate-950/70">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-500">
-                  Boom or bust
+                  {t("analysis.overview.boomOrBust")}
                 </p>
                 <p className="mt-2 text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
                   {formatPercent(row.boomBustRate)}
@@ -208,6 +215,7 @@ function StabilitySpotlight({ rows }: { rows: PlacementRowDatum[] }) {
 }
 
 function DistributionRow({ row }: { row: PlacementRowDatum }) {
+  const { t } = useTranslation();
   const gradient = stackedBarGradient(row);
   return (
     <article className="rounded-3xl border border-slate-200 bg-slate-50/90 p-5 dark:border-slate-800 dark:bg-slate-950/50">
@@ -224,10 +232,14 @@ function DistributionRow({ row }: { row: PlacementRowDatum }) {
               {row.label}
             </span>
             <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">
-              Avg finish {row.meanPlacement.toFixed(2)}
+              {t("analysis.overview.averageFinish", {
+                value: row.meanPlacement.toFixed(2),
+              })}
             </span>
             <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">
-              Stability {Math.round(row.stabilityScore)}
+              {t("analysis.overview.stabilityScore", {
+                value: Math.round(row.stabilityScore),
+              })}
             </span>
           </div>
           <div className="mt-4 overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700">
@@ -237,7 +249,7 @@ function DistributionRow({ row }: { row: PlacementRowDatum }) {
                   key={`${row.basicId}-header-${placementIndex}`}
                   className="px-2 py-2 text-center"
                 >
-                  {getPlacementLabel(placementIndex)}
+                  {t(`common.placements.${placementIndex}`)}
                 </div>
               ))}
             </div>
@@ -260,7 +272,7 @@ function DistributionRow({ row }: { row: PlacementRowDatum }) {
         <div className="grid shrink-0 gap-3 sm:grid-cols-3 xl:w-[21rem] xl:grid-cols-1">
           <div className="rounded-2xl bg-white px-4 py-3 shadow-sm shadow-slate-900/5 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-500">
-              Win rate
+              {t("analysis.overview.winRate")}
             </p>
             <p className="mt-2 text-lg font-bold tracking-tight text-slate-900 dark:text-slate-50">
               {formatPercent(row.winRate)}
@@ -268,7 +280,7 @@ function DistributionRow({ row }: { row: PlacementRowDatum }) {
           </div>
           <div className="rounded-2xl bg-white px-4 py-3 shadow-sm shadow-slate-900/5 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-500">
-              Podium rate
+              {t("analysis.overview.podiumRate")}
             </p>
             <p className="mt-2 text-lg font-bold tracking-tight text-slate-900 dark:text-slate-50">
               {formatPercent(row.podiumRate)}
@@ -276,7 +288,7 @@ function DistributionRow({ row }: { row: PlacementRowDatum }) {
           </div>
           <div className="rounded-2xl bg-white px-4 py-3 shadow-sm shadow-slate-900/5 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-500">
-              Bottom-two rate
+              {t("analysis.overview.bottomTwoRate")}
             </p>
             <p className="mt-2 text-lg font-bold tracking-tight text-slate-900 dark:text-slate-50">
               {formatPercent(row.bottomTwoRate)}
@@ -289,19 +301,20 @@ function DistributionRow({ row }: { row: PlacementRowDatum }) {
 }
 
 function PlacementDistributionPanel({ rows }: { rows: PlacementRowDatum[] }) {
+  const { t } = useTranslation();
   return (
     <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-md shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-900/60 dark:shadow-2xl dark:shadow-slate-950/60">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-base font-bold tracking-tight text-slate-800 dark:text-slate-100">
-            Rank distribution
+            {t("analysis.overview.distributionEyebrow")}
           </p>
           <h3 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
-            Full 1st-through-6th finish profile
+            {t("analysis.overview.distributionTitle")}
           </h3>
         </div>
         <span className="text-sm text-slate-500 dark:text-slate-400">
-          Each bar reads left to right from first place to last place
+          {t("analysis.overview.distributionHint")}
         </span>
       </div>
       <div className="mt-6 space-y-4">
@@ -314,15 +327,17 @@ function PlacementDistributionPanel({ rows }: { rows: PlacementRowDatum[] }) {
 }
 
 export function OverviewPanel({ snapshot }: OverviewPanelProps) {
+  const { getCharacterName, language } = useTranslation();
   const rows = useMemo(
     () =>
       sortRows(
         derivePlacementRows(
           snapshot.selectedBasicIds,
-          snapshot.finalPlacementCountsByBasicId
+          snapshot.finalPlacementCountsByBasicId,
+          getCharacterName
         )
       ),
-    [snapshot.finalPlacementCountsByBasicId, snapshot.selectedBasicIds]
+    [getCharacterName, language, snapshot.finalPlacementCountsByBasicId, snapshot.selectedBasicIds]
   );
 
   return (

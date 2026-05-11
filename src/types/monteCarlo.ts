@@ -1,3 +1,4 @@
+import type { LocalizedText } from "@/i18n";
 import type { DangoId } from "@/types/game";
 
 export type MonteCarloScenarioKind =
@@ -19,7 +20,7 @@ export type MonteCarloAggregateSnapshot = {
   selectedBasicIds: DangoId[];
   participantCount: number;
   scenarioKind: MonteCarloScenarioKind;
-  scenarioLabel: string;
+  scenarioLabel: LocalizedText;
   winsByBasicId: Record<string, number>;
   preliminaryWinsByBasicId: Record<string, number>;
   finalPlacementCountsByBasicId: Record<string, PlacementCountVector>;

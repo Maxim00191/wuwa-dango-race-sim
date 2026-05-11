@@ -1,10 +1,12 @@
 import type { DangoId } from "@/types/game";
+import { useTranslation } from "@/i18n/LanguageContext";
+import type { TranslatableContent } from "@/i18n";
 import { accentFillHexForDango } from "@/services/dangoColors";
 
 export type BroadcastBannerPayload = {
   variant: "turn" | "roll" | "skill" | "idle" | "teleport" | "slide" | "victory";
-  headline: string;
-  detail?: string;
+  headline: TranslatableContent;
+  detail?: TranslatableContent;
   accentDangoId?: DangoId;
 };
 
@@ -44,6 +46,7 @@ const headlineClass: Record<BroadcastBannerPayload["variant"], string> = {
 };
 
 export function BroadcastBanner({ payload }: BroadcastBannerProps) {
+  const { tText } = useTranslation();
   if (!payload) {
     return null;
   }
@@ -77,8 +80,8 @@ export function BroadcastBanner({ payload }: BroadcastBannerProps) {
         : "mt-1.5 text-xs font-normal leading-snug text-slate-600 dark:text-slate-300 sm:text-[13px]";
   return (
     <div className={wrapperClass} style={accentShell}>
-      <p className={headlineResolved}>{payload.headline}</p>
-      {payload.detail ? <p className={detailResolved}>{payload.detail}</p> : null}
+      <p className={headlineResolved}>{tText(payload.headline)}</p>
+      {payload.detail ? <p className={detailResolved}>{tText(payload.detail)}</p> : null}
     </div>
   );
 }

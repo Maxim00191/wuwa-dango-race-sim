@@ -1,12 +1,11 @@
 import { useMemo } from "react";
+import { useTranslation } from "@/i18n/LanguageContext";
 import type { DangoId } from "@/types/game";
 import type { MonteCarloAggregateSnapshot } from "@/types/monteCarlo";
 import {
   colorWithAlpha,
   derivePlacementRows,
   formatPercent,
-  getDangoLabel,
-  getPlacementLabel,
   type PlacementRowDatum,
 } from "@/components/analysis/analytics";
 
@@ -46,6 +45,7 @@ function ConditionalHeatmap({
   rows: PlacementRowDatum[];
   selectedWinnerId: DangoId;
 }) {
+  const { t } = useTranslation();
   const orderedRows = useMemo(() => {
     const winnerRow = rows.find((row) => row.basicId === selectedWinnerId);
     const otherRows = rows
@@ -57,10 +57,10 @@ function ConditionalHeatmap({
   return (
     <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm shadow-slate-900/5 dark:border-slate-700 dark:bg-slate-950/70">
       <div className="grid grid-cols-[minmax(11rem,1.2fr)_repeat(6,minmax(0,1fr))] border-b border-slate-200 bg-slate-50 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-400">
-        <div className="px-4 py-3">Dango</div>
+        <div className="px-4 py-3">{t("analysis.conditional.tableDango")}</div>
         {rows[0]?.rates.map((_, placementIndex) => (
           <div key={`conditional-header-${placementIndex}`} className="px-2 py-3 text-center">
-            {getPlacementLabel(placementIndex)}
+            {t(`common.placements.${placementIndex}`)}
           </div>
         ))}
       </div>
@@ -79,7 +79,9 @@ function ConditionalHeatmap({
                 {row.label}
               </p>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Avg finish {row.meanPlacement.toFixed(2)}
+                {t("analysis.conditional.averageFinish", {
+                  value: row.meanPlacement.toFixed(2),
+                })}
               </p>
             </div>
           </div>
@@ -102,8 +104,10 @@ function ConditionalHeatmap({
                   </p>
                   <p className="text-[11px] font-semibold tracking-[0.16em] opacity-80">
                     {sampleSize > 0
-                      ? `${row.counts[placementIndex] ?? 0} runs`
-                      : "0 runs"}
+                      ? t("analysis.conditional.runs", {
+                          count: row.counts[placementIndex] ?? 0,
+                        })
+                      : t("analysis.conditional.runs", { count: 0 })}
                   </p>
                 </div>
               </div>
@@ -126,6 +130,7 @@ function ConditionalSummary({
   rows: PlacementRowDatum[];
   selectedWinnerId: DangoId;
 }) {
+  const { t } = useTranslation();
   const otherRows = rows.filter((row) => row.basicId !== selectedWinnerId);
   const likelyRunnerUp = pickRunnerUp(otherRows);
   const mostLikelyLast = pickMostLikelyLast(otherRows);
@@ -133,42 +138,49 @@ function ConditionalSummary({
     <div className="grid gap-4">
       <div className="rounded-3xl border border-slate-200 bg-slate-900 p-6 text-slate-50 shadow-md shadow-slate-900/20 dark:border-slate-700">
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-300">
-          Scenario slice
+          {t("analysis.conditional.scenarioSlice")}
         </p>
         <h3 className="mt-2 text-2xl font-bold tracking-tight text-white">
-          {sampleSize.toLocaleString()} matching runs
+          {t("analysis.conditional.matchingRuns", {
+            count: sampleSize.toLocaleString(),
+          })}
         </h3>
         <p className="mt-2 text-sm text-slate-300">
-          {formatPercent(totalRuns > 0 ? (sampleSize / totalRuns) * 100 : 0)} of all
-          simulations ended with this dango taking first.
+          {t("analysis.conditional.matchingRunsHint", {
+            rate: formatPercent(totalRuns > 0 ? (sampleSize / totalRuns) * 100 : 0),
+          })}
         </p>
       </div>
       <div className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-md shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-900/60">
         <p className="text-base font-bold tracking-tight text-slate-900 dark:text-slate-50">
-          Most likely runner-up
+          {t("analysis.conditional.likelyRunnerUp")}
         </p>
         <p className="mt-2 text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
           {likelyRunnerUp?.label ?? "—"}
         </p>
         <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
           {(likelyRunnerUp?.rates[1] ?? 0) > 0
-            ? `${formatPercent(likelyRunnerUp?.rates[1] ?? 0)} chance to finish 2nd`
-            : "No matching runs yet"}
+            ? t("analysis.conditional.secondPlaceChance", {
+                rate: formatPercent(likelyRunnerUp?.rates[1] ?? 0),
+              })
+            : t("analysis.conditional.noMatchingRuns")}
         </p>
       </div>
       <div className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-md shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-900/60">
         <p className="text-base font-bold tracking-tight text-slate-900 dark:text-slate-50">
-          Most likely to crash to last
+          {t("analysis.conditional.likelyLast")}
         </p>
         <p className="mt-2 text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
           {mostLikelyLast?.label ?? "—"}
         </p>
         <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
           {(mostLikelyLast?.rates[mostLikelyLast.rates.length - 1] ?? 0) > 0
-            ? `${formatPercent(
-                mostLikelyLast?.rates[mostLikelyLast.rates.length - 1] ?? 0
-              )} chance to finish 6th`
-            : "No matching runs yet"}
+            ? t("analysis.conditional.sixthPlaceChance", {
+                rate: formatPercent(
+                  mostLikelyLast?.rates[mostLikelyLast.rates.length - 1] ?? 0
+                ),
+              })
+            : t("analysis.conditional.noMatchingRuns")}
         </p>
       </div>
     </div>
@@ -180,6 +192,7 @@ export function ConditionalAnalysisPanel({
   selectedWinnerId,
   onSelectedWinnerIdChange,
 }: ConditionalAnalysisPanelProps) {
+  const { getCharacterName, language, t } = useTranslation();
   const conditionalSnapshot =
     snapshot.conditionalPlacementCountsByWinnerId[selectedWinnerId];
   const sampleSize = conditionalSnapshot?.sampleSize ?? 0;
@@ -188,10 +201,13 @@ export function ConditionalAnalysisPanel({
       derivePlacementRows(
         snapshot.selectedBasicIds,
         conditionalSnapshot?.placementCountsByBasicId ??
-          snapshot.finalPlacementCountsByBasicId
+          snapshot.finalPlacementCountsByBasicId,
+        getCharacterName
       ),
     [
       conditionalSnapshot?.placementCountsByBasicId,
+      getCharacterName,
+      language,
       snapshot.finalPlacementCountsByBasicId,
       snapshot.selectedBasicIds,
     ]
@@ -201,14 +217,13 @@ export function ConditionalAnalysisPanel({
     <div className="grid gap-6">
       <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-md shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-900/60 dark:shadow-2xl dark:shadow-slate-950/60">
         <p className="text-base font-bold tracking-tight text-slate-800 dark:text-slate-100">
-          Conditional analysis
+          {t("analysis.conditional.eyebrow")}
         </p>
         <h3 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
-          If a specific dango wins, how does everyone else land?
+          {t("analysis.conditional.title")}
         </h3>
         <p className="mt-3 max-w-3xl text-sm text-slate-500 dark:text-slate-400">
-          Select a winner to filter the Monte Carlo batch to only those runs, then
-          compare the finishing distribution of every other dango inside that slice.
+          {t("analysis.conditional.description")}
         </p>
         <div className="mt-5 flex flex-wrap gap-2">
           {snapshot.selectedBasicIds.map((basicId) => {
@@ -226,7 +241,7 @@ export function ConditionalAnalysisPanel({
                     : "border-slate-300 bg-white text-slate-700 hover:border-slate-400 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-200"
                 }`}
               >
-                <span>{getDangoLabel(basicId)}</span>
+              <span>{getCharacterName(basicId)}</span>
                 <span className="ml-2 rounded-full bg-black/5 px-2 py-0.5 text-xs dark:bg-white/10">
                   {winnerSampleSize.toLocaleString()}
                 </span>

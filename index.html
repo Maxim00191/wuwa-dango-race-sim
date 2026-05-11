@@ -3,10 +3,22 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dango Scramble</title>
+    <title>Wuthering Waves Anniversary Dango Dash</title>
     <script>
       (function () {
         try {
+          var languageKey = "wuwa-dango-race-sim-language";
+          var storedLanguage = localStorage.getItem(languageKey);
+          var detectedLanguage =
+            storedLanguage === "zh-CN" ||
+            (storedLanguage !== "en" && navigator.language.toLowerCase().indexOf("zh") === 0)
+              ? "zh-CN"
+              : "en";
+          document.documentElement.lang = detectedLanguage;
+          document.title =
+            detectedLanguage === "zh-CN"
+              ? "鸣潮周年庆团子竞速模拟"
+              : "Wuthering Waves Anniversary Dango Dash";
           var key = "dango-scramble-color-mode";
           var stored = localStorage.getItem(key);
           var prefersDark = window.matchMedia(

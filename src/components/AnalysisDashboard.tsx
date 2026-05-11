@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ConditionalAnalysisPanel } from "@/components/analysis/ConditionalAnalysisPanel";
 import { OverviewPanel } from "@/components/analysis/OverviewPanel";
 import { TournamentInsights } from "@/components/analysis/TournamentInsights";
+import { useTranslation } from "@/i18n/LanguageContext";
 import {
   derivePlacementRows,
   formatPercent,
@@ -44,6 +45,7 @@ export function AnalysisDashboard({
   snapshot,
   onNavigateSimulation,
 }: AnalysisDashboardProps) {
+  const { getCharacterName, language, t, tText } = useTranslation();
   const availableTabs = useMemo<DashboardTabId[]>(
     () =>
       snapshot?.scenarioKind === "tournament"
@@ -66,7 +68,8 @@ export function AnalysisDashboard({
     () =>
       derivePlacementRows(
         snapshot?.selectedBasicIds ?? [],
-        snapshot?.finalPlacementCountsByBasicId ?? {}
+        snapshot?.finalPlacementCountsByBasicId ?? {},
+        getCharacterName
       ).sort((left, right) => {
         if (right.winRate !== left.winRate) {
           return right.winRate - left.winRate;
@@ -76,7 +79,7 @@ export function AnalysisDashboard({
         }
         return right.stabilityScore - left.stabilityScore;
       }),
-    [snapshot?.finalPlacementCountsByBasicId, snapshot?.selectedBasicIds]
+    [getCharacterName, language, snapshot?.finalPlacementCountsByBasicId, snapshot?.selectedBasicIds]
   );
 
   useEffect(() => {
@@ -94,14 +97,13 @@ export function AnalysisDashboard({
       <div className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center gap-6 px-4 py-16 text-center">
         <div className="max-w-lg space-y-3">
           <p className="text-base font-bold tracking-tight text-slate-800 dark:text-slate-100">
-            Results nook
+            {t("analysis.empty.eyebrow")}
           </p>
           <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50 md:text-3xl">
-            No cozy batch yet
+            {t("analysis.empty.title")}
           </h2>
           <p className="text-sm font-normal text-slate-500 dark:text-slate-400 md:text-base">
-            Hop back to Simulation and fire off a bulk run—when the bar fills up,
-            we'll tuck all the sweet summaries here for you.
+            {t("analysis.empty.description")}
           </p>
         </div>
         <button
@@ -109,7 +111,7 @@ export function AnalysisDashboard({
           onClick={onNavigateSimulation}
           className="rounded-full bg-emerald-500 px-8 py-3 text-sm font-semibold text-emerald-950 shadow-lg shadow-emerald-900/40 transition hover:bg-emerald-400"
         >
-          Back to the race
+          {t("analysis.empty.button")}
         </button>
       </div>
     );
@@ -142,15 +144,15 @@ export function AnalysisDashboard({
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="space-y-2">
           <p className="text-lg font-bold tracking-tight text-slate-800 dark:text-slate-100 md:text-xl">
-            Advanced analytics
+            {t("analysis.header.eyebrow")}
           </p>
           <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50 md:text-4xl">
-            {snapshot.scenarioLabel}
+            {tText(snapshot.scenarioLabel)}
           </h2>
           <p className="max-w-2xl text-sm font-normal text-slate-500 dark:text-slate-400 md:text-base">
-            From {snapshot.totalRuns.toLocaleString()} simulated runs with this same
-            lineup. This dashboard tracks full placement distributions, winner-based
-            conditional slices, and tournament seed-to-title transitions.
+            {t("analysis.header.description", {
+              runs: snapshot.totalRuns.toLocaleString(),
+            })}
           </p>
         </div>
         <button
@@ -158,35 +160,49 @@ export function AnalysisDashboard({
           onClick={onNavigateSimulation}
           className="self-start rounded-full border border-slate-300 px-5 py-2 text-sm font-semibold text-slate-800 transition hover:border-slate-400 hover:text-slate-950 md:self-auto dark:border-slate-600 dark:text-slate-100 dark:hover:text-white"
         >
-          Return to simulation
+          {t("analysis.header.back")}
         </button>
       </header>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricHighlightCard
-          label={snapshot.scenarioKind === "tournament" ? "Avg tournament length" : "Avg race length"}
+          label={
+            snapshot.scenarioKind === "tournament"
+              ? t("analysis.metrics.averageTournamentLength")
+              : t("analysis.metrics.averageRaceLength")
+          }
           value={averageTurnsToWin.toFixed(1)}
-          hint={snapshot.scenarioKind === "tournament" ? "Prelims plus finals combined" : "Average turns to finish"}
+          hint={
+            snapshot.scenarioKind === "tournament"
+              ? t("analysis.metrics.averageTournamentLengthHint")
+              : t("analysis.metrics.averageRaceLengthHint")
+          }
         />
         <MetricHighlightCard
-          label="Fastest finish"
+          label={t("analysis.metrics.fastestFinish")}
           value={String(minTurnsDisplay)}
-          hint="Shortest complete simulation in the batch"
+          hint={t("analysis.metrics.fastestFinishHint")}
         />
         <MetricHighlightCard
-          label="Lead title share"
+          label={t("analysis.metrics.titleShare")}
           value={
             dominantWinnerRow
               ? formatPercent(dominantWinnerRow.winRate)
               : "0.0%"
           }
-          hint={dominantWinnerRow ? `${dominantWinnerRow.label} wins most often` : "No winner data"}
+          hint={
+            dominantWinnerRow
+              ? t("analysis.metrics.titleShareHint", {
+                  name: dominantWinnerRow.label,
+                })
+              : t("analysis.metrics.noWinnerData")
+          }
         />
         <MetricHighlightCard
           label={
             snapshot.scenarioKind === "tournament"
-              ? "Bottom-half comeback"
-              : "Best stability"
+              ? t("analysis.metrics.bottomHalfComeback")
+              : t("analysis.metrics.bestStability")
           }
           value={
             snapshot.scenarioKind === "tournament"
@@ -197,10 +213,12 @@ export function AnalysisDashboard({
           }
           hint={
             snapshot.scenarioKind === "tournament"
-              ? "Titles won after placing 4th-6th in prelims"
+              ? t("analysis.metrics.bottomHalfComebackHint")
               : highestStabilityRow
-                ? `${highestStabilityRow.label} has the tightest finish spread`
-                : "No stability data"
+                ? t("analysis.metrics.stabilityHint", {
+                    name: highestStabilityRow.label,
+                  })
+                : t("analysis.metrics.noStabilityData")
           }
         />
       </section>
@@ -210,10 +228,10 @@ export function AnalysisDashboard({
           const selected = tabId === activeTab;
           const label =
             tabId === "overview"
-              ? "Overview"
+              ? t("analysis.tabs.overview")
               : tabId === "conditional"
-                ? "If Winner..."
-                : "Tournament";
+                ? t("analysis.tabs.conditional")
+                : t("analysis.tabs.tournament");
           return (
             <button
               key={tabId}

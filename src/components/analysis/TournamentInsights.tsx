@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "@/i18n/LanguageContext";
 import type { DangoId } from "@/types/game";
 import type { MonteCarloAggregateSnapshot } from "@/types/monteCarlo";
 import {
   colorWithAlpha,
   derivePlacementRows,
   formatPercent,
-  getDangoLabel,
-  getPlacementLabel,
   sumCounts,
   sumMatrixRow,
 } from "@/components/analysis/analytics";
@@ -27,11 +26,13 @@ type TournamentConversionRow = {
 };
 
 function createConversionRows(
-  snapshot: MonteCarloAggregateSnapshot
+  snapshot: MonteCarloAggregateSnapshot,
+  getCharacterName: (basicId: DangoId) => string
 ): TournamentConversionRow[] {
   const finalRows = derivePlacementRows(
     snapshot.selectedBasicIds,
-    snapshot.finalPlacementCountsByBasicId
+    snapshot.finalPlacementCountsByBasicId,
+    getCharacterName
   );
   const finalRowById = Object.fromEntries(
     finalRows.map((row) => [row.basicId, row])
@@ -55,7 +56,7 @@ function createConversionRows(
       underdogSample > 0 ? (underdogWins / underdogSample) * 100 : 0;
     return {
       basicId,
-      label: getDangoLabel(basicId),
+      label: getCharacterName(basicId),
       accentHex: finalRowById[basicId]?.accentHex ?? "#8b5cf6",
       topSeedSample,
       topSeedTitleRate,
@@ -118,6 +119,7 @@ function ConversionTable({
   focusedBasicId: DangoId;
   onFocusedBasicIdChange: (basicId: DangoId) => void;
 }) {
+  const { t } = useTranslation();
   const orderedRows = [...rows].sort((left, right) => {
     if (right.totalChampionships !== left.totalChampionships) {
       return right.totalChampionships - left.totalChampionships;
@@ -128,10 +130,10 @@ function ConversionTable({
   return (
     <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-md shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-900/60 dark:shadow-2xl dark:shadow-slate-950/60">
       <p className="text-base font-bold tracking-tight text-slate-800 dark:text-slate-100">
-        Per-dango conversion
+        {t("analysis.tournament.conversionEyebrow")}
       </p>
       <h3 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
-        Seed advantage vs comeback upside
+        {t("analysis.tournament.conversionTitle")}
       </h3>
       <div className="mt-5 space-y-3">
         {orderedRows.map((row) => {
@@ -158,30 +160,36 @@ function ConversionTable({
                   </p>
                 </div>
                 <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                  {row.totalChampionships.toLocaleString()} titles
+                  {t("analysis.tournament.titles", {
+                    count: row.totalChampionships.toLocaleString(),
+                  })}
                 </span>
               </div>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-2xl bg-white px-4 py-3 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-500">
-                    If 1st in prelims
+                    {t("analysis.tournament.ifFirstInPrelims")}
                   </p>
                   <p className="mt-2 text-lg font-bold tracking-tight text-slate-900 dark:text-slate-50">
                     {formatPercent(row.topSeedTitleRate)}
                   </p>
                   <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                    {row.topSeedSample.toLocaleString()} matching prelim runs
+                    {t("analysis.tournament.matchingPrelimRuns", {
+                      count: row.topSeedSample.toLocaleString(),
+                    })}
                   </p>
                 </div>
                 <div className="rounded-2xl bg-white px-4 py-3 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-500">
-                    If 4th-6th in prelims
+                    {t("analysis.tournament.ifFourthToSixthInPrelims")}
                   </p>
                   <p className="mt-2 text-lg font-bold tracking-tight text-slate-900 dark:text-slate-50">
                     {formatPercent(row.underdogTitleRate)}
                   </p>
                   <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                    {row.underdogSample.toLocaleString()} underdog entries
+                    {t("analysis.tournament.underdogEntries", {
+                      count: row.underdogSample.toLocaleString(),
+                    })}
                   </p>
                 </div>
               </div>
@@ -200,38 +208,40 @@ function TransitionHeatmap({
   snapshot: MonteCarloAggregateSnapshot;
   focusedBasicId: DangoId;
 }) {
+  const { getCharacterName, t } = useTranslation();
   const matrix = snapshot.preliminaryToFinalCountsByBasicId[focusedBasicId] ?? [];
   const totalFocusTitles = snapshot.winsByBasicId[focusedBasicId] ?? 0;
   const accentHex =
     derivePlacementRows([focusedBasicId], {
       [focusedBasicId]: snapshot.finalPlacementCountsByBasicId[focusedBasicId] ?? [],
-    })[0]?.accentHex ?? "#8b5cf6";
+    }, getCharacterName)[0]?.accentHex ?? "#8b5cf6";
 
   return (
     <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-md shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-900/60 dark:shadow-2xl dark:shadow-slate-950/60">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-base font-bold tracking-tight text-slate-800 dark:text-slate-100">
-            Focused transition map
+            {t("analysis.tournament.transitionEyebrow")}
           </p>
           <h3 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
-            {getDangoLabel(focusedBasicId)}
+            {getCharacterName(focusedBasicId)}
           </h3>
         </div>
         <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-950/70 dark:text-slate-300">
-          {totalFocusTitles.toLocaleString()} total titles
+          {t("analysis.tournament.totalTitles", {
+            count: totalFocusTitles.toLocaleString(),
+          })}
         </span>
       </div>
       <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
-        Rows are preliminary placements. Columns are final placements. Each row is
-        normalized so you can read conditional outcome probabilities directly.
+        {t("analysis.tournament.transitionDescription")}
       </p>
       <div className="mt-6 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm shadow-slate-900/5 dark:border-slate-700 dark:bg-slate-950/70">
         <div className="grid grid-cols-[minmax(8rem,0.9fr)_repeat(6,minmax(0,1fr))] border-b border-slate-200 bg-slate-50 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-400">
-          <div className="px-4 py-3">Prelim</div>
+          <div className="px-4 py-3">{t("analysis.tournament.prelimHeader")}</div>
           {Array.from({ length: snapshot.participantCount }, (_, placementIndex) => (
             <div key={`final-header-${placementIndex}`} className="px-2 py-3 text-center">
-              {getPlacementLabel(placementIndex)}
+              {t(`common.placements.${placementIndex}`)}
             </div>
           ))}
         </div>
@@ -244,7 +254,7 @@ function TransitionHeatmap({
               className="grid grid-cols-[minmax(8rem,0.9fr)_repeat(6,minmax(0,1fr))] border-b border-slate-200 last:border-b-0 dark:border-slate-800"
             >
               <div className="flex items-center px-4 py-3 text-sm font-semibold tracking-tight text-slate-900 dark:text-slate-50">
-                {getPlacementLabel(rowIndex)}
+                {t(`common.placements.${rowIndex}`)}
               </div>
               {Array.from(
                 { length: snapshot.participantCount },
@@ -267,7 +277,9 @@ function TransitionHeatmap({
                           {formatPercent(rate)}
                         </p>
                         <p className="text-[11px] font-semibold tracking-[0.16em] opacity-80">
-                          {count.toLocaleString()} runs
+                          {t("analysis.conditional.runs", {
+                            count: count.toLocaleString(),
+                          })}
                         </p>
                       </div>
                     </div>
@@ -283,7 +295,11 @@ function TransitionHeatmap({
 }
 
 export function TournamentInsights({ snapshot }: TournamentInsightsProps) {
-  const conversionRows = useMemo(() => createConversionRows(snapshot), [snapshot]);
+  const { getCharacterName, language, t } = useTranslation();
+  const conversionRows = useMemo(
+    () => createConversionRows(snapshot, getCharacterName),
+    [getCharacterName, language, snapshot]
+  );
   const bestLeader = useMemo(
     () =>
       pickBestByRate(
@@ -339,51 +355,53 @@ export function TournamentInsights({ snapshot }: TournamentInsightsProps) {
     <div className="grid gap-6">
       <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-md shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-900/60 dark:shadow-2xl dark:shadow-slate-950/60">
         <p className="text-base font-bold tracking-tight text-slate-800 dark:text-slate-100">
-          Tournament analytics
+          {t("analysis.tournament.eyebrow")}
         </p>
         <h3 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
-          Cross-round conversion and comeback pressure
+          {t("analysis.tournament.title")}
         </h3>
         <p className="mt-3 max-w-3xl text-sm text-slate-500 dark:text-slate-400">
-          These metrics link each preliminary seed to its eventual finals result, so
-          you can see who protects an advantage and who can still steal the title
-          from a bad opener.
+          {t("analysis.tournament.description")}
         </p>
         <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <HighlightCard
-            label="Top seed converts"
+            label={t("analysis.tournament.topSeedConverts")}
             value={formatPercent(
               snapshot.totalRuns > 0
                 ? (overallTopSeedClosures / snapshot.totalRuns) * 100
                 : 0
             )}
-            hint="Share of tournaments where the prelim winner also wins the finals"
+            hint={t("analysis.tournament.topSeedConvertsHint")}
           />
           <HighlightCard
-            label="Bottom-half comeback"
+            label={t("analysis.tournament.bottomHalfComeback")}
             value={formatPercent(
               snapshot.totalRuns > 0
                 ? (overallUnderdogTitles / snapshot.totalRuns) * 100
                 : 0
             )}
-            hint="Share of tournaments won by a dango that was 4th, 5th, or 6th in prelims"
+            hint={t("analysis.tournament.bottomHalfComebackHint")}
           />
           <HighlightCard
-            label="Best frontrunner"
+            label={t("analysis.tournament.bestFrontrunner")}
             value={bestLeader?.label ?? "—"}
             hint={
               bestLeader
-                ? `${formatPercent(bestLeader.topSeedTitleRate)} title rate after a 1st-place prelim`
-                : "No qualifying top-seed samples yet"
+                ? t("analysis.tournament.topSeedHint", {
+                    rate: formatPercent(bestLeader.topSeedTitleRate),
+                  })
+                : t("analysis.tournament.noTopSeedData")
             }
           />
           <HighlightCard
-            label="Best recovery artist"
+            label={t("analysis.tournament.bestRecoveryArtist")}
             value={bestComeback?.label ?? "—"}
             hint={
               bestComeback
-                ? `${formatPercent(bestComeback.underdogTitleRate)} title rate from 4th-6th prelim seeds`
-                : "No qualifying underdog samples yet"
+                ? t("analysis.tournament.underdogHint", {
+                    rate: formatPercent(bestComeback.underdogTitleRate),
+                  })
+                : t("analysis.tournament.noUnderdogData")
             }
           />
         </div>

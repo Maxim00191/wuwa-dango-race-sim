@@ -1,4 +1,5 @@
 import { rollInclusive } from "@/services/characters/dice";
+import { characterParam, text } from "@/i18n";
 import type {
   CharacterDefinition,
   DiceRollContext,
@@ -21,7 +22,10 @@ function rollCarlottaLuckyDoubleDice(
     diceValue,
     initialDiceValue: baseFace,
     skillNarrative: isLuckyDouble
-      ? `Carlotta's Skill! Roll doubled to ${diceValue}!`
+      ? text("simulation.skills.carlottaDouble", {
+          actor: characterParam("carlotta"),
+          value: diceValue,
+        })
       : undefined,
   };
 }

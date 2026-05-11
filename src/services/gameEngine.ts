@@ -8,6 +8,7 @@ import {
   SELECTABLE_BASIC_DANGO_IDS,
 } from "@/constants/ids";
 import { CHARACTER_BY_ID } from "@/services/characters";
+import { characterParam, directionParam, text, type LocalizedText } from "@/i18n";
 import {
   addClockwise,
   addCounterClockwise,
@@ -263,8 +264,9 @@ function evaluateAbbyResetScheduling(state: GameState): GameState {
   }
   const nextState = appendLog(state, {
     kind: "abbyResetScheduled",
-    message:
-      "Abby's having a quiet moment behind everyone—she'll bounce back to start next turn.",
+    message: text("simulation.log.abbyResetScheduled", {
+      actor: characterParam(ABBY_ID),
+    }),
   });
   return { ...nextState, abbyPendingTeleportToStart: true };
 }
@@ -309,7 +311,9 @@ function teleportAbbyToStartLine(state: GameState): GameState {
   );
   nextState = appendLog(nextState, {
     kind: "abbyTeleport",
-    message: "Abby toddles back to the start line for another charge.",
+    message: text("simulation.log.abbyTeleport", {
+      actor: characterParam(ABBY_ID),
+    }),
   });
   return nextState;
 }
@@ -352,7 +356,7 @@ function resolveMovementDiceValue(
 ): {
   diceValue: number;
   entityPatches?: Partial<Record<DangoId, Partial<EntityRuntimeState>>>;
-  skillNarrative?: string;
+  skillNarrative?: LocalizedText;
 } {
   const character = CHARACTER_BY_ID[plan.actorId];
   const handler = character?.skillHooks.resolveMovement;
@@ -392,11 +396,11 @@ function applyMovementStepHooksForTravelGroup(
 ): {
   state: GameState;
   segments: PlaybackSegment[];
-  skillNarratives: string[];
+  skillNarratives: LocalizedText[];
 } {
   let nextState = state;
   const segments: PlaybackSegment[] = [];
-  const skillNarratives: string[] = [];
+  const skillNarratives: LocalizedText[] = [];
   for (const subjectId of baseContext.travelingIds) {
     const handler = CHARACTER_BY_ID[subjectId]?.skillHooks.afterMovementStep;
     if (!handler) {
@@ -578,7 +582,9 @@ function resolveTurnForEntity(
     return {
       state: appendLog(state, {
         kind: "standby",
-        message: `${character.displayName} is still stretching—boss joins once things heat up.`,
+        message: text("simulation.log.standby", {
+          actor: characterParam(actingEntityId),
+        }),
       }),
       segments: [
         {
@@ -612,7 +618,10 @@ function resolveTurnForEntity(
   };
   nextState = appendLog(nextState, {
     kind: "roll",
-    message: `${character.displayName} rolls a ${plan.initialDiceValue}!`,
+    message: text("simulation.log.roll", {
+      actor: characterParam(actingEntityId),
+      value: plan.initialDiceValue,
+    }),
   });
   for (const narrative of [plan.skillNarrative, movementOutcome.skillNarrative]) {
     if (!narrative) {
@@ -642,7 +651,9 @@ function resolveTurnForEntity(
     return {
       state: appendLog(nextState, {
         kind: "skipNotBottom",
-        message: `${character.displayName} can't hop yet—this spot wants someone else first.`,
+        message: text("simulation.log.skipNotBottom", {
+          actor: characterParam(actingEntityId),
+        }),
       }),
       segments: [
         {
@@ -663,7 +674,11 @@ function resolveTurnForEntity(
   segments.push(...movementResult.segments);
   nextState = appendLog(nextState, {
     kind: "move",
-    message: `${character.displayName} pitter-patters ${resolvedMovementStepCount} steps ${character.travelDirection}.`,
+    message: text("simulation.log.move", {
+      actor: characterParam(actingEntityId),
+      steps: resolvedMovementStepCount,
+      direction: directionParam(character.travelDirection),
+    }),
   });
   const destinationStackCellIndex = findCellIndexForEntity(
     nextState.cells,
@@ -711,20 +726,21 @@ function resolveTurnForEntity(
     });
     afterEffectState = appendLog(afterEffectState, {
       kind: "cellEffect",
-      message: "A sparkly cell nudges the whole stack a little farther.",
+      message: text("simulation.log.cellEffectBoost"),
     });
   } else if (boardEffectByCellIndex.get(destinationStackCellIndex)) {
     afterEffectState = appendLog(afterEffectState, {
       kind: "cellEffect",
-      message: "A sparkly cell hums hello to the stack.",
+      message: text("simulation.log.cellEffectHum"),
     });
   }
   const winnerId = pickWinnerBasicDangoId(afterEffectState);
   if (winnerId) {
-    const winnerDisplay = CHARACTER_BY_ID[winnerId]?.displayName ?? winnerId;
     const finished = appendLog(afterEffectState, {
       kind: "win",
-      message: `${winnerDisplay} finishes a lap and steals the whole hug.`,
+      message: text("simulation.log.win", {
+        winner: characterParam(winnerId),
+      }),
     });
     return {
       state: {
@@ -821,7 +837,9 @@ function openNextTurnWithDicePlans(state: GameState): {
   };
   nextState = appendLog(nextState, {
     kind: "turnHeader",
-    message: `Turn ${nextState.turnIndex} starts—everyone take a breath.`,
+    message: text("simulation.log.turnHeader", {
+      turn: nextState.turnIndex,
+    }),
   });
   const orderedActors = shuffleOrderStableCopy(nextState.entityOrder);
   const { plansByActorId, allInitialRollsById, allResolvedRollsById } =

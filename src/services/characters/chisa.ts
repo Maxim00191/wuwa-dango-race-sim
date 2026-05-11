@@ -1,4 +1,5 @@
 import { rollInclusive } from "@/services/characters/dice";
+import { characterParam, text } from "@/i18n";
 import type {
   CharacterDefinition,
   DiceRollContext,
@@ -31,7 +32,9 @@ function resolveChisaUnderdogMovement(
   }
   return {
     diceValue: context.diceValue + 2,
-    skillNarrative: `Chisa's Skill! Underdog boost adds 2 steps!`,
+    skillNarrative: text("simulation.skills.chisaUnderdog", {
+      actor: characterParam("chisa"),
+    }),
   };
 }
 
