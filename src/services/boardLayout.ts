@@ -71,6 +71,20 @@ export function ellipseOutwardUnitAtAngle(
   return { x: vx / length, y: vy / length };
 }
 
+export function ellipseTangentUnitAtAngle(
+  radiusX: number,
+  radiusY: number,
+  angleRadians: number
+): { x: number; y: number } {
+  const vx = -radiusX * Math.sin(angleRadians);
+  const vy = radiusY * Math.cos(angleRadians);
+  const length = Math.hypot(vx, vy);
+  if (length === 0) {
+    return { x: 0, y: 1 };
+  }
+  return { x: vx / length, y: vy / length };
+}
+
 export function buildLinearBoardDescriptor(): BoardCellDefinition[] {
   return Array.from({ length: CELL_COUNT }, (_, index) => {
     const cellIndex = index + 1;

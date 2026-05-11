@@ -144,7 +144,7 @@ export function GameShell({
   ]);
 
   return (
-    <div className="flex min-h-screen w-full flex-col gap-8 px-4 py-8 text-slate-900 dark:text-slate-100 sm:px-6 md:px-10 lg:px-14 xl:px-16 2xl:px-24">
+    <div className="flex min-h-screen w-full flex-col gap-6 px-4 py-8 text-slate-900 dark:text-slate-100 sm:px-6 md:px-10 lg:gap-8 lg:px-14 xl:px-16 2xl:px-24">
       <header className="flex w-full flex-col gap-3">
         <p className="text-lg font-bold tracking-tight text-slate-800 dark:text-slate-100 md:text-xl">
           {headerEyebrow}
@@ -265,9 +265,9 @@ export function GameShell({
 
       {showSetupPanel ? setupPanel : null}
 
-      <div className="grid w-full gap-8 lg:grid-cols-[minmax(0,2.3fr)_minmax(0,1fr)] lg:gap-10 xl:grid-cols-[minmax(0,2.85fr)_minmax(0,1fr)] xl:gap-12 2xl:grid-cols-[minmax(0,3.1fr)_minmax(0,1fr)]">
-        <section className="flex min-w-0 flex-col rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-md shadow-slate-900/10 backdrop-blur dark:border-slate-800 dark:bg-slate-900/60 dark:shadow-2xl dark:shadow-slate-950/60 lg:min-h-[min(72vh,780px)] xl:p-8">
-          <div className="mb-4 flex shrink-0 flex-col gap-3">
+      <div className="grid min-h-0 w-full flex-1 items-stretch gap-8 lg:grid-cols-[minmax(0,2.3fr)_minmax(0,1fr)] lg:gap-10 xl:grid-cols-[minmax(0,2.85fr)_minmax(0,1fr)] xl:gap-12 2xl:grid-cols-[minmax(0,3.1fr)_minmax(0,1fr)]">
+        <section className="grid min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)_auto] rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-md shadow-slate-900/10 backdrop-blur dark:border-slate-800 dark:bg-slate-900/60 dark:shadow-2xl dark:shadow-slate-950/60 xl:p-8">
+          <div className="flex min-w-0 flex-col gap-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-base font-bold tracking-tight text-slate-800 dark:text-slate-100">
@@ -290,17 +290,21 @@ export function GameShell({
               presentation={turnQueuePresentation}
             />
           </div>
-          <div className="relative min-h-[min(42vh,420px)] flex-1 overflow-hidden lg:min-h-[min(48vh,520px)]">
-            <CircularBoard
-              boardCells={boardCells}
-              boardEffects={boardEffects}
-              hoppingEntityIds={hoppingEntityIds}
-            />
-            <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center px-2">
-              <BroadcastBanner payload={broadcastPayload} />
+          <div className="min-h-0 min-w-0 py-4">
+            <div className="relative h-full min-h-[clamp(22rem,46vh,40rem)] min-w-0 overflow-hidden rounded-[2rem] border border-slate-200/80 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.85),_rgba(226,232,240,0.8)_38%,_rgba(148,163,184,0.28)_100%)] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.65),0_24px_60px_rgba(15,23,42,0.12)] dark:border-slate-700/70 dark:bg-[radial-gradient(circle_at_top,_rgba(30,41,59,0.95),_rgba(15,23,42,0.94)_38%,_rgba(2,6,23,0.96)_100%)] dark:shadow-[inset_0_1px_0_rgba(148,163,184,0.16),0_28px_80px_rgba(2,6,23,0.55)]">
+              <div className="relative h-full w-full overflow-hidden rounded-[1.55rem] bg-white/35 dark:bg-slate-950/20">
+                <CircularBoard
+                  boardCells={boardCells}
+                  boardEffects={boardEffects}
+                  hoppingEntityIds={hoppingEntityIds}
+                />
+                <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center px-2">
+                  <BroadcastBanner payload={broadcastPayload} />
+                </div>
+              </div>
             </div>
           </div>
-          <div className="mt-6 shrink-0 grid gap-4 text-sm text-slate-600 dark:text-slate-300 sm:grid-cols-2 xl:grid-cols-5">
+          <div className="grid shrink-0 gap-4 pt-2 text-sm text-slate-600 dark:text-slate-300 sm:grid-cols-2 xl:grid-cols-5">
             <LegendSwatch
               label={t("game.board.legend.finishLine.label")}
               description={t("game.board.legend.finishLine.description")}
