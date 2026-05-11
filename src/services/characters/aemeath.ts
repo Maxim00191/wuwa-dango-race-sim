@@ -55,7 +55,7 @@ function resolveAemeathMidpointLeap(
   context: PostMovementHookContext
 ): SkillHookResolution {
   const entity = state.entities[context.rollerId];
-  if (!entity || entity.hasUsedMidpointLeap) {
+  if (!entity || entity.skillState.hasUsedMidpointLeap) {
     return { state };
   }
   if (!context.landingCells.includes(MIDPOINT_CELL_INDEX)) {
@@ -85,7 +85,10 @@ function resolveAemeathMidpointLeap(
         ...entity,
         cellIndex: destinationCellIndex,
         raceDisplacement: entity.raceDisplacement + nearestTarget.distance,
-        hasUsedMidpointLeap: true,
+        skillState: {
+          ...entity.skillState,
+          hasUsedMidpointLeap: true,
+        },
       },
     },
   };
@@ -109,6 +112,7 @@ export const aemeathCharacter: CharacterDefinition = {
   id: "aemeath",
   displayName: "Aemeath",
   role: "basic",
+  attribute: "Fusion",
   diceRoll: rollAemeathDice,
   travelDirection: "clockwise",
   activateAfterTurnIndex: 0,

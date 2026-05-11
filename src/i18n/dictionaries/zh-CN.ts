@@ -16,7 +16,21 @@ export const zhCnDictionary: TranslationDictionary = {
     carlotta: "珂莱塔",
     chisa: "千咲",
     shorekeeper: "守岸人",
+    luukHerssen: "陆·赫斯",
+    sigrika: "西格莉卡",
+    denia: "达妮娅",
+    hiyuki: "绯雪",
+    phoebe: "菲比",
+    cartethyia: "卡提希娅",
     abby: "布大王",
+  },
+  attributes: {
+    fusion: "热熔",
+    glacio: "冷凝",
+    aero: "气动",
+    electro: "导电",
+    spectro: "衍射",
+    havoc: "湮灭",
   },
   common: {
     directions: {
@@ -86,7 +100,7 @@ export const zhCnDictionary: TranslationDictionary = {
       title: "索拉里斯冲刺",
       description:
         "跳跃、叠层、利用赛道装置，在单场庆典规则下争夺第一名。",
-      start: "开启冲刺",
+      start: "开始竞赛",
     },
   },
   tournament: {
@@ -158,6 +172,11 @@ export const zhCnDictionary: TranslationDictionary = {
     statusOpen: "{selected} / {total} 已就位 · 还有 {remaining} 个空位",
     spotsOne: "名额",
     spotsOther: "名额",
+    clear: "清空选择",
+    selected: "已选",
+    available: "可选",
+    locked: "已满",
+    attributeEmpty: "暂无角色",
   },
   monteCarlo: {
     runBatch: "运行 {count} 次",
@@ -176,8 +195,8 @@ export const zhCnDictionary: TranslationDictionary = {
   game: {
     controls: {
       watch: "观赛模式",
-      step: "步进一拍",
-      playTurn: "播放本回合",
+      step: "下一步",
+      playTurn: "播放一回合",
       playingTurn: "正在播放...",
       pauseAuto: "暂停自动演播",
       autoRun: "开启自动演播",
@@ -343,8 +362,8 @@ export const zhCnDictionary: TranslationDictionary = {
       roll: "{actor} 掷出了 {value} 点。",
       skipNotBottom: "{actor} 踩在别的团子背上，无法自己移动，只能随波逐流。",
       move: "{actor} 沿着{direction}轻快地跃进了 {steps} 格。",
-      cellPropulsion: "踩中推进装置！该格上的整层团子都被向顺时针方向推进了 1 格。",
-      cellHindrance: "触发阻遏装置！该格上的整层团子都被向逆时针方向推回了 1 格。",
+      cellPropulsion: "踩中推进装置！该格上的整层团子都被向顺时针方向推进了 {steps} 格。",
+      cellHindrance: "触发阻遏装置！该格上的整层团子都被向逆时针方向推回了 {steps} 格。",
       cellRift: "卷入时空裂隙！该格的叠层顺序被重新打乱。",
       win: "{winner} 率先跑完一整圈，拿下了二周年的冠军桂冠！",
       turnHeader: "第 {turn} 回合开始，全场屏息以待。",
@@ -355,6 +374,22 @@ export const zhCnDictionary: TranslationDictionary = {
       lynaeDouble: "{actor} 的技能闪耀！点数翻倍至 {value}。",
       lynaeStuck: "{actor} 的技能发生故障，本回合只能尴尬地留在原地。",
       aemeathLeap: "{actor} 撕裂空间，直接跃迁到了前方最近的层叠中！",
+      sigrikaMarkSingle:
+        "{actor} 锁定了 {target}，使其本回合移动减少 1 格。",
+      sigrikaMarkDouble:
+        "{actor} 锁定了 {firstTarget} 与 {secondTarget}，使其本回合移动都减少 1 格。",
+      deniaRepeat:
+        "{actor} 掷出了与上回合相同的点数，额外冲刺 2 格。",
+      hiyukiMetAbby:
+        "{actor} 与 {boss} 正面相遇，此后每回合都会永久额外获得 1 格移动。",
+      hiyukiBondedAdvance:
+        "{actor} 与 {boss} 的相遇带来了 1 格额外移动。",
+      phoebeLucky:
+        "{actor} 运气爆棚，额外获得 1 格移动。",
+      cartethyiaComebackAwaken:
+        "{actor} 掉到末位，进入翻盘状态。",
+      cartethyiaComebackBoost:
+        "{actor} 的翻盘状态爆发，额外获得 2 格移动。",
     },
   },
   banner: {

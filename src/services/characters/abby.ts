@@ -20,6 +20,7 @@ export const abbyCharacter: CharacterDefinition = {
   id: ABBY_ID,
   displayName: "Abby",
   role: "boss",
+  attribute: null,
   diceRoll: rollAbbyBossDice,
   travelDirection: "counterClockwise",
   activateAfterTurnIndex: 2,

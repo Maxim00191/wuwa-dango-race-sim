@@ -15,14 +15,16 @@ function rollMornyeSequentialDice(
   if (!entity) {
     return { diceValue: MORNYE_DICE_SEQUENCE[0]! };
   }
-  const ordinal = entity.sequentialDiceOrdinal ?? 0;
+  const ordinal = entity.skillState.sequentialDiceOrdinal ?? 0;
   const diceValue =
     MORNYE_DICE_SEQUENCE[ordinal % MORNYE_DICE_SEQUENCE.length]!;
   const nextOrdinal = (ordinal + 1) % MORNYE_DICE_SEQUENCE.length;
   return {
     diceValue,
     entityPatches: {
-      [context.rollerId]: { sequentialDiceOrdinal: nextOrdinal },
+      [context.rollerId]: {
+        skillState: { sequentialDiceOrdinal: nextOrdinal },
+      },
     },
   };
 }
@@ -31,6 +33,7 @@ export const mornyeCharacter: CharacterDefinition = {
   id: "mornye",
   displayName: "Mornye",
   role: "basic",
+  attribute: "Fusion",
   diceRoll: rollMornyeSequentialDice,
   travelDirection: "clockwise",
   activateAfterTurnIndex: 0,

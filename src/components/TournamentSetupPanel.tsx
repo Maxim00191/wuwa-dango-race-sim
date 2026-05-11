@@ -5,12 +5,13 @@ import { useTranslation } from "@/i18n/LanguageContext";
 import { useListFlipAnimation } from "@/hooks/useListFlipAnimation";
 import { CHARACTER_BY_ID } from "@/services/characters";
 import { getFinalStartCellIndexForPlacement } from "@/services/raceSetup";
-import type { CharacterDefinition, DangoId } from "@/types/game";
+import type { BasicCharacterDefinition, DangoId } from "@/types/game";
 
 type TournamentSetupPanelProps = {
-  rosterBasics: CharacterDefinition[];
+  rosterBasics: BasicCharacterDefinition[];
   selectedBasicIds: DangoId[];
   onToggleBasicId: (id: DangoId) => void;
+  onClearSelections: () => void;
   finalPlacements: DangoId[];
   preliminaryPlacements: DangoId[] | null;
   onSetFinalPlacements: (placements: DangoId[]) => void;
@@ -65,6 +66,7 @@ export function TournamentSetupPanel({
   rosterBasics,
   selectedBasicIds,
   onToggleBasicId,
+  onClearSelections,
   finalPlacements,
   preliminaryPlacements,
   onSetFinalPlacements,
@@ -183,6 +185,7 @@ export function TournamentSetupPanel({
         rosterBasics={rosterBasics}
         selectedBasicIds={selectedBasicIds}
         onToggleBasicId={onToggleBasicId}
+        onClearSelections={onClearSelections}
       />
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">

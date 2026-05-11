@@ -34,6 +34,7 @@ export const carlottaCharacter: CharacterDefinition = {
   id: "carlotta",
   displayName: "Carlotta",
   role: "basic",
+  attribute: "Glacio",
   diceRoll: rollCarlottaLuckyDoubleDice,
   travelDirection: "clockwise",
   activateAfterTurnIndex: 0,

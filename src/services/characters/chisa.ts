@@ -42,6 +42,7 @@ export const chisaCharacter: CharacterDefinition = {
   id: "chisa",
   displayName: "Chisa",
   role: "basic",
+  attribute: "Havoc",
   diceRoll: rollChisaDice,
   travelDirection: "clockwise",
   activateAfterTurnIndex: 0,

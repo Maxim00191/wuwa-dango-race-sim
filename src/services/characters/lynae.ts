@@ -44,6 +44,7 @@ export const lynaeCharacter: CharacterDefinition = {
   id: "lynae",
   displayName: "Lynae",
   role: "basic",
+  attribute: "Spectro",
   diceRoll: rollLynaeUnstableDice,
   travelDirection: "clockwise",
   activateAfterTurnIndex: 0,

@@ -4,6 +4,22 @@ export type CellIndex = number;
 
 export type DangoId = string;
 
+export type Attribute =
+  | "Fusion"
+  | "Glacio"
+  | "Aero"
+  | "Electro"
+  | "Spectro"
+  | "Havoc";
+
+export type EntitySkillState = {
+  sequentialDiceOrdinal?: number;
+  hasUsedMidpointLeap?: boolean;
+  previousRoll?: number;
+  hasMetAbby?: boolean;
+  comebackActive?: boolean;
+};
+
 export type TravelDirection = "clockwise" | "counterClockwise";
 
 export type RaceMode =
@@ -49,6 +65,26 @@ export type PostMovementHookHandler = (
   state: GameState,
   context: PostMovementHookContext
 ) => SkillHookResolution;
+
+export type TurnRollPreparationContext = {
+  turnIndex: number;
+  actorId: DangoId;
+  rankedBasicIds: DangoId[];
+  plansByActorId: Record<DangoId, TurnRollPlan | undefined>;
+  allInitialRollsById: Record<DangoId, number | undefined>;
+  allResolvedRollsById: Record<DangoId, number | undefined>;
+};
+
+export type TurnRollPreparationResolution = {
+  state: GameState;
+  planPatches?: Partial<Record<DangoId, Partial<TurnRollPlan>>>;
+  skillNarrative?: LocalizedText;
+};
+
+export type TurnRollPreparationHookHandler = (
+  state: GameState,
+  context: TurnRollPreparationContext
+) => TurnRollPreparationResolution;
 
 export type MovementEvaluationContext = {
   turnIndex: number;
@@ -98,7 +134,9 @@ export type MovementStepHookHandler = (
 export type CharacterSkillHooks = {
   afterDiceRoll?: SkillHookHandler;
   afterMovement?: PostMovementHookHandler;
+  afterMovementResolution?: PostMovementHookHandler;
   afterHalfwayCrossing?: SkillHookHandler;
+  afterTurnRolls?: TurnRollPreparationHookHandler;
   resolveMovement?: MovementEvaluationHookHandler;
   afterMovementStep?: MovementStepHookHandler;
 };
@@ -121,6 +159,7 @@ export type CellEffectShift = {
 export type CellEffectApplication = {
   state: GameState;
   shift?: CellEffectShift;
+  message?: LocalizedText;
 };
 
 export type CellEffectHandler = (
@@ -179,8 +218,7 @@ export type EntityRuntimeState = {
   id: DangoId;
   cellIndex: CellIndex;
   raceDisplacement: number;
-  sequentialDiceOrdinal?: number;
-  hasUsedMidpointLeap?: boolean;
+  skillState: EntitySkillState;
 };
 
 export type PlaybackIdleSegment = {
@@ -261,10 +299,17 @@ export type TurnPlaybackPlan = {
   turnQueue?: TurnQueueAttachment;
 };
 
+export type MovementModifier = {
+  sourceId: DangoId;
+  delta: number;
+  minimumSteps?: number;
+};
+
 export type TurnRollPlan = {
   actorId: DangoId;
   diceValue: number;
   initialDiceValue: number;
+  movementModifiers?: MovementModifier[];
   entityPatches?: Partial<Record<DangoId, Partial<EntityRuntimeState>>>;
   skillNarrative?: LocalizedText;
 };
@@ -304,15 +349,28 @@ export type DiceRollResult = {
   skillNarrative?: LocalizedText;
 };
 
-export type CharacterDefinition = {
+type CharacterDefinitionBase = {
   id: DangoId;
   displayName: string;
-  role: "basic" | "boss";
   diceRoll: (state: GameState, ctx: DiceRollContext) => DiceRollResult;
   travelDirection: TravelDirection;
   activateAfterTurnIndex: number;
   skillHooks: CharacterSkillHooks;
 };
+
+export type BasicCharacterDefinition = CharacterDefinitionBase & {
+  role: "basic";
+  attribute: Attribute;
+};
+
+export type BossCharacterDefinition = CharacterDefinitionBase & {
+  role: "boss";
+  attribute: null;
+};
+
+export type CharacterDefinition =
+  | BasicCharacterDefinition
+  | BossCharacterDefinition;
 
 export type GameAction =
   | { type: "INITIALIZE" }

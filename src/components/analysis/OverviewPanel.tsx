@@ -222,7 +222,7 @@ function DistributionRow({ row }: { row: PlacementRowDatum }) {
   return (
     <article className="rounded-3xl border border-slate-200 bg-slate-50/90 p-5 dark:border-slate-800 dark:bg-slate-950/50">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-        <div className="min-w-0">
+        <div className="min-w-0 w-full">
           <div className="flex flex-wrap items-center gap-3">
             <span
               className="inline-flex items-center rounded-full px-3 py-1 text-sm font-bold ring-1 ring-black/10"

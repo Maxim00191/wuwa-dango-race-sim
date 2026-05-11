@@ -23,6 +23,10 @@ export function useLineupSelection() {
     });
   }, []);
 
+  const clearSelectedBasicIds = useCallback(() => {
+    setSelectedBasicIds([]);
+  }, []);
+
   useEffect(() => {
     writePersistedLineupSelection(selectedBasicIds);
   }, [selectedBasicIds]);
@@ -31,5 +35,6 @@ export function useLineupSelection() {
     selectedBasicIds,
     setSelectedBasicIds,
     toggleSelectedBasicId,
+    clearSelectedBasicIds,
   };
 }

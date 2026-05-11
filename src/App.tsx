@@ -22,7 +22,7 @@ import {
   createEmptyMonteCarloAggregate,
 } from "@/services/monteCarloAggregate";
 import { runMonteCarloBatch } from "@/services/monteCarloRunner";
-import { CHARACTER_LIST } from "@/services/characters";
+import { BASIC_CHARACTER_LIST } from "@/services/characters";
 import {
   createCustomFinalRaceSetup,
   createNormalRaceSetup,
@@ -62,10 +62,7 @@ export default function App() {
   const monteCarloRunIdRef = useRef(0);
   const monteCarloAbortControllerRef = useRef<AbortController | null>(null);
 
-  const rosterBasics = useMemo(
-    () => CHARACTER_LIST.filter((character) => character.role === "basic"),
-    []
-  );
+  const rosterBasics = useMemo(() => BASIC_CHARACTER_LIST, []);
   const idleParticipantIds = useMemo(
     () => [...lineup.selectedBasicIds, ABBY_ID],
     [lineup.selectedBasicIds]
@@ -315,6 +312,7 @@ export default function App() {
                 rosterBasics={rosterBasics}
                 selectedBasicIds={lineup.selectedBasicIds}
                 onToggleBasicId={lineup.toggleSelectedBasicId}
+                onClearSelections={lineup.clearSelectedBasicIds}
               />
             }
             showSetupPanel={normalGame.state.phase === "idle"}
@@ -389,6 +387,7 @@ export default function App() {
                 rosterBasics={rosterBasics}
                 selectedBasicIds={lineup.selectedBasicIds}
                 onToggleBasicId={lineup.toggleSelectedBasicId}
+                onClearSelections={lineup.clearSelectedBasicIds}
                 finalPlacements={tournament.finalPlacements}
                 preliminaryPlacements={tournament.preliminaryPlacements}
                 onSetFinalPlacements={tournament.setFinalPlacements}

@@ -8,8 +8,6 @@ import type { DangoId } from "@/types/game";
 
 export const SAVED_LINEUP_STORAGE_KEY = "dango_scramble_saved_lineup";
 
-const GENERIC_BASIC_DANGO_ID = "bot1";
-
 const NAMED_LINEUP_PRIORITY: readonly string[] = [
   "mornye",
   "carlotta",
@@ -26,17 +24,6 @@ export function buildSmartDefaultPendingBasicIds(): DangoId[] {
 
   for (const id of NAMED_LINEUP_PRIORITY) {
     if (!allowed.has(id) || taken.has(id)) {
-      continue;
-    }
-    picked.push(id as DangoId);
-    taken.add(id);
-    if (picked.length === ACTIVE_BASIC_DANGO_COUNT) {
-      return picked;
-    }
-  }
-
-  for (const id of SELECTABLE_BASIC_DANGO_IDS) {
-    if (!allowed.has(id) || taken.has(id) || id === GENERIC_BASIC_DANGO_ID) {
       continue;
     }
     picked.push(id as DangoId);

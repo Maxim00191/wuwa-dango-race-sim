@@ -30,3 +30,9 @@ export function orderedRacerIdsForLeaderboard(state: GameState): DangoId[] {
     compareRacersByRank(left, right, state)
   );
 }
+
+export function orderedBasicRacerIdsForLeaderboard(state: GameState): DangoId[] {
+  return [...state.activeBasicIds].sort((left, right) =>
+    compareRacersByRank(left, right, state)
+  );
+}

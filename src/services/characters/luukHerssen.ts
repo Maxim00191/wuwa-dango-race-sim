@@ -6,21 +6,21 @@ import type {
   GameState,
 } from "@/types/game";
 
-function rollShorekeeperRestrictedDice(
+function rollLuukHerssenDice(
   state: GameState,
   context: DiceRollContext
 ): DiceRollResult {
   void state;
   void context;
-  return { diceValue: rollInclusive(2, 3) };
+  return { diceValue: rollInclusive(1, 3) };
 }
 
-export const shorekeeperCharacter: CharacterDefinition = {
-  id: "shorekeeper",
-  displayName: "Shorekeeper",
+export const luukHerssenCharacter: CharacterDefinition = {
+  id: "luukHerssen",
+  displayName: "Luuk Herssen",
   role: "basic",
   attribute: "Spectro",
-  diceRoll: rollShorekeeperRestrictedDice,
+  diceRoll: rollLuukHerssenDice,
   travelDirection: "clockwise",
   activateAfterTurnIndex: 0,
   skillHooks: {},

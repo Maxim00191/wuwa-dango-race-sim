@@ -1,4 +1,5 @@
 import { ABBY_ID } from "@/constants/ids";
+import { text } from "@/i18n";
 import {
   addClockwise,
   addCounterClockwise,
@@ -33,10 +34,16 @@ function moveTriggeredStack(
   state: GameState,
   stackBottomToTop: string[],
   fromCellIndex: number,
-  destinationCellIndex: number,
-  clockwiseDisplacementDelta: number,
-  direction: "clockwise" | "counterClockwise"
+  shiftSteps: number,
+  direction: "clockwise" | "counterClockwise",
+  messageKey: string
 ): CellEffectApplication {
+  const destinationCellIndex =
+    direction === "clockwise"
+      ? addClockwise(fromCellIndex, shiftSteps)
+      : addCounterClockwise(fromCellIndex, shiftSteps);
+  const clockwiseDisplacementDelta =
+    direction === "clockwise" ? shiftSteps : -shiftSteps;
   const nextCells = moveWholeStackCellsOnly(
     state.cells,
     fromCellIndex,
@@ -61,7 +68,16 @@ function moveTriggeredStack(
       toCell: destinationCellIndex,
       direction,
     },
+    message: text(messageKey, { steps: shiftSteps }),
   };
+}
+
+function resolveLuukAdjustedShiftSteps(
+  context: CellEffectTriggerContext,
+  defaultShiftSteps: number,
+  boostedShiftSteps: number
+): number {
+  return context.moverId === "luukHerssen" ? boostedShiftSteps : defaultShiftSteps;
 }
 
 const propulsionDeviceEffect: CellEffectDefinition = {
@@ -71,9 +87,9 @@ const propulsionDeviceEffect: CellEffectDefinition = {
       state,
       context.stackBottomToTop,
       context.destinationCellIndex,
-      addClockwise(context.destinationCellIndex, 1),
-      1,
-      "clockwise"
+      resolveLuukAdjustedShiftSteps(context, 1, 4),
+      "clockwise",
+      CELL_EFFECT_LOG_KEY_BY_ID[CELL_EFFECT_IDS.propulsionDevice]
     );
   },
 };
@@ -85,9 +101,9 @@ const hindranceDeviceEffect: CellEffectDefinition = {
       state,
       context.stackBottomToTop,
       context.destinationCellIndex,
-      addCounterClockwise(context.destinationCellIndex, 1),
-      -1,
-      "counterClockwise"
+      resolveLuukAdjustedShiftSteps(context, 1, 2),
+      "counterClockwise",
+      CELL_EFFECT_LOG_KEY_BY_ID[CELL_EFFECT_IDS.hindranceDevice]
     );
   },
 };

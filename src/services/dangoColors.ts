@@ -22,11 +22,17 @@ const BASIC_ACCENT_PALETTE = [
 
 const DANGO_ACCENT_OVERRIDES: Partial<Record<DangoId, string>> = {
   aemeath: "#f9a8d4",
+  cartethyia: "#d4b483",
   carlotta: "#ffffff",
   chisa: "#020617",
+  denia: "#fbcfe8",
+  hiyuki: "#fffafa",
   lynae: "#d6b48f",
+  luukHerssen: "#fde68a",
   mornye: "#c7d2fe",
+  phoebe: "#eab308",
   shorekeeper: "#3b82f6",
+  sigrika: "#fb923c",
 };
 
 function hashStringId(entityId: string): number {

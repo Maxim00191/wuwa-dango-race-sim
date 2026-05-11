@@ -16,7 +16,21 @@ export const enDictionary: TranslationDictionary = {
     carlotta: "Carlotta",
     chisa: "Chisa",
     shorekeeper: "Shorekeeper",
+    luukHerssen: "Luuk Herssen",
+    sigrika: "Sigrika",
+    denia: "Denia",
+    hiyuki: "Hiyuki",
+    phoebe: "Phoebe",
+    cartethyia: "Cartethyia",
     abby: "Abby",
+  },
+  attributes: {
+    fusion: "Fusion",
+    glacio: "Glacio",
+    aero: "Aero",
+    electro: "Electro",
+    spectro: "Spectro",
+    havoc: "Havoc",
   },
   common: {
     directions: {
@@ -165,6 +179,11 @@ export const enDictionary: TranslationDictionary = {
     statusOpen: "{selected} / {total} ready · {remaining} {spots} left",
     spotsOne: "slot",
     spotsOther: "slots",
+    clear: "Clear selections",
+    selected: "Selected",
+    available: "Available",
+    locked: "Full",
+    attributeEmpty: "No dangos yet",
   },
   monteCarlo: {
     runBatch: "Run {count} times",
@@ -371,9 +390,9 @@ export const enDictionary: TranslationDictionary = {
       move:
         "{actor} eagerly bounces {steps} steps {direction}.",
       cellPropulsion:
-        "Hit a Propulsion Device! The entire stack on that tile is pushed 1 tile clockwise.",
+        "Hit a Propulsion Device! The entire stack on that tile is pushed {steps} cells clockwise.",
       cellHindrance:
-        "Hit a Hindrance Device! The entire stack on that tile is pushed 1 tile counter-clockwise.",
+        "Hit a Hindrance Device! The entire stack on that tile is pushed {steps} cells counter-clockwise.",
       cellRift:
         "Caught in a Time Rift! The stack order on that tile is reshuffled.",
       win: "{winner} crosses the 32-step mark and claims the 2nd Anniversary Crown!",
@@ -386,6 +405,22 @@ export const enDictionary: TranslationDictionary = {
       lynaeStuck: "{actor}'s skill misfired. Stuck awkwardly in place for this turn.",
       aemeathLeap:
         "{actor} tears through space, leaping into the nearest stack ahead!",
+      sigrikaMarkSingle:
+        "{actor} marks {target}. Their movement is reduced by 1 this round.",
+      sigrikaMarkDouble:
+        "{actor} marks {firstTarget} and {secondTarget}. Their movement is reduced by 1 this round.",
+      deniaRepeat:
+        "{actor} matches her previous roll and bursts forward 2 extra steps.",
+      hiyukiMetAbby:
+        "{actor} meets {boss} and permanently gains 1 extra movement from future turns onward.",
+      hiyukiBondedAdvance:
+        "{actor}'s meeting with {boss} grants 1 extra step this turn.",
+      phoebeLucky:
+        "Luck smiles on {actor}, granting 1 extra step.",
+      cartethyiaComebackAwaken:
+        "{actor} drops to last place and enters Comeback state.",
+      cartethyiaComebackBoost:
+        "{actor}'s Comeback erupts for 2 extra steps.",
     },
   },
   banner: {

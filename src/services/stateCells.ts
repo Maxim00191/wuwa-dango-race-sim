@@ -8,7 +8,10 @@ export function cloneEntityMap(
   for (const id of Object.keys(entities)) {
     const runtime = entities[id];
     if (runtime) {
-      next[id] = { ...runtime };
+      next[id] = {
+        ...runtime,
+        skillState: { ...runtime.skillState },
+      };
     }
   }
   return next;
