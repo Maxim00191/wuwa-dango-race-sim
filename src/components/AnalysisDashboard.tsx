@@ -45,7 +45,7 @@ export function AnalysisDashboard({
   snapshot,
   onNavigateSimulation,
 }: AnalysisDashboardProps) {
-  const { getCharacterName, language, t, tText } = useTranslation();
+  const { getCharacterName, t, tText } = useTranslation();
   const availableTabs = useMemo<DashboardTabId[]>(
     () =>
       snapshot?.scenarioKind === "tournament"
@@ -79,7 +79,7 @@ export function AnalysisDashboard({
         }
         return right.stabilityScore - left.stabilityScore;
       }),
-    [getCharacterName, language, snapshot?.finalPlacementCountsByBasicId, snapshot?.selectedBasicIds]
+    [getCharacterName, snapshot?.finalPlacementCountsByBasicId, snapshot?.selectedBasicIds]
   );
 
   useEffect(() => {

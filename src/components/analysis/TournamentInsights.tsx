@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTheme } from "@/hooks/useTheme";
 import { useTranslation } from "@/i18n/LanguageContext";
+import { useSafeDangoColors } from "@/services/dangoColors";
 import type { DangoId } from "@/types/game";
 import type { MonteCarloAggregateSnapshot } from "@/types/monteCarlo";
 import {
@@ -9,6 +11,11 @@ import {
   sumCounts,
   sumMatrixRow,
 } from "@/components/analysis/analytics";
+import {
+  accessibleTextHexForFill,
+  blendHexColors,
+  themeSurfaceHex,
+} from "@/services/colorUtils";
 
 type TournamentInsightsProps = {
   snapshot: MonteCarloAggregateSnapshot;
@@ -27,12 +34,19 @@ type TournamentConversionRow = {
 
 function createConversionRows(
   snapshot: MonteCarloAggregateSnapshot,
-  getCharacterName: (basicId: DangoId) => string
+  getCharacterName: (basicId: DangoId) => string,
+  resolveRowColors: (
+    basicId: DangoId
+  ) => {
+    accentHex: string;
+    accentInkHex: string;
+  }
 ): TournamentConversionRow[] {
   const finalRows = derivePlacementRows(
     snapshot.selectedBasicIds,
     snapshot.finalPlacementCountsByBasicId,
-    getCharacterName
+    getCharacterName,
+    resolveRowColors
   );
   const finalRowById = Object.fromEntries(
     finalRows.map((row) => [row.basicId, row])
@@ -209,12 +223,12 @@ function TransitionHeatmap({
   focusedBasicId: DangoId;
 }) {
   const { getCharacterName, t } = useTranslation();
+  const { mode } = useTheme();
+  const getSafeDangoColors = useSafeDangoColors();
   const matrix = snapshot.preliminaryToFinalCountsByBasicId[focusedBasicId] ?? [];
   const totalFocusTitles = snapshot.winsByBasicId[focusedBasicId] ?? 0;
-  const accentHex =
-    derivePlacementRows([focusedBasicId], {
-      [focusedBasicId]: snapshot.finalPlacementCountsByBasicId[focusedBasicId] ?? [],
-    }, getCharacterName)[0]?.accentHex ?? "#8b5cf6";
+  const heatmapSurfaceHex = themeSurfaceHex(mode, "panel");
+  const accentHex = getSafeDangoColors(focusedBasicId).chartHex;
 
   return (
     <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-md shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-900/60 dark:shadow-2xl dark:shadow-slate-950/60">
@@ -262,7 +276,8 @@ function TransitionHeatmap({
                   const count = row[columnIndex] ?? 0;
                   const rate = rowTotal > 0 ? (count / rowTotal) * 100 : 0;
                   const alpha = 0.08 + (rate / 100) * 0.76;
-                  const textColor = rate >= 42 ? "#f8fafc" : "#0f172a";
+                  const cellHex = blendHexColors(accentHex, heatmapSurfaceHex, alpha);
+                  const textColor = accessibleTextHexForFill(cellHex);
                   return (
                     <div
                       key={`transition-cell-${rowIndex}-${columnIndex}`}
@@ -295,10 +310,21 @@ function TransitionHeatmap({
 }
 
 export function TournamentInsights({ snapshot }: TournamentInsightsProps) {
-  const { getCharacterName, language, t } = useTranslation();
+  const { getCharacterName, t } = useTranslation();
+  const getSafeDangoColors = useSafeDangoColors();
+  const resolveRowColors = useMemo(
+    () => (basicId: DangoId) => {
+      const { chartHex, chartInkHex } = getSafeDangoColors(basicId);
+      return {
+        accentHex: chartHex,
+        accentInkHex: chartInkHex,
+      };
+    },
+    [getSafeDangoColors]
+  );
   const conversionRows = useMemo(
-    () => createConversionRows(snapshot, getCharacterName),
-    [getCharacterName, language, snapshot]
+    () => createConversionRows(snapshot, getCharacterName, resolveRowColors),
+    [getCharacterName, resolveRowColors, snapshot]
   );
   const bestLeader = useMemo(
     () =>

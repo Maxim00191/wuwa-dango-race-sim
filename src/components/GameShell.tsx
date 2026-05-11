@@ -8,8 +8,7 @@ import { CircularBoard } from "@/components/CircularBoard";
 import { useTranslation } from "@/i18n/LanguageContext";
 import { CHARACTER_BY_ID } from "@/services/characters";
 import {
-  accentFillHexForDango,
-  contrastingInkHexForFill,
+  useSafeDangoColors,
 } from "@/services/dangoColors";
 import {
   PLAYBACK_SPEED_OPTIONS,
@@ -72,6 +71,7 @@ export function GameShell({
   onAutoPlayEnabledChange,
 }: GameShellProps) {
   const { getCharacterName, t, tText } = useTranslation();
+  const getSafeDangoColors = useSafeDangoColors();
   const { speedMultiplier, setSpeedMultiplier } = usePlaybackSettings();
   const racerParticipantIds = useMemo(() => {
     if (state.phase === "idle") {
@@ -347,22 +347,28 @@ export function GameShell({
                 const roll = state.lastRollById[character.id];
                 const rankVisible =
                   state.phase === "running" || state.phase === "finished";
-                const dangoAccentHex = accentFillHexForDango(participantId);
-                const rankInk = contrastingInkHexForFill(dangoAccentHex);
+                const {
+                  baseHex,
+                  baseInkHex,
+                  chartHex,
+                  uiOutlineHex,
+                  uiOutlineSoftHex,
+                } = getSafeDangoColors(participantId);
                 return (
                   <li
                     key={character.id}
                     data-flip-item={character.id}
                     className="flex items-center justify-between rounded-2xl border border-slate-200 border-l-4 bg-slate-50/90 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/60"
-                    style={{ borderLeftColor: dangoAccentHex }}
+                    style={{ borderLeftColor: chartHex }}
                   >
                     <div className="flex items-start gap-3">
                       {rankVisible ? (
                         <span
                           className="mt-0.5 inline-flex h-7 min-w-[2rem] items-center justify-center rounded-full px-2 text-xs font-semibold ring-1 ring-slate-900/15 dark:ring-black/20"
                           style={{
-                            backgroundColor: dangoAccentHex,
-                            color: rankInk,
+                            backgroundColor: baseHex,
+                            color: baseInkHex,
+                            boxShadow: `0 0 0 1px ${uiOutlineHex}, 0 0 0 4px ${uiOutlineSoftHex}`,
                           }}
                         >
                           #{leaderboardIndex + 1}

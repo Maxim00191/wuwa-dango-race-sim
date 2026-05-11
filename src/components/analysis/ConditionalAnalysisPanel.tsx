@@ -1,5 +1,7 @@
 import { useMemo } from "react";
+import { useTheme } from "@/hooks/useTheme";
 import { useTranslation } from "@/i18n/LanguageContext";
+import { useSafeDangoColors } from "@/services/dangoColors";
 import type { DangoId } from "@/types/game";
 import type { MonteCarloAggregateSnapshot } from "@/types/monteCarlo";
 import {
@@ -8,6 +10,11 @@ import {
   formatPercent,
   type PlacementRowDatum,
 } from "@/components/analysis/analytics";
+import {
+  accessibleTextHexForFill,
+  blendHexColors,
+  themeSurfaceHex,
+} from "@/services/colorUtils";
 
 type ConditionalAnalysisPanelProps = {
   snapshot: MonteCarloAggregateSnapshot;
@@ -46,6 +53,8 @@ function ConditionalHeatmap({
   selectedWinnerId: DangoId;
 }) {
   const { t } = useTranslation();
+  const { mode } = useTheme();
+  const heatmapSurfaceHex = themeSurfaceHex(mode, "panel");
   const orderedRows = useMemo(() => {
     const winnerRow = rows.find((row) => row.basicId === selectedWinnerId);
     const otherRows = rows
@@ -88,7 +97,8 @@ function ConditionalHeatmap({
           {row.rates.map((rate, placementIndex) => {
             const isWinnerCell = row.basicId === selectedWinnerId && placementIndex === 0;
             const alpha = isWinnerCell ? 0.92 : 0.08 + (rate / 100) * 0.72;
-            const textColor = rate >= 42 || isWinnerCell ? "#f8fafc" : "#0f172a";
+            const cellHex = blendHexColors(row.accentHex, heatmapSurfaceHex, alpha);
+            const textColor = accessibleTextHexForFill(cellHex);
             return (
               <div
                 key={`${row.basicId}-${placementIndex}`}
@@ -192,7 +202,18 @@ export function ConditionalAnalysisPanel({
   selectedWinnerId,
   onSelectedWinnerIdChange,
 }: ConditionalAnalysisPanelProps) {
-  const { getCharacterName, language, t } = useTranslation();
+  const { getCharacterName, t } = useTranslation();
+  const getSafeDangoColors = useSafeDangoColors();
+  const resolveRowColors = useMemo(
+    () => (basicId: DangoId) => {
+      const { chartHex, chartInkHex } = getSafeDangoColors(basicId);
+      return {
+        accentHex: chartHex,
+        accentInkHex: chartInkHex,
+      };
+    },
+    [getSafeDangoColors]
+  );
   const conditionalSnapshot =
     snapshot.conditionalPlacementCountsByWinnerId[selectedWinnerId];
   const sampleSize = conditionalSnapshot?.sampleSize ?? 0;
@@ -202,12 +223,13 @@ export function ConditionalAnalysisPanel({
         snapshot.selectedBasicIds,
         conditionalSnapshot?.placementCountsByBasicId ??
           snapshot.finalPlacementCountsByBasicId,
-        getCharacterName
+        getCharacterName,
+        resolveRowColors
       ),
     [
       conditionalSnapshot?.placementCountsByBasicId,
       getCharacterName,
-      language,
+      resolveRowColors,
       snapshot.finalPlacementCountsByBasicId,
       snapshot.selectedBasicIds,
     ]
@@ -241,7 +263,7 @@ export function ConditionalAnalysisPanel({
                     : "border-slate-300 bg-white text-slate-700 hover:border-slate-400 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-200"
                 }`}
               >
-              <span>{getCharacterName(basicId)}</span>
+                <span>{getCharacterName(basicId)}</span>
                 <span className="ml-2 rounded-full bg-black/5 px-2 py-0.5 text-xs dark:bg-white/10">
                   {winnerSampleSize.toLocaleString()}
                 </span>

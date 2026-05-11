@@ -1,5 +1,7 @@
 import { useMemo } from "react";
 import { useTranslation } from "@/i18n/LanguageContext";
+import { useSafeDangoColors } from "@/services/dangoColors";
+import type { DangoId } from "@/types/game";
 import type { MonteCarloAggregateSnapshot } from "@/types/monteCarlo";
 import {
   colorWithAlpha,
@@ -327,17 +329,34 @@ function PlacementDistributionPanel({ rows }: { rows: PlacementRowDatum[] }) {
 }
 
 export function OverviewPanel({ snapshot }: OverviewPanelProps) {
-  const { getCharacterName, language } = useTranslation();
+  const { getCharacterName } = useTranslation();
+  const getSafeDangoColors = useSafeDangoColors();
+  const resolveRowColors = useMemo(
+    () => (basicId: DangoId) => {
+      const { chartHex, chartInkHex } = getSafeDangoColors(basicId);
+      return {
+        accentHex: chartHex,
+        accentInkHex: chartInkHex,
+      };
+    },
+    [getSafeDangoColors]
+  );
   const rows = useMemo(
     () =>
       sortRows(
         derivePlacementRows(
           snapshot.selectedBasicIds,
           snapshot.finalPlacementCountsByBasicId,
-          getCharacterName
+          getCharacterName,
+          resolveRowColors
         )
       ),
-    [getCharacterName, language, snapshot.finalPlacementCountsByBasicId, snapshot.selectedBasicIds]
+    [
+      getCharacterName,
+      resolveRowColors,
+      snapshot.finalPlacementCountsByBasicId,
+      snapshot.selectedBasicIds,
+    ]
   );
 
   return (

@@ -1,4 +1,14 @@
+import { useMemo } from "react";
+import { useTheme } from "@/hooks/useTheme";
 import { ABBY_ID } from "@/constants/ids";
+import {
+  accessibleTextHexForFill,
+  colorWithAlpha,
+  resolveOutlineHex,
+  themeSurfaceHex,
+  themeSafeColor,
+  type ThemeMode,
+} from "@/services/colorUtils";
 import type { DangoId } from "@/types/game";
 
 const BASIC_ACCENT_PALETTE = [
@@ -36,28 +46,55 @@ export function accentFillHexForDango(entityId: DangoId): string {
   return BASIC_ACCENT_PALETTE[hashStringId(entityId) % BASIC_ACCENT_PALETTE.length]!;
 }
 
-function parseHexTriplet(hex: string): { r: number; g: number; b: number } | null {
-  const normalized = hex.replace("#", "");
-  if (normalized.length !== 6) {
-    return null;
-  }
-  const value = Number.parseInt(normalized, 16);
-  if (Number.isNaN(value)) {
-    return null;
-  }
+export function contrastingInkHexForFill(fillHex: string): string {
+  return accessibleTextHexForFill(fillHex);
+}
+
+export type SafeDangoColorTokens = {
+  baseHex: string;
+  baseInkHex: string;
+  chartHex: string;
+  chartInkHex: string;
+  uiOutlineHex: string;
+  uiOutlineSoftHex: string;
+  surfaceHex: string;
+};
+
+export function resolveSafeDangoColorTokens(
+  entityId: DangoId,
+  mode: ThemeMode
+): SafeDangoColorTokens {
+  const baseHex = accentFillHexForDango(entityId);
+  const surfaceHex = themeSurfaceHex(mode, "panel");
+  const chartHex = themeSafeColor(baseHex, {
+    mode,
+    backgroundHex: surfaceHex,
+    minContrast: 3.2,
+  });
+  const uiOutlineHex = resolveOutlineHex(baseHex, surfaceHex);
   return {
-    r: (value >> 16) & 255,
-    g: (value >> 8) & 255,
-    b: value & 255,
+    baseHex,
+    baseInkHex: contrastingInkHexForFill(baseHex),
+    chartHex,
+    chartInkHex: contrastingInkHexForFill(chartHex),
+    uiOutlineHex,
+    uiOutlineSoftHex: colorWithAlpha(uiOutlineHex, mode === "dark" ? 0.42 : 0.22),
+    surfaceHex,
   };
 }
 
-export function contrastingInkHexForFill(fillHex: string): string {
-  const rgb = parseHexTriplet(fillHex);
-  if (!rgb) {
-    return "#f8fafc";
-  }
-  const luminance =
-    (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
-  return luminance > 0.62 ? "#0f172a" : "#f8fafc";
+export function useSafeDangoColors() {
+  const { mode } = useTheme();
+  return useMemo(() => {
+    const cache = new Map<DangoId, SafeDangoColorTokens>();
+    return (entityId: DangoId): SafeDangoColorTokens => {
+      const cached = cache.get(entityId);
+      if (cached) {
+        return cached;
+      }
+      const next = resolveSafeDangoColorTokens(entityId, mode);
+      cache.set(entityId, next);
+      return next;
+    };
+  }, [mode]);
 }

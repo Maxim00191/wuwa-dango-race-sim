@@ -20,7 +20,7 @@ import {
 } from "@/services/boardLayout";
 import {
   accentFillHexForDango,
-  contrastingInkHexForFill,
+  useSafeDangoColors,
 } from "@/services/dangoColors";
 import type { DangoId } from "@/types/game";
 
@@ -90,6 +90,7 @@ function CircularBoardComponent({
   hoppingEntityIds,
 }: CircularBoardProps) {
   const { getCharacterName, t } = useTranslation();
+  const getSafeDangoColors = useSafeDangoColors();
   const { speedMultiplier } = usePlaybackSettings();
   const containerRef = useRef<HTMLDivElement>(null);
   const [viewportPixels, setViewportPixels] = useState({
@@ -407,7 +408,11 @@ html:not(.dark) #finishChecker > rect:nth-child(5) { fill: #cbd5e1; }
             const isHopping = hoppingEntityIds.has(entityId);
             const displayName = displayNameForEntity(entityId, getCharacterName);
             const accentFill = accentFillHexForDango(entityId);
-            const labelFill = contrastingInkHexForFill(accentFill);
+            const {
+              baseInkHex,
+              uiOutlineHex,
+              uiOutlineSoftHex,
+            } = getSafeDangoColors(entityId);
             const nameLines = splitDisplayNameIntoLines(displayName);
             const labelFontSize = fontSizeForTokenLabelLines(nameLines);
             const stackedLift = stackIndex / Math.max(stackDepth, 1);
@@ -432,18 +437,25 @@ html:not(.dark) #finishChecker > rect:nth-child(5) { fill: #cbd5e1; }
                   }}
                 >
                   <circle
+                    r={TOKEN_RADIUS + 2.8}
+                    fill="none"
+                    stroke={uiOutlineSoftHex}
+                    strokeWidth={5.5}
+                    opacity={0.9}
+                  />
+                  <circle
                     r={TOKEN_RADIUS}
                     fill={accentFill}
+                    stroke={uiOutlineHex}
                     strokeWidth={2.2}
                     opacity={0.92 + stackedLift * 0.06}
-                    className="stroke-slate-600/85 dark:stroke-slate-300/55"
                   />
                   {nameLines.length === 1 ? (
                     <text
                       textAnchor="middle"
                       dominantBaseline="central"
                       className="pointer-events-none font-bold tracking-tight"
-                      fill={labelFill}
+                      fill={baseInkHex}
                       style={{ fontSize: labelFontSize }}
                     >
                       {nameLines[0]}
@@ -452,7 +464,7 @@ html:not(.dark) #finishChecker > rect:nth-child(5) { fill: #cbd5e1; }
                     <text
                       textAnchor="middle"
                       className="pointer-events-none font-bold tracking-tight"
-                      fill={labelFill}
+                      fill={baseInkHex}
                       style={{ fontSize: labelFontSize }}
                     >
                       <tspan x={0} dy="-0.52em">

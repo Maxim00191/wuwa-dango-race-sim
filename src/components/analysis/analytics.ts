@@ -7,6 +7,7 @@ import type {
   PlacementCountMatrix,
   PlacementCountVector,
 } from "@/types/monteCarlo";
+export { colorWithAlpha } from "@/services/colorUtils";
 
 export type PlacementRowDatum = {
   basicId: DangoId;
@@ -26,24 +27,12 @@ export type PlacementRowDatum = {
   boomBustRate: number;
 };
 
+export type PlacementRowColorResolver = (
+  basicId: DangoId
+) => Pick<PlacementRowDatum, "accentHex" | "accentInkHex">;
+
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
-}
-
-function parseHexTriplet(hex: string): { r: number; g: number; b: number } | null {
-  const normalized = hex.replace("#", "");
-  if (normalized.length !== 6) {
-    return null;
-  }
-  const value = Number.parseInt(normalized, 16);
-  if (Number.isNaN(value)) {
-    return null;
-  }
-  return {
-    r: (value >> 16) & 255,
-    g: (value >> 8) & 255,
-    b: value & 255,
-  };
 }
 
 export function sumCounts(counts: number[]): number {
@@ -64,28 +53,25 @@ export function formatPercent(
   return `${value.toFixed(fractionDigits)}%`;
 }
 
-export function colorWithAlpha(hex: string, alpha: number): string {
-  const rgb = parseHexTriplet(hex);
-  if (!rgb) {
-    return `rgba(99, 102, 241, ${clamp(alpha, 0, 1)})`;
-  }
-  return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${clamp(alpha, 0, 1)})`;
-}
-
 export function derivePlacementRow(
   basicId: DangoId,
   counts: PlacementCountVector,
-  getLabel: (basicId: DangoId) => string
+  getLabel: (basicId: DangoId) => string,
+  resolveColors?: PlacementRowColorResolver
 ): PlacementRowDatum {
   const total = sumCounts(counts);
-  const accentHex = accentFillHexForDango(basicId);
+  const fallbackAccentHex = accentFillHexForDango(basicId);
+  const colorTokens = resolveColors?.(basicId) ?? {
+    accentHex: fallbackAccentHex,
+    accentInkHex: contrastingInkHexForFill(fallbackAccentHex),
+  };
   const rates = counts.map((count) => toPercent(count, total));
   if (total === 0) {
     return {
       basicId,
       label: getLabel(basicId),
-      accentHex,
-      accentInkHex: contrastingInkHexForFill(accentHex),
+      accentHex: colorTokens.accentHex,
+      accentInkHex: colorTokens.accentInkHex,
       counts,
       rates,
       total,
@@ -137,8 +123,8 @@ export function derivePlacementRow(
   return {
     basicId,
     label: getLabel(basicId),
-    accentHex,
-    accentInkHex: contrastingInkHexForFill(accentHex),
+    accentHex: colorTokens.accentHex,
+    accentInkHex: colorTokens.accentInkHex,
     counts,
     rates,
     total,
@@ -156,13 +142,15 @@ export function derivePlacementRow(
 export function derivePlacementRows(
   basicIds: DangoId[],
   placementCountsByBasicId: Record<string, PlacementCountVector>,
-  getLabel: (basicId: DangoId) => string
+  getLabel: (basicId: DangoId) => string,
+  resolveColors?: PlacementRowColorResolver
 ): PlacementRowDatum[] {
   return basicIds.map((basicId) =>
     derivePlacementRow(
       basicId,
       placementCountsByBasicId[basicId] ?? [],
-      getLabel
+      getLabel,
+      resolveColors
     )
   );
 }

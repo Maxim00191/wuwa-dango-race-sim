@@ -1,7 +1,14 @@
 import type { DangoId } from "@/types/game";
+import { useTheme } from "@/hooks/useTheme";
 import { useTranslation } from "@/i18n/LanguageContext";
 import type { TranslatableContent } from "@/i18n";
-import { accentFillHexForDango } from "@/services/dangoColors";
+import { useSafeDangoColors } from "@/services/dangoColors";
+import {
+  accessibleTextHexForFill,
+  blendHexColors,
+  colorWithAlpha,
+  themeSurfaceHex,
+} from "@/services/colorUtils";
 
 export type BroadcastBannerPayload = {
   variant: "turn" | "roll" | "skill" | "idle" | "teleport" | "slide" | "victory";
@@ -47,12 +54,20 @@ const headlineClass: Record<BroadcastBannerPayload["variant"], string> = {
 
 export function BroadcastBanner({ payload }: BroadcastBannerProps) {
   const { tText } = useTranslation();
+  const { mode } = useTheme();
+  const getSafeDangoColors = useSafeDangoColors();
   if (!payload) {
     return null;
   }
   const accentHex = payload.accentDangoId
-    ? accentFillHexForDango(payload.accentDangoId)
+    ? getSafeDangoColors(payload.accentDangoId).chartHex
     : null;
+  const accentTextHex =
+    accentHex !== null
+      ? accessibleTextHexForFill(
+          blendHexColors(accentHex, themeSurfaceHex(mode, "app"), 0.52)
+        )
+      : null;
   const accentShell =
     accentHex !== null
       ? {
@@ -68,20 +83,38 @@ export function BroadcastBanner({ payload }: BroadcastBannerProps) {
     : `pointer-events-none m-auto w-full max-w-sm rounded-2xl px-4 py-3 text-center shadow-lg shadow-slate-900/10 backdrop-blur-md dark:shadow-slate-950/50 sm:max-w-sm ${variantShell[payload.variant]}`;
   const headlineResolved =
     accentHex !== null
-      ? "text-base font-bold leading-tight text-white drop-shadow-sm sm:text-lg"
+      ? "text-base font-bold leading-tight drop-shadow-sm sm:text-lg"
       : headlineClass[payload.variant];
   const detailResolved =
     accentHex !== null
       ? payload.variant === "victory"
-        ? "mt-2 text-[11px] font-normal tracking-normal text-white/75 sm:text-xs"
-        : "mt-1.5 text-xs font-normal leading-snug text-slate-800 dark:text-slate-200 sm:text-[13px]"
+        ? "mt-2 text-[11px] font-normal tracking-normal sm:text-xs"
+        : "mt-1.5 text-xs font-normal leading-snug sm:text-[13px]"
       : payload.variant === "victory"
         ? "mt-2 text-[11px] font-normal tracking-normal text-amber-100/85 sm:text-xs"
         : "mt-1.5 text-xs font-normal leading-snug text-slate-600 dark:text-slate-300 sm:text-[13px]";
   return (
     <div className={wrapperClass} style={accentShell}>
-      <p className={headlineResolved}>{tText(payload.headline)}</p>
-      {payload.detail ? <p className={detailResolved}>{tText(payload.detail)}</p> : null}
+      <p className={headlineResolved} style={accentTextHex ? { color: accentTextHex } : undefined}>
+        {tText(payload.headline)}
+      </p>
+      {payload.detail ? (
+        <p
+          className={detailResolved}
+          style={
+            accentTextHex
+              ? {
+                  color:
+                    payload.variant === "victory"
+                      ? colorWithAlpha(accentTextHex, 0.82)
+                      : colorWithAlpha(accentTextHex, 0.9),
+                }
+              : undefined
+          }
+        >
+          {tText(payload.detail)}
+        </p>
+      ) : null}
     </div>
   );
 }

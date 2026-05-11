@@ -1,7 +1,6 @@
 import { useTranslation } from "@/i18n/LanguageContext";
 import {
-  accentFillHexForDango,
-  contrastingInkHexForFill,
+  useSafeDangoColors,
 } from "@/services/dangoColors";
 import { useListFlipAnimation } from "@/hooks/useListFlipAnimation";
 import type { TurnQueuePresentation } from "@/services/turnQueuePresentation";
@@ -12,6 +11,7 @@ type TurnQueueViewerProps = {
 
 export function TurnQueueViewer({ presentation }: TurnQueueViewerProps) {
   const { getCharacterName, t } = useTranslation();
+  const getSafeDangoColors = useSafeDangoColors();
   const queueListRef = useListFlipAnimation<HTMLDivElement>(
     presentation?.orderedActorIds.join("\u0001") ?? ""
   );
@@ -54,8 +54,12 @@ export function TurnQueueViewer({ presentation }: TurnQueueViewerProps) {
               state === "active" &&
               !turnResolvedPastQueue &&
               queueIndex === activeRacerIndex;
-            const accentHex = accentFillHexForDango(actorId);
-            const inkHex = contrastingInkHexForFill(accentHex);
+            const {
+              baseHex,
+              baseInkHex,
+              uiOutlineHex,
+              uiOutlineSoftHex,
+            } = getSafeDangoColors(actorId);
             return (
               <div
                 key={actorId}
@@ -79,7 +83,11 @@ export function TurnQueueViewer({ presentation }: TurnQueueViewerProps) {
                   style={
                     dimmed
                       ? undefined
-                      : { backgroundColor: accentHex, color: inkHex }
+                      : {
+                          backgroundColor: baseHex,
+                          color: baseInkHex,
+                          boxShadow: `0 0 0 1px ${uiOutlineHex}, 0 0 0 4px ${uiOutlineSoftHex}`,
+                        }
                   }
                   title={displayName}
                 >
