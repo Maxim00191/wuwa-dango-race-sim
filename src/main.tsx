@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import App from "@/App";
 import "@/index.css";
 import { LanguageProvider } from "@/i18n/LanguageContext";
+import { PlaybackSettingsProvider } from "@/hooks/usePlaybackSettings";
 
 const container = document.getElementById("root");
 
@@ -13,7 +14,9 @@ if (!container) {
 createRoot(container).render(
   <StrictMode>
     <LanguageProvider>
-      <App />
+      <PlaybackSettingsProvider>
+        <App />
+      </PlaybackSettingsProvider>
     </LanguageProvider>
   </StrictMode>
 );

@@ -50,6 +50,10 @@ export const enDictionary: TranslationDictionary = {
       tournament: "Tournament Hub",
       analysis: "Festival Archives",
     },
+    playback: {
+      label: "Playback Speed",
+      optionAria: "Set playback speed to {speed}x",
+    },
     language: {
       label: "Language",
     },

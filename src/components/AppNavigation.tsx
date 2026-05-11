@@ -31,7 +31,7 @@ export function AppNavigation({
             {t("nav.tagline")}
           </span>
         </div>
-        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 sm:gap-3">
           <div className="flex shrink-0 gap-1 rounded-full border border-slate-200 bg-slate-100/90 p-1 shadow-inner shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-900/80 dark:shadow-slate-950/50">
             <button
               type="button"

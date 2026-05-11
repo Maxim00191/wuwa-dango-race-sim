@@ -1,6 +1,17 @@
-import { memo, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  memo,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import { CELL_COUNT, FINISH_LINE_CELL_INDEX } from "@/constants/board";
 import { ACTIVE_BASIC_DANGO_COUNT } from "@/constants/ids";
+import {
+  scalePlaybackDurationMs,
+  usePlaybackSettings,
+} from "@/hooks/usePlaybackSettings";
 import { useTranslation } from "@/i18n/LanguageContext";
 import {
   angleForCellIndex,
@@ -28,6 +39,7 @@ const TOTEM_LAYER_STEP_VIEWBOX = 24;
 const FILTER_SHADOW_BLEED = 10;
 const CELL_INDEX_LABEL_BAND =
   FINISH_CELL_MARKER_RADIUS + 7 + 11;
+const DANGO_HOP_DURATION_MS = 320;
 
 const MAX_TOTEM_DEPTH_FOR_ORBIT = ACTIVE_BASIC_DANGO_COUNT;
 
@@ -78,6 +90,7 @@ function CircularBoardComponent({
   hoppingEntityIds,
 }: CircularBoardProps) {
   const { getCharacterName, t } = useTranslation();
+  const { speedMultiplier } = usePlaybackSettings();
   const containerRef = useRef<HTMLDivElement>(null);
   const [viewportPixels, setViewportPixels] = useState({
     width: 960,
@@ -201,6 +214,17 @@ function CircularBoardComponent({
     return rows;
   }, [boardCells, cellsArray, orbitLayout]);
 
+  const boardMotionStyle = useMemo(
+    () =>
+      ({
+        "--dango-hop-duration": `${scalePlaybackDurationMs(
+          DANGO_HOP_DURATION_MS,
+          speedMultiplier
+        )}ms`,
+      }) as CSSProperties,
+    [speedMultiplier]
+  );
+
   const {
     centerX,
     centerY,
@@ -214,6 +238,7 @@ function CircularBoardComponent({
     <div
       ref={containerRef}
       className="relative h-full w-full min-h-0 overflow-hidden"
+      style={boardMotionStyle}
     >
       <svg
         viewBox={`0 0 ${viewWidth} ${viewHeight}`}
@@ -401,6 +426,7 @@ html:not(.dark) #finishChecker > rect:nth-child(5) { fill: #cbd5e1; }
                     isHopping ? "origin-center animate-dango-hop" : undefined
                   }
                   style={{
+                    animationDuration: "var(--dango-hop-duration)",
                     transformBox: "fill-box",
                     transformOrigin: "50% 50%",
                   }}

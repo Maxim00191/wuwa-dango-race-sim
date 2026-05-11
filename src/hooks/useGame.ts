@@ -35,6 +35,10 @@ import {
   formatTurnOrderArrowLine,
   formatTurnOrderFromActorIds,
 } from "@/narration/formatTurnOrderArrowLine";
+import {
+  scalePlaybackDurationMs,
+  usePlaybackSettings,
+} from "@/hooks/usePlaybackSettings";
 
 const ATOMIC_STEP_DELAY_MS = 520;
 const SINGLE_ACTION_PLAYBACK_GAP_MS = 800;
@@ -78,7 +82,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
 export function useGame() {
   const { getCharacterName, t } = useTranslation();
+  const { speedMultiplier } = usePlaybackSettings();
   const translationHelpersRef = useRef({ getCharacterName, t });
+  const playbackSpeedRef = useRef(speedMultiplier);
   const initialState = useMemo(() => createInitialGameState(), []);
   const [state, dispatch] = useReducer(gameReducer, initialState);
   const [playbackCells, setPlaybackCells] = useState<
@@ -98,10 +104,23 @@ export function useGame() {
   const isAnimatingRef = useRef(false);
   const animationGenerationRef = useRef(0);
   const playTurnStartedRef = useRef(false);
+  const getScaledDurationMs = useCallback(
+    (baseDurationMs: number) =>
+      scalePlaybackDurationMs(baseDurationMs, playbackSpeedRef.current),
+    []
+  );
+  const actionPlaybackGapMs = scalePlaybackDurationMs(
+    SINGLE_ACTION_PLAYBACK_GAP_MS,
+    speedMultiplier
+  );
 
   useEffect(() => {
     translationHelpersRef.current = { getCharacterName, t };
   }, [getCharacterName, t]);
+
+  useEffect(() => {
+    playbackSpeedRef.current = speedMultiplier;
+  }, [speedMultiplier]);
 
   const start = useCallback((setup: RaceSetup) => {
     if (!isValidBasicSelection(setup.selectedBasicIds)) {
@@ -221,7 +240,7 @@ export function useGame() {
             detail: text("banner.victory.detail"),
             accentDangoId: state.winnerId,
           });
-          await delayMilliseconds(VICTORY_HOLD_MS);
+          await delayMilliseconds(getScaledDurationMs(VICTORY_HOLD_MS));
           if (cancelled || generation !== animationGenerationRef.current) {
             return;
           }
@@ -246,7 +265,7 @@ export function useGame() {
           return;
         }
         setBroadcastPayload(payload);
-        await delayMilliseconds(holdMs);
+        await delayMilliseconds(getScaledDurationMs(holdMs));
         if (!guard()) {
           return;
         }
@@ -269,7 +288,7 @@ export function useGame() {
                 ? step.travelingIds
                 : step.entityIds;
           setHoppingEntityIds(new Set(movers));
-          await delayMilliseconds(ATOMIC_STEP_DELAY_MS);
+          await delayMilliseconds(getScaledDurationMs(ATOMIC_STEP_DELAY_MS));
         }
         if (!guard()) {
           return;
@@ -513,6 +532,7 @@ export function useGame() {
     state.phase,
     state.playbackStamp,
     state.winnerId,
+    getScaledDurationMs,
   ]);
 
   useEffect(() => {
@@ -536,7 +556,7 @@ export function useGame() {
         detail: text("banner.victory.detail"),
         accentDangoId: winnerId,
       });
-      await delayMilliseconds(VICTORY_HOLD_MS);
+      await delayMilliseconds(getScaledDurationMs(VICTORY_HOLD_MS));
       if (
         cancelled ||
         generationAtStart !== animationGenerationRef.current
@@ -553,6 +573,7 @@ export function useGame() {
     state.winnerId,
     state.lastTurnPlayback,
     isAnimating,
+    getScaledDurationMs,
   ]);
 
   useEffect(() => {
@@ -580,9 +601,10 @@ export function useGame() {
     const timeoutId = window.setTimeout(() => {
       playTurnStartedRef.current = true;
       executeNextStep();
-    }, SINGLE_ACTION_PLAYBACK_GAP_MS);
+    }, actionPlaybackGapMs);
     return () => window.clearTimeout(timeoutId);
   }, [
+    actionPlaybackGapMs,
     playTurnEnabled,
     state.phase,
     state.winnerId,
@@ -603,9 +625,10 @@ export function useGame() {
     }
     const timeoutId = window.setTimeout(() => {
       executeNextStep();
-    }, SINGLE_ACTION_PLAYBACK_GAP_MS);
+    }, actionPlaybackGapMs);
     return () => window.clearTimeout(timeoutId);
   }, [
+    actionPlaybackGapMs,
     autoPlayEnabled,
     state.phase,
     state.winnerId,

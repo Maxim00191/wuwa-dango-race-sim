@@ -50,6 +50,10 @@ export const zhCnDictionary: TranslationDictionary = {
       tournament: "杯赛大厅",
       analysis: "庆典档案",
     },
+    playback: {
+      label: "播放速度",
+      optionAria: "将播放速度设置为 {speed}x",
+    },
     language: {
       label: "语言",
     },

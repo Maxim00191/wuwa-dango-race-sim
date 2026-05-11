@@ -11,6 +11,10 @@ import {
   accentFillHexForDango,
   contrastingInkHexForFill,
 } from "@/services/dangoColors";
+import {
+  PLAYBACK_SPEED_OPTIONS,
+  usePlaybackSettings,
+} from "@/hooks/usePlaybackSettings";
 import { useListFlipAnimation } from "@/hooks/useListFlipAnimation";
 import { usePersistentTurnQueuePresentation } from "@/hooks/usePersistentTurnQueuePresentation";
 import { orderedRacerIdsForLeaderboard } from "@/services/racerRanking";
@@ -68,6 +72,7 @@ export function GameShell({
   onAutoPlayEnabledChange,
 }: GameShellProps) {
   const { getCharacterName, t, tText } = useTranslation();
+  const { speedMultiplier, setSpeedMultiplier } = usePlaybackSettings();
   const racerParticipantIds = useMemo(() => {
     if (state.phase === "idle") {
       return idleParticipantIds;
@@ -153,11 +158,8 @@ export function GameShell({
               {headerDescription}
             </p>
           </div>
-          <div className="flex flex-wrap items-end gap-6">
-            <div className="flex flex-col gap-2">
-              <p className="text-sm font-bold tracking-tight text-slate-700 dark:text-slate-200">
-                {t("game.controls.watch")}
-              </p>
+          <div className="flex flex-wrap items-stretch gap-3 sm:gap-4">
+            <ControlCluster label={t("game.controls.watch")}>
               <div className="flex flex-wrap gap-2">
                 {startControls}
                 <button
@@ -216,11 +218,28 @@ export function GameShell({
                   {t("game.controls.reset")}
                 </button>
               </div>
-            </div>
-            <div className="flex flex-col gap-2">
-              <p className="text-sm font-bold tracking-tight text-slate-700 dark:text-slate-200">
-                {t("game.controls.quickRuns")}
-              </p>
+            </ControlCluster>
+            <ControlCluster label={t("nav.playback.label")}>
+              <div className="flex flex-wrap gap-1 rounded-full border border-slate-200 bg-slate-50/90 p-1 shadow-inner shadow-slate-900/5 dark:border-slate-700 dark:bg-slate-950/70 dark:shadow-slate-950/30">
+                {PLAYBACK_SPEED_OPTIONS.map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => setSpeedMultiplier(option)}
+                    aria-pressed={option === speedMultiplier}
+                    aria-label={t("nav.playback.optionAria", { speed: option })}
+                    className={`rounded-full px-3 py-2 text-sm font-semibold transition sm:min-w-[3.5rem] ${
+                      option === speedMultiplier
+                        ? "bg-slate-900 text-white shadow-md shadow-slate-900/20 dark:bg-slate-100 dark:text-slate-950 dark:shadow-slate-100/10"
+                        : "text-slate-600 hover:bg-white hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+                    }`}
+                  >
+                    {option}x
+                  </button>
+                ))}
+              </div>
+            </ControlCluster>
+            <ControlCluster label={t("game.controls.quickRuns")}>
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
@@ -239,7 +258,7 @@ export function GameShell({
                   {t("game.controls.instantGame")}
                 </button>
               </div>
-            </div>
+            </ControlCluster>
           </div>
         </div>
       </header>
@@ -414,6 +433,23 @@ function shouldIgnoreKeyboardShortcuts(target: EventTarget | null): boolean {
     return true;
   }
   return false;
+}
+
+function ControlCluster({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="flex min-w-[15rem] flex-col gap-2 rounded-2xl border border-slate-200/80 bg-white/80 px-4 py-3 shadow-sm shadow-slate-900/5 backdrop-blur dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-slate-950/25">
+      <p className="text-sm font-bold tracking-tight text-slate-700 dark:text-slate-200">
+        {label}
+      </p>
+      {children}
+    </section>
+  );
 }
 
 type LegendSwatchProps = {
