@@ -185,15 +185,15 @@ export const zhCnDictionary: TranslationDictionary = {
         },
         propulsion: {
           label: "推进装置",
-          description: "赛道上的加速带，能让经过的团子额外向前跃进一格。",
+          description: "落在这里时，会将该格上的整层团子一起向顺时针方向额外推进 1 格。",
         },
-        suppression: {
+        hindrance: {
           label: "阻遏装置",
-          description: "产生阻力的减速带，不幸踩中的团子会被迫后退。",
+          description: "落在这里时，会将该格上的整层团子一起向逆时针方向推回 1 格。",
         },
         rift: {
           label: "时空裂隙",
-          description: "极不稳定的空间缝隙，卷入其中的团子叠层顺序会被彻底打乱。",
+          description: "落在这里会打乱该格团子的叠层顺序，但布大王会始终停在最底层。",
         },
         stacks: {
           label: "叠层机制",
@@ -331,9 +331,9 @@ export const zhCnDictionary: TranslationDictionary = {
       roll: "{actor} 掷出了 {value} 点。",
       skipNotBottom: "{actor} 踩在别的团子背上，无法自己移动，只能随波逐流。",
       move: "{actor} 沿着{direction}轻快地跃进了 {steps} 格。",
-      cellPropulsion: "踩中推进装置！整层团子顺势向前滑行了一步。",
-      cellSuppression: "触发阻遏装置！强大的阻力迫使整层团子往后退。",
-      cellRift: "卷入时空裂隙！失重感让团子们的叠层顺序瞬间大乱。",
+      cellPropulsion: "踩中推进装置！该格上的整层团子都被向顺时针方向推进了 1 格。",
+      cellHindrance: "触发阻遏装置！该格上的整层团子都被向逆时针方向推回了 1 格。",
+      cellRift: "卷入时空裂隙！该格的叠层顺序被重新打乱，但布大王仍稳稳压在最底层。",
       win: "{winner} 率先跑完一整圈，拿下了二周年的冠军桂冠！",
       turnHeader: "第 {turn} 回合开始，全场屏息以待。",
     },
@@ -371,8 +371,8 @@ export const zhCnDictionary: TranslationDictionary = {
       detail: "共鸣技能高光时刻",
     },
     slide: {
-      headline: "推进装置触发",
-      detail: "整层团子都享受了一次顺风车",
+      headline: "格子机关触发",
+      detail: "整层团子都被格子的力量一起带走了",
     },
     victory: {
       headline: "{winner} 赢下二周年冲刺赛！",

@@ -195,17 +195,17 @@ export const enDictionary: TranslationDictionary = {
         propulsion: {
           label: "Propulsion Device",
           description:
-            "A track booster that launches the entire stack of dangos one tile forward.",
+            "Landing here pushes the entire stack on that tile 1 tile clockwise.",
         },
-        suppression: {
-          label: "Suppression Device",
+        hindrance: {
+          label: "Hindrance Device",
           description:
-            "A heavy hazard that creates drag, forcing any dango stack that lands on it to retreat.",
+            "Landing here pushes the entire stack on that tile 1 tile counter-clockwise.",
         },
         rift: {
-          label: "Temporal Rift",
+          label: "Time Rift",
           description:
-            "An unstable spatial anomaly. Landing here completely shuffles the vertical order of the stack.",
+            "Landing here shuffles the stack on that tile, while Abby always stays at the absolute bottom.",
         },
         stacks: {
           label: "Stacking Mechanics",
@@ -359,11 +359,11 @@ export const enDictionary: TranslationDictionary = {
       move:
         "{actor} eagerly bounces {steps} steps {direction}.",
       cellPropulsion:
-        "Hit a Propulsion Device! The stack surges one tile forward.",
-      cellSuppression:
-        "Hit a Suppression Device! Heavy drag forces the stack backward.",
+        "Hit a Propulsion Device! The entire stack on that tile is pushed 1 tile clockwise.",
+      cellHindrance:
+        "Hit a Hindrance Device! The entire stack on that tile is pushed 1 tile counter-clockwise.",
       cellRift:
-        "Caught in a Temporal Rift! The spatial distortion completely scrambles the stack order.",
+        "Caught in a Time Rift! The stack order on that tile is reshuffled, but Abby stays at the bottom.",
       win: "{winner} crosses the 32-step mark and claims the 2nd Anniversary Crown!",
       turnHeader: "Turn {turn} commences. The crowd holds its breath.",
     },
@@ -403,8 +403,8 @@ export const enDictionary: TranslationDictionary = {
       detail: "Resonance Skill Activated",
     },
     slide: {
-      headline: "Propulsion Boost",
-      detail: "A free ride forward for the whole stack",
+      headline: "Cell Effect Triggered",
+      detail: "The whole stack is dragged along by the tile's force",
     },
     victory: {
       headline: "{winner} wins the Anniversary Sprint!",

@@ -90,14 +90,30 @@ export type CellEffectTriggerContext = {
   moverTravelDirection: TravelDirection;
 };
 
+export type CellEffectShift = {
+  travelingIds: DangoId[];
+  fromCell: CellIndex;
+  toCell: CellIndex;
+  direction: TravelDirection;
+};
+
+export type CellEffectApplication = {
+  state: GameState;
+  shift?: CellEffectShift;
+};
+
 export type CellEffectHandler = (
   state: GameState,
   context: CellEffectTriggerContext
-) => GameState;
+) => CellEffectApplication;
 
 export type CellEffectDefinition = {
   id: string;
   apply: CellEffectHandler;
+};
+
+export type ResolvedCellEffect = CellEffectApplication & {
+  effectId: string;
 };
 
 export type BoardCellDefinition = {

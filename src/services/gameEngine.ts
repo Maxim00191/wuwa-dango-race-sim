@@ -14,7 +14,10 @@ import {
   addCounterClockwise,
   clockwiseProgressFromFinishLine,
 } from "@/services/circular";
-import { resolveCellEffectIfPresent } from "@/services/cellEffects";
+import {
+  CELL_EFFECT_LOG_KEY_BY_ID,
+  resolveCellEffectIfPresent,
+} from "@/services/cellEffects";
 import { orderedRacerIdsForLeaderboard } from "@/services/racerRanking";
 import {
   createNormalRaceSetup,
@@ -698,40 +701,33 @@ function resolveTurnForEntity(
   nextState = applySkillHookAfterMovement(nextState, movementContext);
   const refreshedStack =
     nextState.cells.get(destinationStackCellIndex) ?? destinationStack;
-  let afterEffectState = resolveCellEffectIfPresent(
-    nextState,
-    boardEffectByCellIndex,
-    {
-      turnIndex: state.turnIndex,
-      moverId: actingEntityId,
-      destinationCellIndex: destinationStackCellIndex,
-      stackBottomToTop: refreshedStack,
-      moverTravelDirection: character.travelDirection,
-    }
-  );
-  const postEffectCellIndex = findCellIndexForEntity(
-    afterEffectState.cells,
-    actingEntityId
-  );
-  if (
-    postEffectCellIndex !== null &&
-    postEffectCellIndex !== destinationStackCellIndex
-  ) {
+  const shouldResolveCellEffect = resolvedMovementStepCount > 0;
+  const effectOutcome = shouldResolveCellEffect
+    ? resolveCellEffectIfPresent(nextState, boardEffectByCellIndex, {
+        turnIndex: state.turnIndex,
+        moverId: actingEntityId,
+        destinationCellIndex: destinationStackCellIndex,
+        stackBottomToTop: refreshedStack,
+        moverTravelDirection: character.travelDirection,
+      })
+    : null;
+  let afterEffectState = effectOutcome?.state ?? nextState;
+  if (effectOutcome?.shift) {
     segments.push({
       kind: "slide",
-      travelingIds: [...refreshedStack],
-      direction: character.travelDirection,
-      fromCell: destinationStackCellIndex,
-      toCell: postEffectCellIndex,
+      travelingIds: effectOutcome.shift.travelingIds,
+      direction: effectOutcome.shift.direction,
+      fromCell: effectOutcome.shift.fromCell,
+      toCell: effectOutcome.shift.toCell,
     });
     afterEffectState = appendLog(afterEffectState, {
       kind: "cellEffect",
-      message: text("simulation.log.cellEffectBoost"),
+      message: text(CELL_EFFECT_LOG_KEY_BY_ID[effectOutcome.effectId]),
     });
-  } else if (boardEffectByCellIndex.get(destinationStackCellIndex)) {
+  } else if (effectOutcome) {
     afterEffectState = appendLog(afterEffectState, {
       kind: "cellEffect",
-      message: text("simulation.log.cellEffectHum"),
+      message: text(CELL_EFFECT_LOG_KEY_BY_ID[effectOutcome.effectId]),
     });
   }
   const winnerId = pickWinnerBasicDangoId(afterEffectState);

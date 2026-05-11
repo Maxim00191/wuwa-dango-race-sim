@@ -5,133 +5,144 @@ import {
   normalizeCellIndex,
 } from "@/services/circular";
 import {
-  applyCellIndexForMembers,
   applyMovementDeltaForMembers,
   cloneCellMap,
-  mergeWithAbbyBottomRule,
+  moveWholeStackCellsOnly,
 } from "@/services/stateCells";
 import type {
+  CellEffectApplication,
   CellEffectDefinition,
   CellEffectTriggerContext,
   GameState,
+  ResolvedCellEffect,
 } from "@/types/game";
 
-function insertStackAtCell(
-  nextCells: Map<number, string[]>,
-  cellIndex: number,
-  stackBottomToTop: string[]
-): void {
-  const existing = nextCells.get(cellIndex) ?? [];
-  nextCells.set(cellIndex, mergeWithAbbyBottomRule(existing, stackBottomToTop));
-}
+export const CELL_EFFECT_IDS = {
+  propulsionDevice: "propulsionDevice",
+  hindranceDevice: "hindranceDevice",
+  timeRift: "timeRift",
+} as const;
 
-function moveWholeStackByCells(
+export const CELL_EFFECT_LOG_KEY_BY_ID: Record<string, string> = {
+  [CELL_EFFECT_IDS.propulsionDevice]: "simulation.log.cellPropulsion",
+  [CELL_EFFECT_IDS.hindranceDevice]: "simulation.log.cellHindrance",
+  [CELL_EFFECT_IDS.timeRift]: "simulation.log.cellRift",
+};
+
+function moveTriggeredStack(
   state: GameState,
-  originCellIndex: number,
   stackBottomToTop: string[],
+  fromCellIndex: number,
   destinationCellIndex: number,
-  clockwiseDeltaForDisplacement: number
-): GameState {
-  const nextCells = cloneCellMap(state.cells);
-  const atOrigin = nextCells.get(originCellIndex);
-  if (!atOrigin || atOrigin.join("|") !== stackBottomToTop.join("|")) {
-    return state;
+  clockwiseDisplacementDelta: number,
+  direction: "clockwise" | "counterClockwise"
+): CellEffectApplication {
+  const nextCells = moveWholeStackCellsOnly(
+    state.cells,
+    fromCellIndex,
+    stackBottomToTop,
+    destinationCellIndex
+  );
+  if (nextCells === state.cells) {
+    return { state };
   }
-  nextCells.delete(originCellIndex);
-  insertStackAtCell(nextCells, destinationCellIndex, stackBottomToTop);
   let nextState: GameState = { ...state, cells: nextCells };
   nextState = applyMovementDeltaForMembers(
     nextState,
     stackBottomToTop,
-    clockwiseDeltaForDisplacement,
+    clockwiseDisplacementDelta,
     destinationCellIndex
   );
-  nextState = applyCellIndexForMembers(
-    nextState,
-    nextCells.get(destinationCellIndex) ?? [],
-    destinationCellIndex
-  );
-  return nextState;
+  return {
+    state: nextState,
+    shift: {
+      travelingIds: stackBottomToTop,
+      fromCell: fromCellIndex,
+      toCell: destinationCellIndex,
+      direction,
+    },
+  };
 }
 
-const forwardCellStepEffect: CellEffectDefinition = {
-  id: "forwardCellStepIfTopOfStack",
+const propulsionDeviceEffect: CellEffectDefinition = {
+  id: CELL_EFFECT_IDS.propulsionDevice,
   apply: (state, context) => {
-    const topId =
-      context.stackBottomToTop[context.stackBottomToTop.length - 1];
-    if (topId !== context.moverId) {
-      return state;
-    }
-    const originCellIndex = context.destinationCellIndex;
-    const stack = [...context.stackBottomToTop];
-    const forwardClockwise =
-      context.moverTravelDirection === "clockwise"
-        ? 1
-        : -1;
-    const nextCellIndex =
-      forwardClockwise === 1
-        ? addClockwise(originCellIndex, 1)
-        : addCounterClockwise(originCellIndex, 1);
-    if (nextCellIndex === originCellIndex) {
-      return state;
-    }
-    return moveWholeStackByCells(
+    return moveTriggeredStack(
       state,
-      originCellIndex,
-      stack,
-      nextCellIndex,
-      forwardClockwise
+      context.stackBottomToTop,
+      context.destinationCellIndex,
+      addClockwise(context.destinationCellIndex, 1),
+      1,
+      "clockwise"
+    );
+  },
+};
+
+const hindranceDeviceEffect: CellEffectDefinition = {
+  id: CELL_EFFECT_IDS.hindranceDevice,
+  apply: (state, context) => {
+    return moveTriggeredStack(
+      state,
+      context.stackBottomToTop,
+      context.destinationCellIndex,
+      addCounterClockwise(context.destinationCellIndex, 1),
+      -1,
+      "counterClockwise"
     );
   },
 };
 
 function shuffleStackBottomToTop(stackBottomToTop: string[]): string[] {
-  const copy = [...stackBottomToTop];
-  for (let index = copy.length - 1; index > 0; index--) {
+  const shuffledRacers = stackBottomToTop.filter((id) => id !== ABBY_ID);
+  for (let index = shuffledRacers.length - 1; index > 0; index--) {
     const swapIndex = Math.floor(Math.random() * (index + 1));
-    const temporary = copy[index];
-    copy[index] = copy[swapIndex]!;
-    copy[swapIndex] = temporary!;
+    const temporary = shuffledRacers[index];
+    shuffledRacers[index] = shuffledRacers[swapIndex]!;
+    shuffledRacers[swapIndex] = temporary!;
   }
-  if (copy.includes(ABBY_ID)) {
-    return [ABBY_ID, ...copy.filter((id) => id !== ABBY_ID)];
+  if (stackBottomToTop.includes(ABBY_ID)) {
+    return [ABBY_ID, ...shuffledRacers];
   }
-  return copy;
+  return shuffledRacers;
 }
 
-const shuffleStackEffect: CellEffectDefinition = {
-  id: "shuffleStackOrderOnCell",
+const timeRiftEffect: CellEffectDefinition = {
+  id: CELL_EFFECT_IDS.timeRift,
   apply: (state, context) => {
     const nextCells = cloneCellMap(state.cells);
     const cellIndex = context.destinationCellIndex;
     const previous = nextCells.get(cellIndex);
     if (!previous) {
-      return state;
+      return { state };
     }
     nextCells.set(cellIndex, shuffleStackBottomToTop(previous));
-    return { ...state, cells: nextCells };
+    return { state: { ...state, cells: nextCells } };
   },
 };
 
 export const CELL_EFFECT_REGISTRY: Record<string, CellEffectDefinition> = {
-  [forwardCellStepEffect.id]: forwardCellStepEffect,
-  [shuffleStackEffect.id]: shuffleStackEffect,
+  [propulsionDeviceEffect.id]: propulsionDeviceEffect,
+  [hindranceDeviceEffect.id]: hindranceDeviceEffect,
+  [timeRiftEffect.id]: timeRiftEffect,
 };
 
 export function resolveCellEffectIfPresent(
   state: GameState,
   boardEffectByCellIndex: Map<number, string | null>,
   context: CellEffectTriggerContext
-): GameState {
+): ResolvedCellEffect | null {
   const effectId = boardEffectByCellIndex.get(
     normalizeCellIndex(context.destinationCellIndex)
   );
   if (!effectId) {
-    return state;
+    return null;
   }
   const definition = CELL_EFFECT_REGISTRY[effectId];
   if (!definition) {
-    return state;
+    return null;
   }
-  return definition.apply(state, context);
+  return {
+    effectId: definition.id,
+    ...definition.apply(state, context),
+  };
 }

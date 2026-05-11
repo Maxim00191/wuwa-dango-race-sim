@@ -1,5 +1,41 @@
 import type { BoardCellDefinition } from "@/types/game";
 import { CELL_COUNT } from "@/constants/board";
+import { CELL_EFFECT_IDS } from "@/services/cellEffects";
+
+export type BoardCellEffectVisual = {
+  fill: string;
+  stroke: string;
+  symbol: string;
+};
+
+export const BOARD_CELL_EFFECT_VISUALS: Record<string, BoardCellEffectVisual> = {
+  [CELL_EFFECT_IDS.propulsionDevice]: {
+    fill: "#dcfce7",
+    stroke: "#16a34a",
+    symbol: "+",
+  },
+  [CELL_EFFECT_IDS.hindranceDevice]: {
+    fill: "#fee2e2",
+    stroke: "#dc2626",
+    symbol: "-",
+  },
+  [CELL_EFFECT_IDS.timeRift]: {
+    fill: "#f3e8ff",
+    stroke: "#a855f7",
+    symbol: "R",
+  },
+};
+
+const BOARD_CELL_EFFECT_BY_INDEX: Record<number, string> = {
+  4: CELL_EFFECT_IDS.propulsionDevice,
+  7: CELL_EFFECT_IDS.timeRift,
+  11: CELL_EFFECT_IDS.hindranceDevice,
+  12: CELL_EFFECT_IDS.propulsionDevice,
+  17: CELL_EFFECT_IDS.propulsionDevice,
+  21: CELL_EFFECT_IDS.timeRift,
+  24: CELL_EFFECT_IDS.propulsionDevice,
+  29: CELL_EFFECT_IDS.hindranceDevice,
+};
 
 export function angleForCellIndex(
   cellIndex: number,
@@ -38,17 +74,10 @@ export function ellipseOutwardUnitAtAngle(
 export function buildLinearBoardDescriptor(): BoardCellDefinition[] {
   return Array.from({ length: CELL_COUNT }, (_, index) => {
     const cellIndex = index + 1;
-    let effectId: string | null = null;
-    if (cellIndex === 8) {
-      effectId = "forwardCellStepIfTopOfStack";
-    }
-    if (cellIndex === 16) {
-      effectId = "shuffleStackOrderOnCell";
-    }
-    if (cellIndex === 24) {
-      effectId = "forwardCellStepIfTopOfStack";
-    }
-    return { index: cellIndex, effectId };
+    return {
+      index: cellIndex,
+      effectId: BOARD_CELL_EFFECT_BY_INDEX[cellIndex] ?? null,
+    };
   });
 }
 
@@ -56,4 +85,13 @@ export function buildEffectLookup(
   descriptor: BoardCellDefinition[]
 ): Map<number, string | null> {
   return new Map(descriptor.map((item) => [item.index, item.effectId]));
+}
+
+export function getBoardCellEffectVisual(
+  effectId: string | null | undefined
+): BoardCellEffectVisual | null {
+  if (!effectId) {
+    return null;
+  }
+  return BOARD_CELL_EFFECT_VISUALS[effectId] ?? null;
 }

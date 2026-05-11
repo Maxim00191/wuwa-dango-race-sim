@@ -281,15 +281,25 @@ export function GameShell({
               <BroadcastBanner payload={broadcastPayload} />
             </div>
           </div>
-          <div className="mt-6 shrink-0 grid gap-4 text-sm text-slate-600 dark:text-slate-300 sm:grid-cols-3">
+          <div className="mt-6 shrink-0 grid gap-4 text-sm text-slate-600 dark:text-slate-300 sm:grid-cols-2 xl:grid-cols-5">
             <LegendSwatch
               label={t("game.board.legend.finishLine.label")}
               description={t("game.board.legend.finishLine.description")}
               borderClass="border-amber-300"
             />
             <LegendSwatch
-              label={t("game.board.legend.sparklyCells.label")}
-              description={t("game.board.legend.sparklyCells.description")}
+              label={t("game.board.legend.propulsion.label")}
+              description={t("game.board.legend.propulsion.description")}
+              borderClass="border-green-500"
+            />
+            <LegendSwatch
+              label={t("game.board.legend.hindrance.label")}
+              description={t("game.board.legend.hindrance.description")}
+              borderClass="border-red-500"
+            />
+            <LegendSwatch
+              label={t("game.board.legend.rift.label")}
+              description={t("game.board.legend.rift.description")}
               borderClass="border-purple-400"
             />
             <LegendSwatch

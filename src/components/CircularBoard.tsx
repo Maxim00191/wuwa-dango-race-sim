@@ -5,6 +5,7 @@ import { useTranslation } from "@/i18n/LanguageContext";
 import {
   angleForCellIndex,
   ellipsePointFromAngle,
+  getBoardCellEffectVisual,
 } from "@/services/boardLayout";
 import {
   accentFillHexForDango,
@@ -312,7 +313,8 @@ html:not(.dark) #finishChecker > rect:nth-child(5) { fill: #cbd5e1; }
             angle
           );
           const effectId = boardEffects.get(cellIndex);
-          const hasEffect = Boolean(effectId);
+          const effectVisual = getBoardCellEffectVisual(effectId);
+          const hasEffect = Boolean(effectVisual);
           const finishAccent = cellIndex === FINISH_LINE_CELL_INDEX;
           const markerRadius = finishAccent
             ? FINISH_CELL_MARKER_RADIUS
@@ -322,18 +324,36 @@ html:not(.dark) #finishChecker > rect:nth-child(5) { fill: #cbd5e1; }
               <g transform={`translate(${cellCenter.x}, ${cellCenter.y})`}>
                 <circle
                   r={markerRadius}
-                  fill={finishAccent ? "url(#finishChecker)" : undefined}
-                  stroke={finishAccent ? "#fbbf24" : hasEffect ? "#c084fc" : undefined}
+                  fill={
+                    finishAccent
+                      ? "url(#finishChecker)"
+                      : effectVisual?.fill ?? undefined
+                  }
+                  stroke={
+                    finishAccent
+                      ? "#fbbf24"
+                      : effectVisual?.stroke ?? undefined
+                  }
                   strokeWidth={finishAccent ? 3 : hasEffect ? 2 : 1.4}
                   filter={finishAccent ? "url(#finishCellGlow)" : undefined}
                   className={
                     finishAccent
                       ? undefined
                       : hasEffect
-                        ? "fill-slate-100 dark:fill-[#0f172a]"
+                        ? undefined
                         : "fill-slate-100 stroke-slate-400 dark:fill-[#0f172a] dark:stroke-[#64748b]"
                   }
                 />
+                {effectVisual && !finishAccent ? (
+                  <text
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    className="pointer-events-none text-[7px] font-black"
+                    fill={effectVisual.stroke}
+                  >
+                    {effectVisual.symbol}
+                  </text>
+                ) : null}
                 <text
                   textAnchor="middle"
                   dominantBaseline="central"

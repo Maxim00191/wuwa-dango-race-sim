@@ -2,7 +2,6 @@ import { clockwiseDistanceBetweenInclusive } from "@/services/circular";
 import {
   cloneCellMap,
   findCellIndexForEntity,
-  moveWholeStackCellsOnly,
   relocateActorLedPortionCellsOnly,
   teleportEntitySliceCellsOnly,
 } from "@/services/stateCells";
@@ -98,18 +97,12 @@ export function expandPlaybackToAtomicSteps(
         fromCell: segment.fromCell,
         toCell: segment.toCell,
       });
-      const stackAtOrigin = cells.get(segment.fromCell);
-      if (
-        stackAtOrigin &&
-        stackAtOrigin.join("|") === segment.travelingIds.join("|")
-      ) {
-        cells = moveWholeStackCellsOnly(
-          cells,
-          segment.fromCell,
-          segment.travelingIds,
-          segment.toCell
-        );
-      }
+      cells = teleportEntitySliceCellsOnly(
+        cells,
+        segment.fromCell,
+        segment.toCell,
+        segment.travelingIds
+      );
     }
   }
   return atomic;
@@ -180,18 +173,12 @@ export function expandPlaybackToSegmentAtomicChunks(
         fromCell: segment.fromCell,
         toCell: segment.toCell,
       });
-      const stackAtOrigin = cells.get(segment.fromCell);
-      if (
-        stackAtOrigin &&
-        stackAtOrigin.join("|") === segment.travelingIds.join("|")
-      ) {
-        cells = moveWholeStackCellsOnly(
-          cells,
-          segment.fromCell,
-          segment.travelingIds,
-          segment.toCell
-        );
-      }
+      cells = teleportEntitySliceCellsOnly(
+        cells,
+        segment.fromCell,
+        segment.toCell,
+        segment.travelingIds
+      );
       chunks.push(chunk);
     }
   }
@@ -227,18 +214,11 @@ export function applyAtomicCellsStep(
       step.entityIds
     );
   }
-  const stackAtOrigin = cells.get(step.fromCell);
-  if (
-    !stackAtOrigin ||
-    stackAtOrigin.join("|") !== step.travelingIds.join("|")
-  ) {
-    return cells;
-  }
-  return moveWholeStackCellsOnly(
+  return teleportEntitySliceCellsOnly(
     cells,
     step.fromCell,
-    step.travelingIds,
-    step.toCell
+    step.toCell,
+    step.travelingIds
   );
 }
 
