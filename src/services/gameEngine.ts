@@ -1040,6 +1040,8 @@ export type HeadlessSimulationOutcome = {
   preliminaryTurnsAtFinish: number;
   finalTurnsAtFinish: number;
   preliminaryWinnerBasicId: DangoId | null;
+  finalPlacements: DangoId[];
+  preliminaryPlacements: DangoId[] | null;
   stackCarrierObservationCountByBasicId: Record<string, number>;
 };
 
@@ -1094,13 +1096,16 @@ export function simulateHeadlessScenario(
 ): HeadlessSimulationOutcome {
   if (scenario.kind === "singleRace") {
     const race = simulateHeadlessRace(scenario.setup, boardEffectByCellIndex);
+    const finalPlacements = deriveBasicPlacementsFromRace(race.state);
     return {
       scenarioKind: scenario.kind,
-      winnerBasicId: race.state.winnerId,
+      winnerBasicId: race.state.winnerId ?? finalPlacements[0] ?? null,
       turnsAtFinish: race.state.turnIndex,
       preliminaryTurnsAtFinish: 0,
       finalTurnsAtFinish: race.state.turnIndex,
       preliminaryWinnerBasicId: null,
+      finalPlacements,
+      preliminaryPlacements: null,
       stackCarrierObservationCountByBasicId:
         race.stackCarrierObservationCountByBasicId,
     };
@@ -1110,18 +1115,24 @@ export function simulateHeadlessScenario(
     createTournamentPreliminaryRaceSetup(scenario.selectedBasicIds),
     boardEffectByCellIndex
   );
-  const finalPlacements = deriveBasicPlacementsFromRace(preliminaryRace.state);
+  const preliminaryPlacements = deriveBasicPlacementsFromRace(
+    preliminaryRace.state
+  );
   const finalRace = simulateHeadlessRace(
-    createTournamentFinalRaceSetup(finalPlacements),
+    createTournamentFinalRaceSetup(preliminaryPlacements),
     boardEffectByCellIndex
   );
+  const finalPlacements = deriveBasicPlacementsFromRace(finalRace.state);
   return {
     scenarioKind: scenario.kind,
-    winnerBasicId: finalRace.state.winnerId,
+    winnerBasicId: finalRace.state.winnerId ?? finalPlacements[0] ?? null,
     turnsAtFinish: preliminaryRace.state.turnIndex + finalRace.state.turnIndex,
     preliminaryTurnsAtFinish: preliminaryRace.state.turnIndex,
     finalTurnsAtFinish: finalRace.state.turnIndex,
-    preliminaryWinnerBasicId: preliminaryRace.state.winnerId,
+    preliminaryWinnerBasicId:
+      preliminaryRace.state.winnerId ?? preliminaryPlacements[0] ?? null,
+    finalPlacements,
+    preliminaryPlacements,
     stackCarrierObservationCountByBasicId: mergeTallies(
       preliminaryRace.stackCarrierObservationCountByBasicId,
       finalRace.stackCarrierObservationCountByBasicId
