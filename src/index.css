@@ -2,7 +2,63 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --banner-mix-bg: #f8fafc;
+  --banner-mix-border: #e2e8f0;
+  --banner-mix-shadow: #94a3b8;
+  --donut-empty: #cbd5e1;
+}
+
+html.dark {
+  --banner-mix-bg: #0f172a;
+  --banner-mix-border: #1e293b;
+  --banner-mix-shadow: #020617;
+  --donut-empty: #334155;
+}
+
 #root {
   width: 100%;
   min-height: 100vh;
+}
+
+/* Pause auto-run: outer = translate only, inner = rotate only (no transform clash). */
+.pause-auto-run-rainbow__wrap {
+  pointer-events: none;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 0;
+  width: min(50vmin, 24rem);
+  height: min(50vmin, 24rem);
+  transform: translate(-50%, -50%);
+}
+
+.pause-auto-run-rainbow__spin {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: conic-gradient(
+    from 0deg,
+    #f43f5e,
+    #fb923c,
+    #fbbf24,
+    #4ade80,
+    #38bdf8,
+    #818cf8,
+    #e879f9,
+    #f43f5e
+  );
+  animation: pause-auto-run-rainbow-spin 3.5s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pause-auto-run-rainbow__spin {
+    animation: none;
+  }
+}
+
+@keyframes pause-auto-run-rainbow-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }

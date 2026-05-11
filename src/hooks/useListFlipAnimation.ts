@@ -2,10 +2,10 @@ import { type RefObject, useLayoutEffect, useRef } from "react";
 
 const TRANSFORM_DURATION_MS = 420;
 
-export function useListFlipAnimation(
+export function useListFlipAnimation<T extends HTMLElement>(
   orderedIdsKey: string
-): RefObject<HTMLUListElement | null> {
-  const listRef = useRef<HTMLUListElement | null>(null);
+): RefObject<T | null> {
+  const listRef = useRef<T | null>(null);
   const positionsRef = useRef(new Map<string, DOMRect>());
 
   useLayoutEffect(() => {

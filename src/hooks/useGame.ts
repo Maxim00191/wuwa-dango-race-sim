@@ -8,10 +8,7 @@ import {
   useState,
 } from "react";
 import { ABBY_ID, ACTIVE_BASIC_DANGO_COUNT } from "@/constants/ids";
-import {
-  buildEffectLookup,
-  buildLinearBoardDescriptor,
-} from "@/services/boardLayout";
+import { BOARD_CELL_EFFECT_LOOKUP } from "@/services/boardCellEffectLookup";
 import {
   applyAtomicCellsStep,
   applyAtomicStepToEntities,
@@ -35,10 +32,6 @@ import {
   formatTurnOrderArrowLine,
   formatTurnOrderFromActorIds,
 } from "@/narration/formatTurnOrderArrowLine";
-
-const BOARD_EFFECT_BY_CELL_INDEX = buildEffectLookup(
-  buildLinearBoardDescriptor()
-);
 
 const ATOMIC_STEP_DELAY_MS = 520;
 const SINGLE_ACTION_PLAYBACK_GAP_MS = 800;
@@ -77,7 +70,7 @@ function accentDangoIdForTurnIntro(
 }
 
 function gameReducer(state: GameState, action: GameAction): GameState {
-  return reduceGameState(state, action, BOARD_EFFECT_BY_CELL_INDEX);
+  return reduceGameState(state, action, BOARD_CELL_EFFECT_LOOKUP);
 }
 
 export function useGame() {
@@ -280,7 +273,7 @@ export function useGame() {
         await shineBanner(
           {
             variant: "turn",
-            headline: `Turn ${playback.turnIndex}`,
+            headline: `Turn ${playback.turnIndex} — off we go`,
             detail: orderLine,
             accentDangoId: accentDangoIdForTurnIntro(playback.segments),
           },
@@ -295,9 +288,9 @@ export function useGame() {
         await shineBanner(
           {
             variant: "teleport",
-            headline: "Abby reclaims the starting lane",
+            headline: "Abby boops back to the start",
             detail:
-              incomingLogs[logCursor]?.message ?? "Boss reposition complete",
+              incomingLogs[logCursor]?.message ?? "Boss girl finds her footing again",
             accentDangoId: ABBY_ID,
           },
           TELEPORT_BANNER_MS
@@ -334,10 +327,10 @@ export function useGame() {
               variant: "teleport",
               headline:
                 accentDangoId === ABBY_ID
-                  ? "Abby reclaims the starting lane"
-                  : `${name} leaps to a nearby stack`,
+                  ? "Abby boops back to the start"
+                  : `${name} springs to a friendlier stack`,
               detail:
-                incomingLogs[logCursor]?.message ?? "Teleport reposition complete",
+                incomingLogs[logCursor]?.message ?? "Everyone lands soft",
               accentDangoId,
             },
             TELEPORT_BANNER_MS
@@ -356,8 +349,8 @@ export function useGame() {
             await shineBanner(
               {
                 variant: "idle",
-                headline: `${name} remains on standby`,
-                detail: "Waiting for the race clock to advance",
+                headline: `${name} is warming up off-track`,
+                detail: "They'll hop in once the pace picks up",
                 accentDangoId: segment.actorId,
               },
               IDLE_BANNER_MS
@@ -370,11 +363,11 @@ export function useGame() {
             await shineBanner(
               {
                 variant: "idle",
-                headline: `${name} cannot carry the stack`,
+                headline: `${name} lets someone else lead here`,
                 detail:
                   rollValue !== undefined
-                    ? `Rolled ${rollValue}, but another racer anchors this cell`
-                    : "Stack anchor mismatch on this cell",
+                    ? `Rolled ${rollValue}, but a friend is anchoring this spot`
+                    : "Another racer is holding this stack together",
                 accentDangoId: segment.actorId,
               },
               IDLE_BANNER_MS
@@ -403,7 +396,7 @@ export function useGame() {
                 rollValue !== undefined
                   ? `${name} rolled a ${rollValue}!`
                   : `${name} rolls`,
-              detail: "Track animation incoming",
+              detail: "Watch the little hops unfold",
               accentDangoId: segment.actorId,
             },
             BANNER_READ_MS
@@ -418,7 +411,7 @@ export function useGame() {
               {
                 variant: "skill",
                 headline: skillMessage,
-                detail: "Skill surge",
+                detail: "Sparkly skill moment",
                 accentDangoId: segment.actorId,
               },
               SKILL_BANNER_READ_MS
@@ -442,8 +435,8 @@ export function useGame() {
           await shineBanner(
             {
               variant: "slide",
-              headline: "Special cell surge",
-              detail: "The stack rides bonus momentum",
+              headline: "Sparkly cell bonus",
+              detail: "The whole pile gets a cheerful shove",
               accentDangoId: segment.travelingIds.at(-1),
             },
             SLIDE_BANNER_MS
@@ -465,8 +458,8 @@ export function useGame() {
         await shineBanner(
           {
             variant: "victory",
-            headline: `${winnerLabel} wins Dango Scramble`,
-            detail: "Lap complete · champion crowned",
+            headline: `${winnerLabel} wins the scramble!`,
+            detail: "Full lap done—big sparkle energy today",
             accentDangoId: state.winnerId,
           },
           VICTORY_HOLD_MS
@@ -505,8 +498,8 @@ export function useGame() {
         CHARACTER_BY_ID[winnerId]?.displayName ?? winnerId;
       setBroadcastPayload({
         variant: "victory",
-        headline: `${winnerLabel} wins Dango Scramble`,
-        detail: "Lap complete · champion crowned",
+        headline: `${winnerLabel} wins the scramble!`,
+        detail: "Full lap done—big sparkle energy today",
         accentDangoId: winnerId,
       });
       await delayMilliseconds(VICTORY_HOLD_MS);
@@ -604,7 +597,7 @@ export function useGame() {
     instantFullTurn,
     instantSimulateGame,
     reset,
-    boardEffects: BOARD_EFFECT_BY_CELL_INDEX,
+    boardEffects: BOARD_CELL_EFFECT_LOOKUP,
     boardCells: playbackCells ?? state.cells,
     hoppingEntityIds,
     isAnimating,

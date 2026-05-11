@@ -231,7 +231,7 @@ function evaluateAbbyResetScheduling(state: GameState): GameState {
   const nextState = appendLog(state, {
     kind: "abbyResetScheduled",
     message:
-      "Abby is alone on a cell and behind every racer; next turn Abby returns to the start.",
+      "Abby's having a quiet moment behind everyone—she'll bounce back to start next turn.",
   });
   return { ...nextState, abbyPendingTeleportToStart: true };
 }
@@ -276,7 +276,7 @@ function teleportAbbyToStartLine(state: GameState): GameState {
   );
   nextState = appendLog(nextState, {
     kind: "abbyTeleport",
-    message: "Abby was sent back to the start line.",
+    message: "Abby toddles back to the start line for another charge.",
   });
   return nextState;
 }
@@ -545,7 +545,7 @@ function resolveTurnForEntity(
     return {
       state: appendLog(state, {
         kind: "standby",
-        message: `${character.displayName} is still on standby.`,
+        message: `${character.displayName} is still stretching—boss joins once things heat up.`,
       }),
       segments: [
         {
@@ -579,7 +579,7 @@ function resolveTurnForEntity(
   };
   nextState = appendLog(nextState, {
     kind: "roll",
-    message: `${character.displayName} rolled ${plan.initialDiceValue}.`,
+    message: `${character.displayName} rolls a ${plan.initialDiceValue}!`,
   });
   for (const narrative of [plan.skillNarrative, movementOutcome.skillNarrative]) {
     if (!narrative) {
@@ -608,7 +608,7 @@ function resolveTurnForEntity(
     return {
       state: appendLog(nextState, {
         kind: "skipNotBottom",
-        message: `${character.displayName} could not be placed on the track.`,
+        message: `${character.displayName} can't hop yet—this spot wants someone else first.`,
       }),
       segments: [
         {
@@ -629,7 +629,7 @@ function resolveTurnForEntity(
   segments.push(...movementResult.segments);
   nextState = appendLog(nextState, {
     kind: "move",
-    message: `${character.displayName} moved ${resolvedMovementStepCount} steps ${character.travelDirection}.`,
+    message: `${character.displayName} pitter-patters ${resolvedMovementStepCount} steps ${character.travelDirection}.`,
   });
   const destinationStackCellIndex = findCellIndexForEntity(
     nextState.cells,
@@ -677,12 +677,12 @@ function resolveTurnForEntity(
     });
     afterEffectState = appendLog(afterEffectState, {
       kind: "cellEffect",
-      message: "A special cell shifted the stack farther along the track.",
+      message: "A sparkly cell nudges the whole stack a little farther.",
     });
   } else if (boardEffectByCellIndex.get(destinationStackCellIndex)) {
     afterEffectState = appendLog(afterEffectState, {
       kind: "cellEffect",
-      message: "A special cell reacted to the stack.",
+      message: "A sparkly cell hums hello to the stack.",
     });
   }
   const winnerId = pickWinnerBasicDangoId(afterEffectState);
@@ -690,7 +690,7 @@ function resolveTurnForEntity(
     const winnerDisplay = CHARACTER_BY_ID[winnerId]?.displayName ?? winnerId;
     const finished = appendLog(afterEffectState, {
       kind: "win",
-      message: `${winnerDisplay} finished a lap and won the scramble.`,
+      message: `${winnerDisplay} finishes a lap and steals the whole hug.`,
     });
     return {
       state: {
@@ -761,7 +761,7 @@ function openNextTurnWithDicePlans(state: GameState): {
   };
   nextState = appendLog(nextState, {
     kind: "turnHeader",
-    message: `Turn ${nextState.turnIndex} begins.`,
+    message: `Turn ${nextState.turnIndex} starts—everyone take a breath.`,
   });
   const orderedActors = shuffleOrderStableCopy(nextState.entityOrder);
   const { plansByActorId, allInitialRollsById, allResolvedRollsById } =
@@ -952,6 +952,42 @@ function applyInstantSimulateGame(
   return {
     ...working,
     lastTurnPlayback: null,
+  };
+}
+
+export type HeadlessSimulationOutcome = {
+  winnerBasicId: DangoId | null;
+  turnsAtFinish: number;
+  stackCarrierObservationCountByBasicId: Record<string, number>;
+};
+
+function tallyBasicStackTopsAcrossCells(
+  state: GameState,
+  tallies: Record<string, number>
+): void {
+  for (const [, stackBottomToTop] of state.cells) {
+    const topId = stackBottomToTop[stackBottomToTop.length - 1];
+    if (!topId || topId === ABBY_ID) {
+      continue;
+    }
+    tallies[topId] = (tallies[topId] ?? 0) + 1;
+  }
+}
+
+export function simulateHeadlessFullGame(
+  selectedBasicIds: DangoId[],
+  boardEffectByCellIndex: Map<number, string | null>
+): HeadlessSimulationOutcome {
+  let working = createRunningSessionFromSelection(selectedBasicIds);
+  const stackCarrierObservationCountByBasicId: Record<string, number> = {};
+  while (working.phase === "running" && !working.winnerId) {
+    working = applyInstantFullTurn(working, boardEffectByCellIndex);
+    tallyBasicStackTopsAcrossCells(working, stackCarrierObservationCountByBasicId);
+  }
+  return {
+    winnerBasicId: working.winnerId,
+    turnsAtFinish: working.turnIndex,
+    stackCarrierObservationCountByBasicId,
   };
 }
 

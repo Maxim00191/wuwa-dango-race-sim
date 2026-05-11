@@ -212,11 +212,20 @@ function CircularBoardComponent({
     >
       <svg
         viewBox={`0 0 ${viewWidth} ${viewHeight}`}
-        className="h-full w-full text-slate-100"
+        className="h-full w-full text-slate-900 dark:text-slate-100"
         role="img"
         aria-label="Elliptical race board with thirty-two cells"
       >
         <defs>
+          <style>{`
+html:not(.dark) #boardGlow stop:nth-child(1) { stop-color: #f8fafc; }
+html:not(.dark) #boardGlow stop:nth-child(2) { stop-color: #e2e8f0; }
+html:not(.dark) #finishChecker > rect:nth-child(1) { fill: #f8fafc; }
+html:not(.dark) #finishChecker > rect:nth-child(2),
+html:not(.dark) #finishChecker > rect:nth-child(3) { fill: #64748b; opacity: 0.35; }
+html:not(.dark) #finishChecker > rect:nth-child(4),
+html:not(.dark) #finishChecker > rect:nth-child(5) { fill: #cbd5e1; }
+`}</style>
           <pattern
             id="finishChecker"
             width={10}
@@ -273,8 +282,9 @@ function CircularBoardComponent({
           rx={orbitRadiusX + TRACK_RING_PAD_X}
           ry={orbitRadiusY + TRACK_RING_PAD_Y}
           fill="url(#boardGlow)"
-          stroke="#334155"
+          stroke="currentColor"
           strokeWidth={2}
+          className="text-slate-300 dark:text-slate-600"
         />
         <ellipse
           cx={centerX}
@@ -282,10 +292,11 @@ function CircularBoardComponent({
           rx={orbitRadiusX}
           ry={orbitRadiusY}
           fill="none"
-          stroke="#334155"
+          stroke="currentColor"
           strokeWidth={1.25}
           strokeDasharray="6 10"
           opacity={0.55}
+          className="text-slate-300 dark:text-slate-600"
         />
         {cellsArray.map((cellIndex) => {
           const angle = angleForCellIndex(cellIndex, CELL_COUNT);
@@ -307,19 +318,26 @@ function CircularBoardComponent({
               <g transform={`translate(${cellCenter.x}, ${cellCenter.y})`}>
                 <circle
                   r={markerRadius}
-                  fill={finishAccent ? "url(#finishChecker)" : "#0f172a"}
-                  stroke={
-                    finishAccent ? "#fbbf24" : hasEffect ? "#c084fc" : "#64748b"
-                  }
+                  fill={finishAccent ? "url(#finishChecker)" : undefined}
+                  stroke={finishAccent ? "#fbbf24" : hasEffect ? "#c084fc" : undefined}
                   strokeWidth={finishAccent ? 3 : hasEffect ? 2 : 1.4}
                   filter={finishAccent ? "url(#finishCellGlow)" : undefined}
+                  className={
+                    finishAccent
+                      ? undefined
+                      : hasEffect
+                        ? "fill-slate-100 dark:fill-[#0f172a]"
+                        : "fill-slate-100 stroke-slate-400 dark:fill-[#0f172a] dark:stroke-[#64748b]"
+                  }
                 />
                 <text
                   textAnchor="middle"
                   dominantBaseline="central"
                   y={-markerRadius - 7}
                   className={`pointer-events-none text-[9px] font-semibold tabular-nums ${
-                    finishAccent ? "fill-amber-100" : "fill-slate-500"
+                    finishAccent
+                      ? "fill-amber-700 dark:fill-amber-100"
+                      : "fill-slate-600 dark:fill-slate-500"
                   }`}
                 >
                   {cellIndex}
@@ -366,9 +384,9 @@ function CircularBoardComponent({
                   <circle
                     r={TOKEN_RADIUS}
                     fill={accentFill}
-                    stroke="#020617"
                     strokeWidth={2.2}
                     opacity={0.92 + stackedLift * 0.06}
+                    className="stroke-slate-600/85 dark:stroke-slate-300/55"
                   />
                   {nameLines.length === 1 ? (
                     <text

@@ -3,53 +3,18 @@ import {
   accentFillHexForDango,
   contrastingInkHexForFill,
 } from "@/services/dangoColors";
-import type { DangoId, GameState } from "@/types/game";
-
-export type TurnQueuePresentation = {
-  orderedActorIds: DangoId[];
-  initialDiceByActorId: Record<DangoId, number | undefined>;
-  activeRacerIndex: number;
-};
-
-export function pickTurnQueuePresentation(
-  gameState: GameState,
-  isAnimating: boolean
-): TurnQueuePresentation | null {
-  if (gameState.phase !== "running") {
-    return null;
-  }
-  if (isAnimating && gameState.lastTurnPlayback?.turnQueue) {
-    const attachment = gameState.lastTurnPlayback.turnQueue;
-    return {
-      orderedActorIds: attachment.orderedActorIds,
-      initialDiceByActorId: attachment.initialDiceByActorId,
-      activeRacerIndex: Math.max(0, attachment.nextActorIndexAfterPlayback - 1),
-    };
-  }
-  if (gameState.pendingTurn) {
-    const initialDiceByActorId: Record<DangoId, number | undefined> = {};
-    for (const actorId of gameState.pendingTurn.orderedActorIds) {
-      initialDiceByActorId[actorId] =
-        gameState.pendingTurn.plansByActorId[actorId]?.initialDiceValue;
-    }
-    return {
-      orderedActorIds: gameState.pendingTurn.orderedActorIds,
-      initialDiceByActorId,
-      activeRacerIndex: gameState.pendingTurn.nextActorIndex,
-    };
-  }
-  return null;
-}
+import { useListFlipAnimation } from "@/hooks/useListFlipAnimation";
+import type { TurnQueuePresentation } from "@/services/turnQueuePresentation";
 
 type TurnQueueViewerProps = {
   presentation: TurnQueuePresentation | null;
-  isAnimating: boolean;
 };
 
-export function TurnQueueViewer({
-  presentation,
-  isAnimating,
-}: TurnQueueViewerProps) {
+export function TurnQueueViewer({ presentation }: TurnQueueViewerProps) {
+  const queueListRef = useListFlipAnimation<HTMLDivElement>(
+    presentation?.orderedActorIds.join("\u0001") ?? ""
+  );
+
   if (!presentation || presentation.orderedActorIds.length === 0) {
     return null;
   }
@@ -58,21 +23,21 @@ export function TurnQueueViewer({
     orderedActorIds,
     initialDiceByActorId,
     activeRacerIndex,
+    state,
   } = presentation;
   const slotCount = orderedActorIds.length;
-  const fullTurnPlaybackRecap =
-    isAnimating && activeRacerIndex >= slotCount;
-  const turnResolvedPastQueue =
-    activeRacerIndex >= slotCount && !fullTurnPlaybackRecap;
-  const showPointerUnderSlot = activeRacerIndex < slotCount;
+  const turnResolvedPastQueue = state === "resolved" || activeRacerIndex >= slotCount;
+  const showPointerUnderSlot =
+    state === "active" && activeRacerIndex < slotCount;
 
   return (
     <div className="mt-4 w-full min-w-0">
-      <p className="mb-2 text-[10px] uppercase tracking-[0.22em] text-slate-500">
-        Turn order queue
+      <p className="mb-2 text-base font-bold tracking-tight text-slate-800 dark:text-slate-100">
+        This turn's hopping order
       </p>
       <div className="relative pb-6">
         <div
+          ref={queueListRef}
           className="grid min-w-0 gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           style={{
             gridTemplateColumns: `repeat(${slotCount}, minmax(5.25rem, 1fr))`,
@@ -84,41 +49,47 @@ export function TurnQueueViewer({
             const rollValue = initialDiceByActorId[actorId];
             const rollLabel =
               rollValue === undefined ? "—" : String(rollValue);
-            const dimmed = fullTurnPlaybackRecap
-              ? false
-              : queueIndex < activeRacerIndex || turnResolvedPastQueue;
+            const dimmed = queueIndex < activeRacerIndex || turnResolvedPastQueue;
             const isCurrentSlot =
-              !fullTurnPlaybackRecap &&
+              state === "active" &&
               !turnResolvedPastQueue &&
               queueIndex === activeRacerIndex;
             const accentHex = accentFillHexForDango(actorId);
             const inkHex = contrastingInkHexForFill(accentHex);
             return (
               <div
-                key={`${actorId}-${queueIndex}`}
+                key={actorId}
+                data-flip-item={actorId}
                 className={`flex min-w-0 flex-col items-center rounded-2xl border px-3 py-2 text-center transition-all duration-300 ease-out ${
-                  dimmed
-                    ? "border-slate-800/80 bg-slate-950/40 opacity-50 grayscale"
-                    : `border-slate-600/90 bg-slate-950/70 opacity-100 grayscale-0 ${
-                        isCurrentSlot
-                          ? "shadow-[0_0_22px_rgba(56,189,248,0.35)] ring-2 ring-sky-400/70"
-                          : ""
-                      }`
+                  isCurrentSlot
+                    ? "border-slate-300/95 bg-white/85 opacity-100 grayscale-0 shadow-[0_0_22px_rgba(56,189,248,0.35)] ring-2 ring-sky-400/70 dark:border-slate-600/90 dark:bg-slate-950/70"
+                    : turnResolvedPastQueue
+                      ? "border-slate-200/90 bg-slate-100/70 opacity-75 dark:border-slate-800/80 dark:bg-slate-950/45"
+                      : dimmed
+                    ? "border-slate-200/90 bg-slate-100/50 opacity-50 grayscale dark:border-slate-800/80 dark:bg-slate-950/40"
+                    : "border-slate-300/95 bg-white/85 opacity-100 grayscale-0 dark:border-slate-600/90 dark:bg-slate-950/70"
                 }`}
               >
                 <span
-                  className="inline-flex max-w-full truncate rounded-full px-2 py-0.5 text-[11px] font-semibold leading-tight"
-                  style={{
-                    backgroundColor: dimmed ? "#334155" : accentHex,
-                    color: dimmed ? "#e2e8f0" : inkHex,
-                  }}
+                  className={`inline-flex max-w-full truncate rounded-full px-2 py-0.5 text-[11px] font-semibold leading-tight ${
+                    dimmed
+                      ? "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200"
+                      : ""
+                  }`}
+                  style={
+                    dimmed
+                      ? undefined
+                      : { backgroundColor: accentHex, color: inkHex }
+                  }
                   title={displayName}
                 >
                   {displayName}
                 </span>
                 <span
                   className={`mt-1 font-mono text-lg font-semibold tabular-nums leading-none ${
-                    dimmed ? "text-slate-500" : "text-white"
+                    dimmed
+                      ? "text-slate-500"
+                      : "text-slate-900 dark:text-white"
                   }`}
                 >
                   {rollLabel}
@@ -138,7 +109,7 @@ export function TurnQueueViewer({
               }}
             >
               <div className="flex h-full items-end justify-center">
-                <div className="flex w-20 items-center gap-1.5 rounded-full bg-sky-400 px-2 py-1 shadow-sm shadow-sky-950/30">
+                <div className="flex w-20 items-center gap-1.5 rounded-full bg-sky-400 px-2 py-1 shadow-sm shadow-sky-900/20 dark:shadow-sky-950/30">
                 </div>
               </div>
             </div>
