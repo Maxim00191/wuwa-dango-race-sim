@@ -35,3 +35,8 @@ coverage/
 
 # Vite
 vite.config.ts.timestamp-*
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
