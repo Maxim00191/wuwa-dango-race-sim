@@ -89,6 +89,8 @@ export const enDictionary: TranslationDictionary = {
   footer: {
     disclaimer:
       "This website is a fan-made simulation and does not represent actual in-game code or mechanics. It may produce behaviors inconsistent with the official game. All content is only for reference and entertainment. This is a purely fan-made project and is not affiliated with the official game.",
+    githubLabel: "GitHub repo",
+    bilibiliLabel: "Bilibili page",
   },
   normal: {
     session: {
@@ -521,21 +523,21 @@ export const enDictionary: TranslationDictionary = {
       cartethyiaComebackBoost:
         "{actor}'s Comeback erupts for 2 extra steps.",
       jinhsiStackAscend:
-        "{actor} surges through the stack and claims the highest perch.",
+        "{actor} invokes Magistrate's Name and ascends through the stack to seize the highest perch.",
       changliActLastNextRound:
-        "{actor} gathers her rhythm and will perform the grand finale next round.",
+        "{actor} acts with Plan Before Resolve, setting the stage to perform the grand finale next round.",
       calcharoLastPlaceBoost:
-        "{actor} claws back from last place and gains 3 extra steps.",
+        "{actor} moves Like a Shadow, surging from last place for 3 extra steps.",
       augustaGovernorAuthority:
-        "{actor} exercises Governor's Authority, skips this round, and will deliver the grand finale next round.",
+        "{actor} exercises Governor's Authority, yielding this round to deliver the grand finale next round.",
       iunoAnchoredDestiny:
-        "{actor} anchors fate and pulls {aheadTarget} and {behindTarget} onto the same tile.",
+        "{actor} invokes Anchored Destiny and pulls the ahead {aheadTarget} and behind {behindTarget} onto the same tile.",
       iunoAnchoredDestinyAhead:
-        "{actor} anchors fate and pulls {target} onto the same tile from one rank ahead.",
+        "{actor} invokes Anchored Destiny and pulls {target} onto the same tile from one rank ahead.",
       iunoAnchoredDestinyBehind:
-        "{actor} anchors fate and pulls {target} onto the same tile from one rank behind.",
+        "{actor} invokes Anchored Destiny and pulls {target} onto the same tile from one rank behind.",
       phrolovaBottomBoost:
-        "{actor} successfully plots from the base of the stack and gains 3 extra steps.",
+        "{actor} unveils Elegant Conspiracy from the base of the stack and gains 3 extra steps.",
     },
   },
   banner: {

@@ -1768,9 +1768,6 @@ function resolveTurnForEntity(
   }
   const actingEntity = state.entities[actingEntityId];
   if (actingEntity?.skillState.skipTurnThisRound) {
-    const skillNarrative = text("simulation.skills.augustaGovernorAuthority", {
-      actor: characterParam(actingEntityId),
-    });
     let skippedState: GameState = {
       ...state,
       entities: {
@@ -1784,17 +1781,7 @@ function resolveTurnForEntity(
         },
       },
     };
-    skippedState = appendLog(skippedState, {
-      kind: "skillTrigger",
-      message: skillNarrative,
-    });
-    const skippedSegments: PlaybackSegment[] = [
-      {
-        kind: "skill",
-        actorId: actingEntityId,
-        message: skillNarrative,
-      },
-    ];
+    const skippedSegments: PlaybackSegment[] = [];
     const actingCellIndex =
       findCellIndexForEntity(skippedState.cells, actingEntityId) ??
       FINISH_LINE_CELL_INDEX;

@@ -5,6 +5,7 @@ import {
   type WorkspaceView,
 } from "@/components/AppNavigation";
 import { DangoPicker } from "@/components/DangoPicker";
+import { FooterSocialLinks } from "@/components/FooterSocialLinks";
 import { GameShell } from "@/components/GameShell";
 import { MonteCarloPanel } from "@/components/MonteCarloPanel";
 import { TournamentSetupPanel } from "@/components/TournamentSetupPanel";
@@ -343,6 +344,7 @@ export default function App() {
               startControls={
                 <button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() =>
                     normalGame.start(createNormalRaceSetup(lineup.selectedBasicIds))
                   }
@@ -413,6 +415,7 @@ export default function App() {
               startControls={
                 <button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={
                     tournamentRestartStartsFinal
                       ? tournament.startFinal
@@ -449,6 +452,7 @@ export default function App() {
                 tournamentCanLaunchFinalFromPreliminary ? (
                   <button
                     type="button"
+                    onMouseDown={(e) => e.preventDefault()}
                     onClick={tournament.startFinal}
                     disabled={tournamentLaunchFinalDisabled}
                     className="rounded-full bg-violet-500 px-5 py-2 text-sm font-semibold text-violet-950 shadow-lg shadow-violet-900/40 transition hover:bg-violet-400 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
@@ -482,8 +486,9 @@ export default function App() {
         )}
       </main>
       <footer className="mt-auto border-t border-slate-200/70 px-4 py-6 text-center text-xs text-slate-500/80 dark:border-slate-800/70 dark:text-slate-400/80 sm:px-6 md:px-10 lg:px-14 xl:px-16 2xl:px-24">
-        <div className="mx-auto flex max-w-5xl flex-col gap-1 leading-6">
+        <div className="mx-auto flex max-w-5xl flex-col gap-3 leading-6">
           <p>{t("footer.disclaimer")}</p>
+          <FooterSocialLinks />
           <p>
             Build time: <time dateTime={__BUILD_TIMESTAMP__}>{formattedBuildTimestamp}</time>
           </p>

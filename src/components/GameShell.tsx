@@ -1,4 +1,9 @@
-import { useEffect, useMemo, type ReactNode } from "react";
+import {
+  useEffect,
+  useMemo,
+  type MouseEvent,
+  type ReactNode,
+} from "react";
 import { TurnQueueViewer } from "@/components/TurnQueueViewer";
 import {
   BroadcastBanner,
@@ -18,6 +23,10 @@ import { useListFlipAnimation } from "@/hooks/useListFlipAnimation";
 import { usePersistentTurnQueuePresentation } from "@/hooks/usePersistentTurnQueuePresentation";
 import { orderedRacerIdsForLeaderboard } from "@/services/racerRanking";
 import type { DangoId, GameState } from "@/types/game";
+
+function suppressMouseDownFocus(e: MouseEvent<HTMLButtonElement>) {
+  e.preventDefault();
+}
 
 type GameShellProps = {
   state: GameState;
@@ -196,6 +205,7 @@ export function GameShell({
             {startControls}
             <button
               type="button"
+              onMouseDown={suppressMouseDownFocus}
               onClick={onStepAction}
               disabled={nextTurnDisabled}
               className="rounded-full bg-violet-500 px-5 py-2 text-sm font-semibold text-violet-950 shadow-lg shadow-violet-900/40 transition hover:bg-violet-400 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
@@ -204,6 +214,7 @@ export function GameShell({
             </button>
             <button
               type="button"
+              onMouseDown={suppressMouseDownFocus}
               onClick={onPlayTurn}
               disabled={playTurnDisabled}
               className="rounded-full bg-sky-500 px-5 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-sky-900/40 transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
@@ -221,6 +232,7 @@ export function GameShell({
                 </span>
                 <button
                   type="button"
+                  onMouseDown={suppressMouseDownFocus}
                   onClick={() => onAutoPlayEnabledChange(false)}
                   disabled={autoRunDisabled}
                   className="relative z-10 rounded-full bg-white px-5 py-2 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900 dark:disabled:bg-slate-800 dark:disabled:text-slate-500"
@@ -234,6 +246,7 @@ export function GameShell({
               >
                 <button
                   type="button"
+                  onMouseDown={suppressMouseDownFocus}
                   onClick={() => onAutoPlayEnabledChange(true)}
                   disabled={autoRunDisabled}
                   className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900 dark:disabled:bg-slate-800 dark:disabled:text-slate-500"
@@ -245,6 +258,7 @@ export function GameShell({
             {resetAdjacentControls}
             <button
               type="button"
+              onMouseDown={suppressMouseDownFocus}
               onClick={onReset}
               className="rounded-full bg-rose-600 px-5 py-2 text-sm font-semibold text-rose-50 shadow-lg shadow-rose-950/35 transition hover:bg-rose-500"
             >
@@ -258,6 +272,7 @@ export function GameShell({
               <button
                 key={option}
                 type="button"
+                onMouseDown={suppressMouseDownFocus}
                 onClick={() => setSpeedMultiplier(option)}
                 aria-pressed={option === speedMultiplier}
                 aria-label={t("nav.playback.optionAria", { speed: option })}
@@ -276,6 +291,7 @@ export function GameShell({
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
+              onMouseDown={suppressMouseDownFocus}
               onClick={onInstantTurn}
               disabled={instantDisabled}
               className="rounded-full bg-fuchsia-600 px-5 py-2 text-sm font-semibold text-fuchsia-50 shadow-lg shadow-fuchsia-950/40 transition hover:bg-fuchsia-500 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
@@ -284,6 +300,7 @@ export function GameShell({
             </button>
             <button
               type="button"
+              onMouseDown={suppressMouseDownFocus}
               onClick={onInstantGame}
               disabled={instantDisabled}
               className="rounded-full bg-rose-600 px-5 py-2 text-sm font-semibold text-rose-50 shadow-lg shadow-rose-950/40 transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none dark:disabled:bg-slate-700 dark:disabled:text-slate-400"

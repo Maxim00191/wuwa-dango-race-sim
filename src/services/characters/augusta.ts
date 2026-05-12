@@ -1,3 +1,4 @@
+import { characterParam, text } from "@/i18n";
 import { rollStandardBasicDice } from "@/services/characters/basic";
 import type {
   CharacterDefinition,
@@ -41,6 +42,9 @@ function resolveAugustaGovernorAuthority(
         },
       },
     },
+    skillNarrative: text("simulation.skills.augustaGovernorAuthority", {
+      actor: characterParam(context.actorId),
+    }),
   };
 }
 

@@ -89,6 +89,8 @@ export const zhCnDictionary: TranslationDictionary = {
   footer: {
     disclaimer:
       "本网站仅提供基于个人创作的模拟程序，并不代表实际游戏内代码运行情况，可能会产生与游戏不符合的表现，所有内容仅供参考和娱乐。本站仅为玩家二创内容，与官方无关。",
+    githubLabel: "GitHub 仓库",
+    bilibiliLabel: "Bilibili 主页",
   },
   normal: {
     session: {
@@ -487,21 +489,21 @@ export const zhCnDictionary: TranslationDictionary = {
       cartethyiaComebackBoost:
         "{actor} 的翻盘状态爆发，额外获得 2 格移动。",
       jinhsiStackAscend:
-        "{actor} 瞬间跃上了层叠最上方，占住了最高点。",
+        "{actor} 以令尹之名，踏上团子之顶，瞬间跃至最上方。",
       changliActLastNextRound:
-        "{actor} 收束节奏，下回合将压轴行动。",
+        "{actor} 谋而后定，收束全局，下回合将压轴行动。",
       calcharoLastPlaceBoost:
-        "{actor} 身处末位却骤然爆发，额外获得 3 格移动。",
+        "{actor} 如影随形，瞬间加速，额外获得 3 格移动。",
       augustaGovernorAuthority:
-        "{actor} 发动总督权柄，本回合跳过行动，并将在下回合压轴出手。",
+        "{actor} 发动总督权柄，暂缓本回合行动，并将在下回合压轴出手。",
       iunoAnchoredDestiny:
-        "{actor} 锚定命途，将 {aheadTarget} 与 {behindTarget} 一并牵引到自己所在的格子。",
+        "{actor} 锚定命途，将前方的 {aheadTarget} 与后方的 {behindTarget} 一并牵引至自己所在的格子。",
       iunoAnchoredDestinyAhead:
-        "{actor} 锚定命途，将前方相邻名次的 {target} 牵引到自己所在的格子。",
+        "{actor} 锚定命途，将前方相邻名次的 {target} 牵引至自己所在的格子。",
       iunoAnchoredDestinyBehind:
-        "{actor} 锚定命途，将后方相邻名次的 {target} 牵引到自己所在的格子。",
+        "{actor} 锚定命途，将后方相邻名次的 {target} 牵引至自己所在的格子。",
       phrolovaBottomBoost:
-        "{actor} 在叠层底部布局得手，本回合额外获得 3 格移动。",
+        "{actor} 施展优雅阴谋，于叠层底部完成布局，本回合额外获得 3 格移动。",
     },
   },
   banner: {
