@@ -1,55 +1,90 @@
 # Wuthering Waves 2nd Anniversary Dango Dash Simulator
 
-A fan-developed web simulator for the Wuthering Waves 2nd Anniversary Dango Dash mini-game.
+[简体中文](./README_zh.md)
 
-This tool allows players to build custom 6-dango lineups, simulate step-by-step race outcomes, and run large-scale Monte Carlo analyses to estimate winning probabilities and optimal strategies.
+A fan-made web simulator for the Wuthering Waves 2nd Anniversary `Cubie Derby` event (I prefer to call it `Dango`).
 
-## Key Features
+The app lets you build custom 6-dango lineups, inspect races action by action, simulate tournament brackets, and run large Monte Carlo batches to estimate lineup strength and placement trends.
 
-- Interactive Race Engine: Granular control over simulations with step-by-step playback, turn-based progression, auto-run, and instant result generation.
-- Tournament Mode: Fully replicates the event's tournament structure, including preliminary race logic and customizable grand final placements.
-- Monte Carlo Analysis: Run parallel simulation batches (100, 1,000, or 10,000 iterations) to extract data on win rates, placement stability, and conditional lineup performance.
-- Quality of Life: Built-in state persistence via local storage (saves lineup choices, playback speed, and UI preferences), alongside bilingual support (English/Simplified Chinese) and dark mode.
+> The official website for this project is [wuwadango.com](https://wuwadango.com).
 
-## Technical Overview
+## Highlights
 
-The application is built entirely as a client-side single-page application (SPA).
+- Normal race: Run a single race with step-by-step controls, per-turn playback, auto-run, instant resolution, live leaderboard updates, and animated board state.
+- Tournament workflow: Recreate the event format with a preliminary race, then launch the final using either the official qualifying order or a custom reordered start stack.
+- Analysis workspace: Review aggregate results in dedicated overview, conditional, and tournament insight panels after a Monte Carlo batch finishes.
+- Flexible Monte Carlo runner: Launch preset batches of `100`, `1,000`, or `10,000` simulations, or enter a custom run count, track progress live, and cancel long runs.
+- Better lineup tooling: Pick racers by attribute or lineup group, save your current setup locally, and switch between English / Simplified Chinese plus light / dark themes.
 
-- Framework: React 19
-- Language: TypeScript
-- Build Tool: Vite
-- Styling: Tailwind CSS
+## Keyboard Shortcuts
 
-## Local Development
+- `Enter`: start the current race when available, otherwise resolve the full race instantly.
+- `Right Arrow`: step the next action.
+- `Ctrl + Right Arrow`: play the rest of the current turn.
+- `Space`: toggle auto-run.
 
-Ensure you have Node.js (version 20 or higher) installed.
+## Tech Stack
 
-1. Install dependencies:
-   npm install
+This is a client-side SPA built with:
 
-2. Start the local development server:
-   npm run dev
+- React 19
+- TypeScript
+- Vite
+- Tailwind CSS
+- Cloudflare Vite plugin + Wrangler for local preview and deployment
 
-3. Build for production:
-   npm run build
+## Development
 
-4. Run ESLint checks:
-   npm run lint
+Use Node.js `20+`.
 
-## Project Architecture
+```bash
+npm install
+npm run dev
+```
 
-- /src/components: React components grouped by UI features and analytical dashboards.
-- /src/services: Core simulation engine containing race logic, tournament brackets, and Monte Carlo batch runners.
-- /src/constants: Static data configurations for the game board and dango attributes.
-- /src/hooks: Custom React hooks managing application state and local storage persistence.
-- /src/i18n: Localization files for dual-language support.
+Available scripts:
+
+- `npm run dev`: start the Vite development server.
+- `npm run lint`: run ESLint with `--max-warnings 0`.
+- `npm run typecheck`: run TypeScript project builds for type validation.
+- `npm run check`: run lint and typecheck together.
+- `npm run build`: produce a production build after lint and typecheck pass.
+- `npm run preview`: build the app and serve it locally through Wrangler.
+- `npm run deploy`: build and deploy to Cloudflare.
+
+## Cloudflare Preview / Deploy
+
+The repository includes `wrangler.jsonc` and the Cloudflare Vite plugin, so the production flow is already wired for Cloudflare assets hosting with SPA fallback handling.
+
+Typical deployment flow:
+
+```bash
+npm run build
+npm run preview
+```
+
+When you are ready to publish, authenticate Wrangler if needed and run:
+
+```bash
+npm run deploy
+```
+
+## Project Structure
+
+- `src/components`: main UI, race controls, setup panels, and dashboards.
+- `src/components/analysis`: aggregate analysis views for Monte Carlo results.
+- `src/services`: simulation engine, tournament logic, board setup, and analytics helpers.
+- `src/hooks`: reusable state hooks, including persistence and UI preferences.
+- `src/i18n`: localization dictionaries and translation helpers.
+- `src/constants`: static configuration for IDs, attributes, and board metadata.
+- `src/types`: shared TypeScript domain types.
 
 ## Disclaimer
 
-This is an independent, unofficial fan project and is not affiliated with, endorsed, or sponsored by Kuro Games.
+This is an unofficial fan project and is not affiliated with, endorsed by, or sponsored by Kuro Games.
 
-Simulation outcomes are calculated based on reverse-engineered in-app logic and RNG. The generated probabilities are statistical estimates and do not guarantee actual in-game results.
+Simulation results are derived from project-side logic reconstruction and RNG. Reported probabilities are statistical estimates, not guarantees of in-game outcomes.
 
 ## License
 
-This project is open-sourced under the MIT License. See the LICENSE file for details.
+Released under the MIT License. See `LICENSE` for details.
