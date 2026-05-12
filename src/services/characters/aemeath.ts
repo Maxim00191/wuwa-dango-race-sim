@@ -1,7 +1,7 @@
+import { LAP_DISTANCE_IN_CLOCKWISE_STEPS } from "@/constants/board";
 import { ABBY_ID } from "@/constants/ids";
 import { characterParam, text } from "@/i18n";
 import { rollInclusive } from "@/services/characters/dice";
-import { clockwiseDistanceAhead } from "@/services/circular";
 import {
   findCellIndexForEntity,
   teleportEntitySliceCellsOnly,
@@ -15,7 +15,7 @@ import type {
   SkillHookResolution,
 } from "@/types/game";
 
-const MIDPOINT_CELL_INDEX = 16;
+const MIDPOINT_DISTANCE = LAP_DISTANCE_IN_CLOCKWISE_STEPS / 2;
 
 function rollAemeathDice(
   state: GameState,
@@ -26,25 +26,25 @@ function rollAemeathDice(
   return { diceValue: rollInclusive(1, 3) };
 }
 
-function hasValidTeleportTarget(stackBottomToTop: string[]): boolean {
-  return stackBottomToTop.some((id) => id !== ABBY_ID);
-}
-
 function findNearestValidTargetCell(
   state: GameState,
-  fromCellIndex: number
+  rollerId: string
 ): { cellIndex: number; distance: number } | null {
+  const actor = state.entities[rollerId];
+  if (!actor) {
+    return null;
+  }
   let nearestTarget: { cellIndex: number; distance: number } | null = null;
-  for (const [cellIndex, stackBottomToTop] of state.cells.entries()) {
-    if (!hasValidTeleportTarget(stackBottomToTop)) {
+  for (const [targetId, target] of Object.entries(state.entities)) {
+    if (targetId === rollerId || targetId === ABBY_ID) {
       continue;
     }
-    const distance = clockwiseDistanceAhead(fromCellIndex, cellIndex);
-    if (distance === 0) {
+    const distance = target.raceDisplacement - actor.raceDisplacement;
+    if (distance <= 0) {
       continue;
     }
     if (!nearestTarget || distance < nearestTarget.distance) {
-      nearestTarget = { cellIndex, distance };
+      nearestTarget = { cellIndex: target.cellIndex, distance };
     }
   }
   return nearestTarget;
@@ -58,14 +58,14 @@ function resolveAemeathMidpointLeap(
   if (!entity || entity.skillState.hasUsedMidpointLeap) {
     return { state };
   }
-  if (!context.landingCells.includes(MIDPOINT_CELL_INDEX)) {
+  if (entity.raceDisplacement < MIDPOINT_DISTANCE) {
     return { state };
   }
   const originCellIndex = findCellIndexForEntity(state.cells, context.rollerId);
   if (originCellIndex === null) {
     return { state };
   }
-  const nearestTarget = findNearestValidTargetCell(state, originCellIndex);
+  const nearestTarget = findNearestValidTargetCell(state, context.rollerId);
   if (!nearestTarget) {
     return { state };
   }

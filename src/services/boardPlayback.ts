@@ -48,7 +48,8 @@ export function expandPlaybackToAtomicSteps(
       segment.kind === "idle" ||
       segment.kind === "roll" ||
       segment.kind === "skill" ||
-      segment.kind === "cellEffect"
+      segment.kind === "cellEffect" ||
+      segment.kind === "victory"
     ) {
       continue;
     }
@@ -125,7 +126,8 @@ export function expandPlaybackToSegmentAtomicChunks(
       segment.kind === "idle" ||
       segment.kind === "roll" ||
       segment.kind === "skill" ||
-      segment.kind === "cellEffect"
+      segment.kind === "cellEffect" ||
+      segment.kind === "victory"
     ) {
       chunks.push(chunk);
       continue;

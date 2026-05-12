@@ -275,6 +275,11 @@ export type PlaybackCellEffectSegment = {
   message: LocalizedText;
 };
 
+export type PlaybackVictorySegment = {
+  kind: "victory";
+  winnerId: DangoId;
+};
+
 export type PlaybackSegment =
   | PlaybackIdleSegment
   | PlaybackRollSegment
@@ -282,7 +287,8 @@ export type PlaybackSegment =
   | PlaybackHopsSegment
   | PlaybackTeleportSegment
   | PlaybackSlideSegment
-  | PlaybackCellEffectSegment;
+  | PlaybackCellEffectSegment
+  | PlaybackVictorySegment;
 
 export type TurnQueueAttachment = {
   orderedActorIds: DangoId[];

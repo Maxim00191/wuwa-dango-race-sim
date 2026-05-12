@@ -330,6 +330,10 @@ export default function App() {
                   {t("normal.shell.start")}
                 </button>
               }
+              onStartSprint={() =>
+                normalGame.start(createNormalRaceSetup(lineup.selectedBasicIds))
+              }
+              startShortcutDisabled={normalStartDisabled}
               onPlayTurn={normalGame.playTurn}
               onStepAction={normalGame.stepAction}
               onInstantTurn={normalGame.instantFullTurn}
@@ -406,6 +410,7 @@ export default function App() {
               }
               showSetupPanel={tournament.race.state.phase !== "running"}
               startControls={null}
+              startShortcutDisabled
               onPlayTurn={tournament.race.playTurn}
               onStepAction={tournament.race.stepAction}
               onInstantTurn={tournament.race.instantFullTurn}

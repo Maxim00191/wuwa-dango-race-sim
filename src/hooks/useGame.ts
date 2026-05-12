@@ -461,27 +461,25 @@ export function useGame() {
           continue;
         }
 
+        if (segment.kind === "victory") {
+          setHoppingEntityIds(new Set());
+          await shineBanner(
+            {
+              variant: "victory",
+              headline: text("banner.victory.headline", {
+                winner: characterParam(segment.winnerId),
+              }),
+              detail: text("banner.victory.detail"),
+              accentDangoId: segment.winnerId,
+            },
+            VICTORY_HOLD_MS
+          );
+          continue;
+        }
+
         if (segment.kind === "slide") {
           await runAtomicSteps(chunk);
         }
-      }
-
-      if (!guard()) {
-        return;
-      }
-
-      if (state.phase === "finished" && state.winnerId) {
-        await shineBanner(
-          {
-            variant: "victory",
-            headline: text("banner.victory.headline", {
-              winner: characterParam(state.winnerId),
-            }),
-            detail: text("banner.victory.detail"),
-            accentDangoId: state.winnerId,
-          },
-          VICTORY_HOLD_MS
-        );
       }
 
       if (!guard()) {

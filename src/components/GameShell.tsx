@@ -34,6 +34,8 @@ type GameShellProps = {
   setupPanel?: ReactNode;
   showSetupPanel?: boolean;
   startControls: ReactNode;
+  onStartSprint?: () => void;
+  startShortcutDisabled?: boolean;
   onPlayTurn: () => void;
   onStepAction: () => void;
   onInstantTurn: () => void;
@@ -60,6 +62,8 @@ export function GameShell({
   setupPanel,
   showSetupPanel = false,
   startControls,
+  onStartSprint,
+  startShortcutDisabled = true,
   onPlayTurn,
   onStepAction,
   onInstantTurn,
@@ -103,8 +107,14 @@ export function GameShell({
     isAnimating ||
     playTurnEnabled ||
     autoPlayEnabled;
+  const startSprintDisabled =
+    !onStartSprint ||
+    startShortcutDisabled ||
+    state.phase === "running";
   const autoRunDisabled =
     state.phase !== "running" || Boolean(state.winnerId);
+  const showWinnerBadge =
+    state.phase === "finished" && Boolean(state.winnerId) && !isAnimating;
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -128,6 +138,19 @@ export function GameShell({
         if (nextTurnDisabled) return;
         e.preventDefault();
         onStepAction();
+        return;
+      }
+
+      if (e.code === "Enter") {
+        if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+        if (!startSprintDisabled) {
+          e.preventDefault();
+          onStartSprint();
+          return;
+        }
+        if (instantDisabled) return;
+        e.preventDefault();
+        onInstantGame();
       }
     };
 
@@ -136,11 +159,15 @@ export function GameShell({
   }, [
     autoPlayEnabled,
     autoRunDisabled,
+    instantDisabled,
     nextTurnDisabled,
     onAutoPlayEnabledChange,
+    onInstantGame,
     onPlayTurn,
+    onStartSprint,
     onStepAction,
     playTurnDisabled,
+    startSprintDisabled,
   ]);
 
   return (
@@ -280,7 +307,7 @@ export function GameShell({
                   {` · ${sessionLabel}`}
                 </p>
               </div>
-              {state.winnerId ? (
+              {showWinnerBadge ? (
                 <div className="rounded-full bg-amber-400/25 px-4 py-2 text-sm font-semibold text-amber-900 ring-1 ring-amber-500/50 dark:bg-amber-400/15 dark:text-amber-200 dark:ring-amber-400/40">
                   {t("game.board.winnerBadge")}
                 </div>

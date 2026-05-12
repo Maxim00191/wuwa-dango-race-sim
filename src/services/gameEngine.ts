@@ -130,7 +130,7 @@ function createRunningSessionFromSetup(setup: RaceSetup): GameState {
       id,
       cellIndex: FINISH_LINE_CELL_INDEX,
       raceDisplacement: 0,
-      skillState: {},
+      skillState: id === "aemeath" ? { hasUsedMidpointLeap: false } : {},
     };
   }
   entities[ABBY_ID] = {
@@ -711,6 +711,66 @@ function pushHopSegment(
   });
 }
 
+function resolveExecutedMovementStepCount(
+  state: GameState,
+  actingEntityId: DangoId,
+  plannedStepCount: number,
+  travelDirection: TravelDirection
+): number {
+  if (plannedStepCount <= 0 || travelDirection !== "clockwise") {
+    return plannedStepCount;
+  }
+  const character = CHARACTER_BY_ID[actingEntityId];
+  if (!character || character.role !== "basic") {
+    return plannedStepCount;
+  }
+  const actor = state.entities[actingEntityId];
+  if (!actor) {
+    return plannedStepCount;
+  }
+  const remainingStepsToFinish =
+    LAP_DISTANCE_IN_CLOCKWISE_STEPS - actor.raceDisplacement;
+  if (remainingStepsToFinish <= 0) {
+    return 0;
+  }
+  return Math.min(plannedStepCount, remainingStepsToFinish);
+}
+
+function finalizeWinningTurn(
+  state: GameState,
+  winnerId: DangoId,
+  segments: PlaybackSegment[]
+): { state: GameState; segments: PlaybackSegment[] } {
+  const finished = appendLog(state, {
+    kind: "win",
+    message: text("simulation.log.win", {
+      winner: characterParam(winnerId),
+    }),
+  });
+  return {
+    state: {
+      ...finished,
+      phase: "finished",
+      winnerId,
+    },
+    segments: [...segments, { kind: "victory", winnerId }],
+  };
+}
+
+function finalizeTurnIfWinnerResolved(
+  state: GameState,
+  segments: PlaybackSegment[]
+): { state: GameState; segments: PlaybackSegment[] } {
+  if (state.phase === "finished" && state.winnerId) {
+    return { state, segments };
+  }
+  const winnerId = pickWinnerBasicDangoId(state);
+  if (!winnerId) {
+    return { state, segments };
+  }
+  return finalizeWinningTurn(state, winnerId, segments);
+}
+
 function executeStepwiseMovement(
   state: GameState,
   actingEntityId: DangoId,
@@ -1097,15 +1157,18 @@ function resolveTurnForEntity(
         message: afterTurnOutcome.skillNarrative,
       });
     }
-    return {
-      state: skippedState,
-      segments: skippedSegments,
-    };
+    return finalizeTurnIfWinnerResolved(skippedState, skippedSegments);
   }
-  const movementResult = executeStepwiseMovement(
+  const executedMovementStepCount = resolveExecutedMovementStepCount(
     nextState,
     actingEntityId,
     resolvedMovementStepCount,
+    character.travelDirection
+  );
+  const movementResult = executeStepwiseMovement(
+    nextState,
+    actingEntityId,
+    executedMovementStepCount,
     character.travelDirection
   );
   nextState = movementResult.state;
@@ -1114,44 +1177,27 @@ function resolveTurnForEntity(
     kind: "move",
     message: text("simulation.log.move", {
       actor: characterParam(actingEntityId),
-      steps: resolvedMovementStepCount,
+      steps: executedMovementStepCount,
       direction: directionParam(character.travelDirection),
     }),
   });
   const postMovementOutcome = resolvePostMovementPhase(
     nextState,
     actingEntityId,
-    resolvedMovementStepCount,
+    executedMovementStepCount,
     movementOriginCellIndex,
     character.travelDirection,
     boardEffectByCellIndex
   );
   const afterEffectState = postMovementOutcome.state;
   segments.push(...postMovementOutcome.segments);
-  const winnerId = pickWinnerBasicDangoId(afterEffectState);
-  if (winnerId) {
-    const finished = appendLog(afterEffectState, {
-      kind: "win",
-      message: text("simulation.log.win", {
-        winner: characterParam(winnerId),
-      }),
-    });
-    return {
-      state: {
-        ...finished,
-        phase: "finished",
-        winnerId,
-      },
-      segments,
-    };
-  }
   const finalCellIndex =
     findCellIndexForEntity(afterEffectState.cells, actingEntityId) ??
     FINISH_LINE_CELL_INDEX;
   const afterTurnOutcome = applySkillHookAfterTurn(afterEffectState, {
     turnIndex: state.turnIndex,
     rollerId: actingEntityId,
-    diceValue: resolvedMovementStepCount,
+    diceValue: executedMovementStepCount,
     cellIndex: finalCellIndex,
   });
   nextState = afterTurnOutcome.state;
@@ -1167,7 +1213,7 @@ function resolveTurnForEntity(
       message: afterTurnOutcome.skillNarrative,
     });
   }
-  return { state: nextState, segments };
+  return finalizeTurnIfWinnerResolved(nextState, segments);
 }
 
 function buildPendingTurnResolution(
