@@ -2,7 +2,7 @@ import type { TranslationDictionary } from "@/i18n/types";
 
 export const zhCnDictionary: TranslationDictionary = {
   meta: {
-    title: "鸣潮二周年：团子竞速模拟",
+    title: "鸣潮二周年：小团快跑模拟器",
   },
   locale: {
     en: "English",
@@ -55,7 +55,7 @@ export const zhCnDictionary: TranslationDictionary = {
       label: "第 {cell} 格",
     },
     actions: {
-      drag: "拖拽",
+      drag: "拖动",
     },
     notes: {
       one: "{count} 条记录",
@@ -64,10 +64,10 @@ export const zhCnDictionary: TranslationDictionary = {
   },
   nav: {
     brand: "索拉里斯二周年团子竞速",
-    tagline: "周年庆典赛、共鸣者杯赛与赛况推演",
+    tagline: "周年庆典赛、共鸣者竞赛与赛况推演",
     views: {
       normal: "竞速场",
-      tournament: "杯赛大厅",
+      tournament: "赛程大厅",
       analysis: "庆典档案",
     },
     playback: {
@@ -117,27 +117,27 @@ export const zhCnDictionary: TranslationDictionary = {
   },
   tournament: {
     session: {
-      setup: "杯赛筹备室",
+      setup: "赛程筹备室",
       finalsReady: "决战就绪",
-      raceFallback: "庆典杯赛",
+      raceFallback: "庆典竞赛",
       preliminaryComplete: "预赛成绩已录入",
       finalComplete: "决赛成绩已生成",
     },
     monteCarlo: {
       heading: "赛程推演",
-      title: "模拟完整杯赛或直击总决赛",
+      title: "模拟完整赛程或直击决赛",
       description:
         "你可以选择连同预赛一起进行高强度压测，也可以直接对当前的决赛阵容进行胜率演算。",
       scenarios: {
         tournament: {
-          label: "完整庆典杯",
-          description: "先跑预赛，根据成绩排布决赛顺位，最终决出庆典总冠军。",
-          analysisLabel: "庆典杯推演",
+          label: "完整庆典竞赛",
+          description: "先跑预赛，根据成绩排布决赛顺位，最终决出冠军。",
+          analysisLabel: "庆典赛程推演",
         },
         final: {
           label: "当前决赛阵容",
           description: "跳过预赛，直接模拟当前这组决赛站位的赛况。",
-          officialAnalysisLabel: "总决赛推演",
+          officialAnalysisLabel: "决赛推演",
           customAnalysisLabel: "自定义决赛推演",
         },
       },
@@ -152,24 +152,24 @@ export const zhCnDictionary: TranslationDictionary = {
       preliminary: {
         eyebrow: "第一轮",
         title: "预赛阶段",
-        description: "所有团子同一起跑线出发，完赛名次将直接决定总决赛的站位优势。",
+        description: "所有团子同一起跑线出发，完赛名次将直接决定决赛的站位优势。",
         start: "开始预赛",
-        reset: "重置杯赛进度",
+        reset: "重置赛程进度",
         lockedTitle: "预赛顺位已锁定",
         empty: "跑完预赛后会自动生成决赛阵容。你也可以直接在右侧自由编排决赛顺位。",
       },
       finals: {
         eyebrow: "第二轮",
-        title: "总决赛阵容",
+        title: "决赛阵容",
         description:
           "保留预赛结果直接开启巅峰对决，或者拖拽名牌来一场自定义赛局。",
         helper: "拖拽名牌可以调整顺位；选中名牌后，使用上下方向键也能进行微调。",
-        ariaLabel: "总决赛顺位列表",
+        ariaLabel: "决赛顺位列表",
         placementAria: "第 {placement} 位，{name}",
         start: "开启总决赛",
         restore: "恢复预赛顺位",
         roles: {
-          startLine: "起跑灯位",
+          startLine: "起跑线",
           topOfStack: "叠层最上方",
           bottomOfStack: "叠层最下方",
         },
@@ -185,10 +185,10 @@ export const zhCnDictionary: TranslationDictionary = {
     spotsOne: "名额",
     spotsOther: "名额",
     clear: "清空选择",
-    selected: "已选",
-    available: "可选",
+    selected: "参赛中",
+    available: "待加入",
     locked: "已满",
-    attributeEmpty: "暂无角色",
+    attributeEmpty: "暂无团子",
     modes: {
       attribute: "按属性",
       group: "按编组",
@@ -248,8 +248,8 @@ export const zhCnDictionary: TranslationDictionary = {
       winnerBadge: "冠军诞生",
       legend: {
         finishLine: {
-          label: "终点灯位",
-          description: "不管起点距离终点有多近，都必须完整跑满 32 步才能夺下冠军。",
+          label: "终点",
+          description: "不管起点距离终点有多近，都必须完整跑完赛场才能夺下冠军。",
         },
         propulsion: {
           label: "推进装置",
@@ -300,10 +300,10 @@ export const zhCnDictionary: TranslationDictionary = {
     tabs: {
       overview: "总览数据",
       conditional: "若Ta夺冠",
-      tournament: "杯赛趋势",
+      tournament: "赛程趋势",
     },
     metrics: {
-      averageTournamentLength: "平均杯赛长度",
+      averageTournamentLength: "平均赛程长度",
       averageRaceLength: "平均单局长度",
       averageTournamentLengthHint: "包含预赛与总决赛的总回合数",
       averageRaceLengthHint: "平均需要多少回合才能完赛",
@@ -320,7 +320,7 @@ export const zhCnDictionary: TranslationDictionary = {
     },
     overview: {
       winRateEyebrow: "胜率总览",
-      winRateTitleTournament: "谁最容易捧起二周年庆典杯",
+      winRateTitleTournament: "谁最容易赛程出线？",
       winRateTitleRace: "谁最容易赢下单场冲刺赛",
       finalOnly: "仅统计最终名次",
       averageFinish: "平均排位 {value}",
@@ -342,7 +342,7 @@ export const zhCnDictionary: TranslationDictionary = {
     },
     conditional: {
       eyebrow: "条件推演",
-      title: "如果Ta拿了冠军，其他团子都在哪？",
+      title: "如果Ta拿了第一，其他团子都在哪？",
       description: "选择一位冠军选手，系统会筛选出Ta夺冠的所有对局，让你看清在这种剧本下，其他选手的命运如何。",
       tableDango: "选手",
       averageFinish: "平均名次 {value}",
@@ -357,13 +357,13 @@ export const zhCnDictionary: TranslationDictionary = {
       noMatchingRuns: "未匹配到相关对局",
     },
     tournament: {
-      eyebrow: "杯赛深度分析",
+      eyebrow: "赛程深度分析",
       title: "顺位转化与逆风翻盘",
       description: "追踪预赛顺位与最终结果的关联，看看谁能一路高歌猛进，谁又能在逆境中完成惊天翻盘。",
       topSeedConverts: "头号种子转化率",
-      topSeedConvertsHint: "预赛拿第一且总决赛也拿第一的概率",
+      topSeedConvertsHint: "预赛拿第一且决赛也拿第一的概率",
       bottomHalfComeback: "下半区逆袭夺冠",
-      bottomHalfComebackHint: "预赛排在 4-6 名，却在决赛成功夺冠的概率",
+      bottomHalfComebackHint: "预赛排在 4-6 名，却在决赛拿下第一的概率",
       bestFrontrunner: "最强领跑者",
       bestRecoveryArtist: "翻盘小能手",
       topSeedHint: "预赛第 1 名的最终夺冠率为 {rate}",
@@ -372,13 +372,13 @@ export const zhCnDictionary: TranslationDictionary = {
       noUnderdogData: "缺少逆袭夺冠的数据样本",
       conversionEyebrow: "单体转化率",
       conversionTitle: "前期优势与翻盘潜力",
-      titles: "夺冠 {count} 次",
+      titles: "出线 {count} 次",
       ifFirstInPrelims: "若预赛排第 1",
       ifFourthToSixthInPrelims: "若预赛排 4-6 名",
       matchingPrelimRuns: "{count} 次预赛样本",
       underdogEntries: "{count} 次逆风样本",
       transitionEyebrow: "顺位转化热力图",
-      totalTitles: "共夺冠 {count} 次",
+      totalTitles: "共出线 {count} 次",
       transitionDescription: "行代表预赛名次，列代表决赛名次。可以直接读取预赛名次对最终结果的概率影响。",
       prelimHeader: "预赛顺位",
     },
@@ -386,37 +386,37 @@ export const zhCnDictionary: TranslationDictionary = {
   simulation: {
     labels: {
       normalRace: "二周年冲刺",
-      tournamentPreliminary: "杯赛预选",
+      tournamentPreliminary: "赛程预选",
       tournamentFinal: "巅峰决战",
       customFinal: "自定义决赛",
       finalsReady: "决战就绪",
-      tournamentSetup: "杯赛筹备室",
+      tournamentSetup: "赛程筹备室",
     },
     log: {
       abbyResetScheduled: "{actor} 落在队伍最后方，下回合将被直接传送回起点。",
       abbyTeleport: "{actor} 化作一道光闪回起跑线，准备发起新一轮冲击。",
       standby: "{actor} 还在场外热身。等比赛节奏加快后，首领才会真正下场。",
-      roll: "{actor} 掷出了 {value} 点。",
-      skipNotBottom: "{actor} 踩在别的团子背上，无法自己移动，只能随波逐流。",
-      move: "{actor} 沿着{direction}轻快地跃进了 {steps} 格。",
-      cellPropulsion: "踩中推进装置！该格上的整层团子都被向顺时针方向推进了 {steps} 格。",
-      cellHindrance: "触发阻遏装置！该格上的整层团子都被向逆时针方向推回了 {steps} 格。",
-      cellRift: "卷入时空裂隙！该格的叠层顺序被重新打乱。",
-      win: "{winner} 率先跑完一整圈，拿下了二周年的冠军桂冠！",
+      roll: "{actor} 掷出 {value} 点。",
+      skipNotBottom: "{actor} 踩在别的团子背上，随波逐流。",
+      move: "{actor} 沿着{direction}轻快地前进了 {steps} 格。",
+      cellPropulsion: "踩中推进装置！该格上的整层团子都被顺时针推进了 {steps} 格。",
+      cellHindrance: "触发阻遏装置！该格上的整层团子都被逆时针推回了 {steps} 格。",
+      cellRift: "卷入时空裂隙！该格的叠层顺序被打乱。",
+      win: "{winner} 率先跑完一整圈，拿下了本场比赛的冠军！",
       turnHeader: "第 {turn} 回合开始，全场屏息以待。",
     },
     skills: {
-      carlottaDouble: "{actor} 的共鸣技能触发！点数暴击翻倍至 {value}。",
-      chisaUnderdog: "{actor} 触发逆境觉醒！额外爆发出 2 步的冲刺。",
+      carlottaDouble: "{actor} 的技能触发！点数翻倍至 {value}。",
+      chisaUnderdog: "{actor} 触发技能！额外前进 2 步。",
       lynaeDouble: "{actor} 的技能闪耀！点数翻倍至 {value}。",
       lynaeStuck: "{actor} 的技能发生故障，本回合只能尴尬地留在原地。",
-      aemeathLeap: "{actor} 撕裂空间，直接跃迁到了前方最近的层叠中！",
+      aemeathLeap: "{actor} 触发技能！直接跃迁到了前方最近的团子上！",
       sigrikaMarkSingle:
         "{actor} 锁定了 {target}，使其本回合移动减少 1 格。",
       sigrikaMarkDouble:
         "{actor} 锁定了 {firstTarget} 与 {secondTarget}，使其本回合移动都减少 1 格。",
       deniaRepeat:
-        "{actor} 掷出了与上回合相同的点数，额外冲刺 2 格。",
+        "{actor} 掷出了与上回合相同的点数，额外前进 2 格。",
       hiyukiMetAbby:
         "{actor} 与 {boss} 正面相遇，此后每回合都会永久额外获得 1 格移动。",
       hiyukiBondedAdvance:
@@ -455,10 +455,10 @@ export const zhCnDictionary: TranslationDictionary = {
     roll: {
       headline: "{actor} 掷出了 {value}",
       headlineFallback: "{actor} 丢出骰子",
-      detail: "看看这波能跑多远",
+      detail: "看看这波能跑多远...",
     },
     skill: {
-      detail: "共鸣技能高光时刻",
+      detail: "共鸣解放高光时刻",
     },
     effect: {
       propulsionDevice: {

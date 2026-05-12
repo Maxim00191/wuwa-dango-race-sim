@@ -1,7 +1,10 @@
 import { FINISH_LINE_CELL_INDEX } from "@/constants/board";
 import { ABBY_ID } from "@/constants/ids";
 import { text, type LocalizedText } from "@/i18n";
-import { addCounterClockwise } from "@/services/circular";
+import {
+  addCounterClockwise,
+  clockwiseDistanceAhead,
+} from "@/services/circular";
 import { orderedRacerIdsForLeaderboard } from "@/services/racerRanking";
 import type {
   DangoId,
@@ -27,7 +30,8 @@ function createRaceSetup(
   label: LocalizedText,
   shortLabel: LocalizedText,
   selectedBasicIds: DangoId[],
-  startingStacks: RaceStartingStack[]
+  startingStacks: RaceStartingStack[],
+  startingDisplacementById: Partial<Record<DangoId, number>> = {}
 ): RaceSetup {
   return {
     mode,
@@ -35,6 +39,7 @@ function createRaceSetup(
     shortLabel,
     selectedBasicIds: [...selectedBasicIds],
     startingStacks,
+    startingDisplacementById: { ...startingDisplacementById },
   };
 }
 
@@ -153,6 +158,28 @@ function buildFinalStartingStacks(placements: DangoId[]): RaceStartingStack[] {
   return stacks;
 }
 
+function getFinalStartingDisplacementForCell(cellIndex: number): number {
+  if (cellIndex === FINISH_LINE_CELL_INDEX) {
+    return 0;
+  }
+  return -clockwiseDistanceAhead(cellIndex, FINISH_LINE_CELL_INDEX);
+}
+
+function buildFinalStartingDisplacementById(
+  placements: DangoId[]
+): Partial<Record<DangoId, number>> {
+  const displacementById: Partial<Record<DangoId, number>> = {};
+  for (const [placementIndex, basicId] of placements.entries()) {
+    const cellIndex = getFinalStartCellIndexForPlacement(placementIndex);
+    const displacement = getFinalStartingDisplacementForCell(cellIndex);
+    if (displacement === 0) {
+      continue;
+    }
+    displacementById[basicId] = displacement;
+  }
+  return displacementById;
+}
+
 function createFinalRaceSetup(
   mode: RaceMode,
   label: LocalizedText,
@@ -165,7 +192,8 @@ function createFinalRaceSetup(
     label,
     shortLabel,
     selectedBasicIds,
-    buildFinalStartingStacks(selectedBasicIds)
+    buildFinalStartingStacks(selectedBasicIds),
+    buildFinalStartingDisplacementById(selectedBasicIds)
   );
 }
 

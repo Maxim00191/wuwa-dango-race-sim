@@ -199,6 +199,7 @@ export type RaceSetup = {
   shortLabel: LocalizedText;
   selectedBasicIds: DangoId[];
   startingStacks: RaceStartingStack[];
+  startingDisplacementById: Partial<Record<DangoId, number>>;
 };
 
 export type GameLogEntryKind =

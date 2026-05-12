@@ -125,11 +125,12 @@ export function isValidBasicSelection(ids: DangoId[]): boolean {
 
 function createRunningSessionFromSetup(setup: RaceSetup): GameState {
   const entities: GameState["entities"] = {};
+  const startingDisplacementById = setup.startingDisplacementById;
   for (const id of setup.selectedBasicIds) {
     entities[id] = {
       id,
       cellIndex: FINISH_LINE_CELL_INDEX,
-      raceDisplacement: 0,
+      raceDisplacement: startingDisplacementById[id] ?? 0,
       skillState: id === "aemeath" ? { hasUsedMidpointLeap: false } : {},
     };
   }
@@ -171,6 +172,11 @@ function createRunningSessionFromSetup(setup: RaceSetup): GameState {
     pendingTurn: null,
     playbackStamp: 0,
   };
+}
+
+function hasReachedWinningDistance(entity: EntityRuntimeState | undefined): boolean {
+  return (entity?.raceDisplacement ?? Number.NEGATIVE_INFINITY) >=
+    LAP_DISTANCE_IN_CLOCKWISE_STEPS;
 }
 
 export function createInitialGameState(): GameState {
@@ -277,10 +283,11 @@ function pickWinnerBasicDangoId(state: GameState): string | null {
     if (topId === ABBY_ID) {
       continue;
     }
-    const displacement = state.entities[topId]!.raceDisplacement;
-    if (displacement < LAP_DISTANCE_IN_CLOCKWISE_STEPS) {
+    const entity = state.entities[topId];
+    if (!hasReachedWinningDistance(entity)) {
       continue;
     }
+    const displacement = entity.raceDisplacement;
     if (displacement > bestDisplacement) {
       bestDisplacement = displacement;
       bestId = topId;
@@ -728,11 +735,11 @@ function resolveExecutedMovementStepCount(
   if (!actor) {
     return plannedStepCount;
   }
-  const remainingStepsToFinish =
-    LAP_DISTANCE_IN_CLOCKWISE_STEPS - actor.raceDisplacement;
-  if (remainingStepsToFinish <= 0) {
+  if (hasReachedWinningDistance(actor)) {
     return 0;
   }
+  const remainingStepsToFinish =
+    LAP_DISTANCE_IN_CLOCKWISE_STEPS - actor.raceDisplacement;
   return Math.min(plannedStepCount, remainingStepsToFinish);
 }
 

@@ -64,7 +64,7 @@ export const enDictionary: TranslationDictionary = {
   },
   nav: {
     brand: "Solaris 2nd Anniversary Dango Dash",
-    tagline: "Festival Sprints, Resonator Cups, and Tactical Divinations",
+    tagline: "Festival Sprints, Resonator Competitions, and Tactical Divinations",
     views: {
       normal: "Dash Grounds",
       tournament: "Tournament Hub",
@@ -118,29 +118,29 @@ export const enDictionary: TranslationDictionary = {
   },
   tournament: {
     session: {
-      setup: "Cup Seeding Room",
+      setup: "Tournament Seeding Room",
       finalsReady: "Finals Ready",
-      raceFallback: "Celebration Cup",
+      raceFallback: "Celebration Competition",
       preliminaryComplete: "Preliminary Results Recorded",
       finalComplete: "Grand Final Results Recorded",
     },
     monteCarlo: {
       heading: "Bracket Divinations",
-      title: "Simulate the full cup or jump straight to the finals",
+      title: "Simulate the full tournament or jump straight to the finals",
       description:
         "Stress-test both rounds to see how momentum carries, or calculate win rates based strictly on the current finals lineup.",
       scenarios: {
         tournament: {
-          label: "Full Celebration Cup",
+          label: "Full Celebration Competition",
           description:
-            "Run the preliminary, use the results to seed the final, and crown the ultimate champion.",
-          analysisLabel: "Cup Divination",
+            "Run the preliminary, use the results to seed the final, and crown the champion.",
+          analysisLabel: "Tournament Divination",
         },
         final: {
           label: "Current Grand Final Lineup",
           description:
             "Skip the prelims and simulate win rates for the current finals arrangement.",
-          officialAnalysisLabel: "Grand Final Divination",
+          officialAnalysisLabel: "Final Divination",
           customAnalysisLabel: "Custom Final Divination",
         },
       },
@@ -156,9 +156,9 @@ export const enDictionary: TranslationDictionary = {
         eyebrow: "Round 1",
         title: "Preliminary Sprint",
         description:
-          "All competitors start at the line. Placements here will grant seeding advantages in the Grand Final.",
+          "All competitors start at the line. Placements here will grant seeding advantages in the Final.",
         start: "Begin Preliminary",
-        reset: "Reset Cup Progress",
+        reset: "Reset Tournament Progress",
         lockedTitle: "Preliminary Standings Locked",
         empty:
           "Finish the prelims to auto-generate the finals bracket, or drag the badges on the right to set up a custom match.",
@@ -170,12 +170,12 @@ export const enDictionary: TranslationDictionary = {
           "Proceed with the preliminary seedings, or drag the badges to create a custom showdown.",
         helper:
           "Drag a badge to rearrange the order. You can also use the up and down arrow keys while a badge is selected.",
-        ariaLabel: "Grand Final Standings",
+        ariaLabel: "Final Standings",
         placementAria: "Placement {placement}, {name}",
-        start: "Launch Grand Final",
+        start: "Launch Final",
         restore: "Restore Preliminary Seeding",
         roles: {
-          startLine: "Starting Lantern",
+          startLine: "Starting Line",
           topOfStack: "Top of the stack",
           bottomOfStack: "Bottom of the stack",
         },
@@ -192,8 +192,8 @@ export const enDictionary: TranslationDictionary = {
     spotsOne: "slot",
     spotsOther: "slots",
     clear: "Clear selections",
-    selected: "Selected",
-    available: "Available",
+    selected: "In Race",
+    available: "Waiting",
     locked: "Full",
     attributeEmpty: "No dangos yet",
     modes: {
@@ -258,9 +258,9 @@ export const enDictionary: TranslationDictionary = {
       winnerBadge: "Champion!",
       legend: {
         finishLine: {
-          label: "Finish Lantern",
+          label: "Finish Line",
           description:
-            "Victory requires exactly 32 steps completed, regardless of how close to the line you started.",
+            "Victory requires completing the entire board, regardless of how close to the line you started.",
         },
         propulsion: {
           label: "Propulsion Device",
@@ -316,7 +316,7 @@ export const enDictionary: TranslationDictionary = {
     tabs: {
       overview: "Overview",
       conditional: "If They Win...",
-      tournament: "Bracket Flow",
+      tournament: "Tournament Flow",
     },
     metrics: {
       averageTournamentLength: "Avg Cup Length",
@@ -336,7 +336,7 @@ export const enDictionary: TranslationDictionary = {
     },
     overview: {
       winRateEyebrow: "Win Rate Overview",
-      winRateTitleTournament: "Who dominates the Solaris Celebration Cup?",
+      winRateTitleTournament: "Who dominates the Tournament?",
       winRateTitleRace: "Who claims the Anniversary Sprint the most?",
       finalOnly: "Final placements only",
       averageFinish: "Avg placement: {value}",
@@ -360,7 +360,7 @@ export const enDictionary: TranslationDictionary = {
     },
     conditional: {
       eyebrow: "Scenario Analytics",
-      title: "If this dango wins, where does everyone else end up?",
+      title: "If this dango takes 1st, where does everyone else end up?",
       description:
         "Pick a champion to filter the simulations. See who usually rides their coattails to 2nd place, and who gets left in the dust.",
       tableDango: "Competitor",
@@ -377,16 +377,16 @@ export const enDictionary: TranslationDictionary = {
       noMatchingRuns: "No data matches this scenario.",
     },
     tournament: {
-      eyebrow: "Bracket Analytics",
+      eyebrow: "Tournament Analytics",
       title: "Seeding Momentum & Underdog Upsets",
       description:
         "See how preliminary performance translates to final victory. Find out who chokes under pressure and who thrives from behind.",
       topSeedConverts: "Top Seed Conversion",
       topSeedConvertsHint:
-        "How often the 1st place prelim winner also wins the Grand Final",
+        "How often the 1st place prelim winner also wins the Final",
       bottomHalfComeback: "Underdog Comeback",
       bottomHalfComebackHint:
-        "How often the 4th, 5th, or 6th place prelim seed wins the Grand Final",
+        "How often the 4th, 5th, or 6th place prelim seed wins the Final",
       bestFrontrunner: "Best Frontrunner",
       bestRecoveryArtist: "Comeback King",
       topSeedHint: "{rate} win rate if seeded 1st in prelims",
@@ -395,7 +395,7 @@ export const enDictionary: TranslationDictionary = {
       noUnderdogData: "Not enough comeback data yet",
       conversionEyebrow: "Individual Conversion Rates",
       conversionTitle: "Early Leads vs Comeback Potential",
-      titles: "Won {count} times",
+      titles: "Qualified {count} times",
       ifFirstInPrelims: "If 1st in Prelims",
       ifFourthToSixthInPrelims: "If 4th-6th in Prelims",
       matchingPrelimRuns: "{count} prelim matches",
@@ -410,11 +410,11 @@ export const enDictionary: TranslationDictionary = {
   simulation: {
     labels: {
       normalRace: "Anniversary Sprint",
-      tournamentPreliminary: "Cup Prelims",
+      tournamentPreliminary: "Tournament Prelims",
       tournamentFinal: "Grand Final",
       customFinal: "Custom Finals",
       finalsReady: "Finals Ready",
-      tournamentSetup: "Cup Seeding Room",
+      tournamentSetup: "Tournament Seeding Room",
     },
     log: {
       abbyResetScheduled:
@@ -425,31 +425,31 @@ export const enDictionary: TranslationDictionary = {
         "{actor} is still warming up on the sidelines. The boss will drop in once the pace picks up.",
       roll: "{actor} rolled a {value}.",
       skipNotBottom:
-        "{actor} is piggybacking on another dango and cannot move independently this turn.",
+        "{actor} is piggybacking on another dango.",
       move:
-        "{actor} eagerly bounces {steps} steps {direction}.",
+        "{actor} eagerly advances {steps} steps {direction}.",
       cellPropulsion:
         "Hit a Propulsion Device! The entire stack on that tile is pushed {steps} cells clockwise.",
       cellHindrance:
         "Hit a Hindrance Device! The entire stack on that tile is pushed {steps} cells counter-clockwise.",
       cellRift:
         "Caught in a Time Rift! The stack order on that tile is reshuffled.",
-      win: "{winner} crosses the 32-step mark and claims the 2nd Anniversary Crown!",
+      win: "{winner} crosses the finish line and claims the victory!",
       turnHeader: "Turn {turn} commences. The crowd holds its breath.",
     },
     skills: {
-      carlottaDouble: "Resonance Skill triggered! {actor}'s roll doubles to {value}.",
-      chisaUnderdog: "Underdog Awakening! {actor} pushes forward an extra 2 steps.",
+      carlottaDouble: "Skill triggered! {actor}'s roll doubles to {value}.",
+      chisaUnderdog: "Skill triggered! {actor} pushes forward an extra 2 steps.",
       lynaeDouble: "{actor}'s skill flares up! The roll doubles to {value}.",
       lynaeStuck: "{actor}'s skill misfired. Stuck awkwardly in place for this turn.",
       aemeathLeap:
-        "{actor} tears through space, leaping into the nearest stack ahead!",
+        "Skill triggered! {actor} leaps into the nearest dango ahead!",
       sigrikaMarkSingle:
         "{actor} marks {target}. Their movement is reduced by 1 this round.",
       sigrikaMarkDouble:
         "{actor} marks {firstTarget} and {secondTarget}. Their movement is reduced by 1 this round.",
       deniaRepeat:
-        "{actor} matches her previous roll and bursts forward 2 extra steps.",
+        "{actor} matches her previous roll and advances 2 extra steps.",
       hiyukiMetAbby:
         "{actor} meets {boss} and permanently gains 1 extra movement from future turns onward.",
       hiyukiBondedAdvance:
@@ -489,10 +489,10 @@ export const enDictionary: TranslationDictionary = {
     roll: {
       headline: "{actor} rolled a {value}",
       headlineFallback: "{actor} throws the dice",
-      detail: "Let's see how far this takes them",
+      detail: "Let's see how far this can take them...",
     },
     skill: {
-      detail: "Resonance Skill Activated",
+      detail: "Resonance Ultimate Activated",
     },
     effect: {
       propulsionDevice: {
