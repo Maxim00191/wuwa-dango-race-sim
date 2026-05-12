@@ -173,7 +173,7 @@ export const enDictionary: TranslationDictionary = {
         ariaLabel: "Final Standings",
         placementAria: "Placement {placement}, {name}",
         start: "Launch Final",
-        restore: "Restore Preliminary Seeding",
+        restore: "Restore Entered Seeding",
         roles: {
           startLine: "Starting Line",
           topOfStack: "Top of the stack",

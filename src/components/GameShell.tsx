@@ -40,6 +40,7 @@ type GameShellProps = {
   onStepAction: () => void;
   onInstantTurn: () => void;
   onInstantGame: () => void;
+  resetAdjacentControls?: ReactNode;
   onReset: () => void;
   isAnimating: boolean;
   playTurnEnabled: boolean;
@@ -68,6 +69,7 @@ export function GameShell({
   onStepAction,
   onInstantTurn,
   onInstantGame,
+  resetAdjacentControls,
   onReset,
   isAnimating,
   playTurnEnabled,
@@ -176,166 +178,168 @@ export function GameShell({
         <p className="text-lg font-bold tracking-tight text-slate-800 dark:text-slate-100 md:text-xl">
           {headerEyebrow}
         </p>
-        <div className="flex flex-wrap items-end justify-between gap-6 gap-y-4">
-          <div className="min-w-0 flex-1">
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50 md:text-4xl">
-              {headerTitle}
-            </h1>
-            <p className="mt-2 max-w-none text-sm font-normal text-slate-500 dark:text-slate-400 md:text-base lg:text-lg">
-              {headerDescription}
-            </p>
-          </div>
-          <div className="flex flex-wrap items-stretch gap-3 sm:gap-4">
-            <ControlCluster label={t("game.controls.watch")}>
-              <div className="flex flex-wrap gap-2">
-                {startControls}
-                <button
-                  type="button"
-                  onClick={onStepAction}
-                  disabled={nextTurnDisabled}
-                  className="rounded-full bg-violet-500 px-5 py-2 text-sm font-semibold text-violet-950 shadow-lg shadow-violet-900/40 transition hover:bg-violet-400 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
-                >
-                  {t("game.controls.step")}
-                </button>
-                <button
-                  type="button"
-                  onClick={onPlayTurn}
-                  disabled={playTurnDisabled}
-                  className="rounded-full bg-sky-500 px-5 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-sky-900/40 transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
-                >
-                  {playTurnEnabled
-                    ? t("game.controls.playingTurn")
-                    : t("game.controls.playTurn")}
-                </button>
-                {autoPlayEnabled ? (
-                  <span
-                    className={`relative inline-flex overflow-hidden rounded-full p-[2px] shadow-lg shadow-violet-900/25 dark:shadow-violet-950/40 ${autoRunDisabled ? "opacity-55" : ""}`}
-                  >
-                    <span className="pause-auto-run-rainbow__wrap">
-                      <span aria-hidden className="pause-auto-run-rainbow__spin" />
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => onAutoPlayEnabledChange(false)}
-                      disabled={autoRunDisabled}
-                      className="relative z-10 rounded-full bg-white px-5 py-2 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900 dark:disabled:bg-slate-800 dark:disabled:text-slate-500"
-                    >
-                      {t("game.controls.pauseAuto")}
-                    </button>
-                  </span>
-                ) : (
-                  <span
-                    className={`inline-flex rounded-full bg-[linear-gradient(90deg,#f43f5e,#fb923c,#fbbf24,#4ade80,#38bdf8,#818cf8,#e879f9,#f43f5e)] p-[2px] shadow-lg shadow-violet-900/25 dark:shadow-violet-950/40 ${autoRunDisabled ? "opacity-55" : ""}`}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => onAutoPlayEnabledChange(true)}
-                      disabled={autoRunDisabled}
-                      className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900 dark:disabled:bg-slate-800 dark:disabled:text-slate-500"
-                    >
-                      {t("game.controls.autoRun")}
-                    </button>
-                  </span>
-                )}
-                <button
-                  type="button"
-                  onClick={onReset}
-                  className="rounded-full bg-rose-600 px-5 py-2 text-sm font-semibold text-rose-50 shadow-lg shadow-rose-950/35 transition hover:bg-rose-500"
-                >
-                  {t("game.controls.reset")}
-                </button>
-              </div>
-            </ControlCluster>
-            <ControlCluster label={t("nav.playback.label")}>
-              <div className="flex flex-wrap gap-1 rounded-full border border-slate-200 bg-slate-50/90 p-1 shadow-inner shadow-slate-900/5 dark:border-slate-700 dark:bg-slate-950/70 dark:shadow-slate-950/30">
-                {PLAYBACK_SPEED_OPTIONS.map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    onClick={() => setSpeedMultiplier(option)}
-                    aria-pressed={option === speedMultiplier}
-                    aria-label={t("nav.playback.optionAria", { speed: option })}
-                    className={`rounded-full px-3 py-2 text-sm font-semibold transition sm:min-w-[3.5rem] ${
-                      option === speedMultiplier
-                        ? "bg-slate-900 text-white shadow-md shadow-slate-900/20 dark:bg-slate-100 dark:text-slate-950 dark:shadow-slate-100/10"
-                        : "text-slate-600 hover:bg-white hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
-                    }`}
-                  >
-                    {option}x
-                  </button>
-                ))}
-              </div>
-            </ControlCluster>
-            <ControlCluster label={t("game.controls.quickRuns")}>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={onInstantTurn}
-                  disabled={instantDisabled}
-                  className="rounded-full bg-fuchsia-600 px-5 py-2 text-sm font-semibold text-fuchsia-50 shadow-lg shadow-fuchsia-950/40 transition hover:bg-fuchsia-500 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
-                >
-                  {t("game.controls.instantTurn")}
-                </button>
-                <button
-                  type="button"
-                  onClick={onInstantGame}
-                  disabled={instantDisabled}
-                  className="rounded-full bg-rose-600 px-5 py-2 text-sm font-semibold text-rose-50 shadow-lg shadow-rose-950/40 transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
-                >
-                  {t("game.controls.instantGame")}
-                </button>
-              </div>
-            </ControlCluster>
-          </div>
+        <div className="min-w-0 max-w-4xl">
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50 md:text-4xl">
+            {headerTitle}
+          </h1>
+          <p className="mt-2 max-w-none text-sm font-normal text-slate-500 dark:text-slate-400 md:text-base lg:text-lg">
+            {headerDescription}
+          </p>
         </div>
       </header>
 
       {showSetupPanel ? setupPanel : null}
 
+      <div className="flex w-full flex-wrap items-stretch justify-start gap-3 sm:gap-4">
+        <ControlCluster label={t("game.controls.watch")}>
+          <div className="flex flex-wrap gap-2">
+            {startControls}
+            <button
+              type="button"
+              onClick={onStepAction}
+              disabled={nextTurnDisabled}
+              className="rounded-full bg-violet-500 px-5 py-2 text-sm font-semibold text-violet-950 shadow-lg shadow-violet-900/40 transition hover:bg-violet-400 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
+            >
+              {t("game.controls.step")}
+            </button>
+            <button
+              type="button"
+              onClick={onPlayTurn}
+              disabled={playTurnDisabled}
+              className="rounded-full bg-sky-500 px-5 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-sky-900/40 transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
+            >
+              {playTurnEnabled
+                ? t("game.controls.playingTurn")
+                : t("game.controls.playTurn")}
+            </button>
+            {autoPlayEnabled ? (
+              <span
+                className={`relative inline-flex overflow-hidden rounded-full p-[2px] shadow-lg shadow-violet-900/25 dark:shadow-violet-950/40 ${autoRunDisabled ? "opacity-55" : ""}`}
+              >
+                <span className="pause-auto-run-rainbow__wrap">
+                  <span aria-hidden className="pause-auto-run-rainbow__spin" />
+                </span>
+                <button
+                  type="button"
+                  onClick={() => onAutoPlayEnabledChange(false)}
+                  disabled={autoRunDisabled}
+                  className="relative z-10 rounded-full bg-white px-5 py-2 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900 dark:disabled:bg-slate-800 dark:disabled:text-slate-500"
+                >
+                  {t("game.controls.pauseAuto")}
+                </button>
+              </span>
+            ) : (
+              <span
+                className={`inline-flex rounded-full bg-[linear-gradient(90deg,#f43f5e,#fb923c,#fbbf24,#4ade80,#38bdf8,#818cf8,#e879f9,#f43f5e)] p-[2px] shadow-lg shadow-violet-900/25 dark:shadow-violet-950/40 ${autoRunDisabled ? "opacity-55" : ""}`}
+              >
+                <button
+                  type="button"
+                  onClick={() => onAutoPlayEnabledChange(true)}
+                  disabled={autoRunDisabled}
+                  className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900 dark:disabled:bg-slate-800 dark:disabled:text-slate-500"
+                >
+                  {t("game.controls.autoRun")}
+                </button>
+              </span>
+            )}
+            {resetAdjacentControls}
+            <button
+              type="button"
+              onClick={onReset}
+              className="rounded-full bg-rose-600 px-5 py-2 text-sm font-semibold text-rose-50 shadow-lg shadow-rose-950/35 transition hover:bg-rose-500"
+            >
+              {t("game.controls.reset")}
+            </button>
+          </div>
+        </ControlCluster>
+        <ControlCluster label={t("nav.playback.label")}>
+          <div className="flex flex-wrap gap-1 rounded-full border border-slate-200 bg-slate-50/90 p-1 shadow-inner shadow-slate-900/5 dark:border-slate-700 dark:bg-slate-950/70 dark:shadow-slate-950/30">
+            {PLAYBACK_SPEED_OPTIONS.map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => setSpeedMultiplier(option)}
+                aria-pressed={option === speedMultiplier}
+                aria-label={t("nav.playback.optionAria", { speed: option })}
+                className={`rounded-full px-3 py-2 text-sm font-semibold transition sm:min-w-[3.5rem] ${
+                  option === speedMultiplier
+                    ? "bg-slate-900 text-white shadow-md shadow-slate-900/20 dark:bg-slate-100 dark:text-slate-950 dark:shadow-slate-100/10"
+                    : "text-slate-600 hover:bg-white hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+                }`}
+              >
+                {option}x
+              </button>
+            ))}
+          </div>
+        </ControlCluster>
+        <ControlCluster label={t("game.controls.quickRuns")}>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={onInstantTurn}
+              disabled={instantDisabled}
+              className="rounded-full bg-fuchsia-600 px-5 py-2 text-sm font-semibold text-fuchsia-50 shadow-lg shadow-fuchsia-950/40 transition hover:bg-fuchsia-500 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
+            >
+              {t("game.controls.instantTurn")}
+            </button>
+            <button
+              type="button"
+              onClick={onInstantGame}
+              disabled={instantDisabled}
+              className="rounded-full bg-rose-600 px-5 py-2 text-sm font-semibold text-rose-50 shadow-lg shadow-rose-950/40 transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
+            >
+              {t("game.controls.instantGame")}
+            </button>
+          </div>
+        </ControlCluster>
+      </div>
+
       <div className="grid min-h-0 w-full flex-1 items-stretch gap-8 lg:grid-cols-[minmax(0,2.3fr)_minmax(0,1fr)] lg:gap-10 xl:grid-cols-[minmax(0,2.85fr)_minmax(0,1fr)] xl:gap-12 2xl:grid-cols-[minmax(0,3.1fr)_minmax(0,1fr)]">
         <section className="grid min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)_auto] rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-md shadow-slate-900/10 backdrop-blur dark:border-slate-800 dark:bg-slate-900/60 dark:shadow-2xl dark:shadow-slate-950/60 xl:p-8">
-          <div className="flex min-w-0 flex-col gap-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-base font-bold tracking-tight text-slate-800 dark:text-slate-100">
-                  {t("game.board.panelTitle")}
-                </p>
-                <p className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
-                  {t("game.board.turnLabel", {
-                    turn: Math.max(state.turnIndex, 0),
-                  })}
-                  {` · ${sessionLabel}`}
-                </p>
-              </div>
-              {showWinnerBadge ? (
-                <div className="rounded-full bg-amber-400/25 px-4 py-2 text-sm font-semibold text-amber-900 ring-1 ring-amber-500/50 dark:bg-amber-400/15 dark:text-amber-200 dark:ring-amber-400/40">
-                  {t("game.board.winnerBadge")}
-                </div>
-              ) : null}
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 sm:text-sm">
+                {t("game.board.panelTitle")}
+              </p>
+              <p className="min-w-0 text-lg font-bold tracking-tight text-slate-900 dark:text-slate-50 sm:text-xl">
+                {t("game.board.turnLabel", {
+                  turn: Math.max(state.turnIndex, 0),
+                })}
+                {` · ${sessionLabel}`}
+              </p>
             </div>
-            <TurnQueueViewer
-              presentation={turnQueuePresentation}
-            />
+            {showWinnerBadge ? (
+              <div className="rounded-full bg-amber-400/25 px-4 py-2 text-sm font-semibold text-amber-900 ring-1 ring-amber-500/50 dark:bg-amber-400/15 dark:text-amber-200 dark:ring-amber-400/40">
+                {t("game.board.winnerBadge")}
+              </div>
+            ) : null}
           </div>
-          <div className="flex min-h-[clamp(22rem,46vh,40rem)] min-w-0 items-center justify-center py-4">
-            <div className="relative w-full min-w-0 max-w-[72rem]">
-              <div className="relative aspect-[48/35] w-full overflow-hidden rounded-[2rem] border border-slate-200/80 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.85),_rgba(226,232,240,0.8)_38%,_rgba(148,163,184,0.28)_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.65),0_24px_60px_rgba(15,23,42,0.12)] dark:border-slate-700/70 dark:bg-[radial-gradient(circle_at_top,_rgba(30,41,59,0.95),_rgba(15,23,42,0.94)_38%,_rgba(2,6,23,0.96)_100%)] dark:shadow-[inset_0_1px_0_rgba(148,163,184,0.16),0_28px_80px_rgba(2,6,23,0.55)]">
-                <div className="absolute inset-0 p-3">
-                  <div className="relative h-full w-full overflow-hidden rounded-[1.55rem] bg-white/35 dark:bg-slate-950/20">
-                    <CircularBoard
-                      boardCells={boardCells}
-                      boardEffects={boardEffects}
-                      hoppingEntityIds={hoppingEntityIds}
-                    />
-                    <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center px-4 pt-4">
-                      <BroadcastBanner payload={broadcastPayload} />
+          <div className="flex min-h-[clamp(22rem,46vh,40rem)] min-w-0 flex-col gap-4">
+            <div className="w-full min-w-0 max-w-[72rem] self-center">
+              <TurnQueueViewer
+                presentation={turnQueuePresentation}
+              />
+            </div>
+            <div className="flex min-w-0 flex-1 items-start justify-center">
+              <div className="relative w-full min-w-0 max-w-[72rem]">
+                <div className="relative aspect-[48/28] w-full overflow-hidden rounded-[2rem] border border-slate-200/80 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.85),_rgba(226,232,240,0.8)_38%,_rgba(148,163,184,0.28)_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.65),0_24px_60px_rgba(15,23,42,0.12)] dark:border-slate-700/70 dark:bg-[radial-gradient(circle_at_top,_rgba(30,41,59,0.95),_rgba(15,23,42,0.94)_38%,_rgba(2,6,23,0.96)_100%)] dark:shadow-[inset_0_1px_0_rgba(148,163,184,0.16),0_28px_80px_rgba(2,6,23,0.55)]">
+                  <div className="absolute inset-0 p-3">
+                    <div className="relative h-full w-full overflow-hidden rounded-[1.55rem] bg-white/35 dark:bg-slate-950/20">
+                      <CircularBoard
+                        boardCells={boardCells}
+                        boardEffects={boardEffects}
+                        hoppingEntityIds={hoppingEntityIds}
+                      />
+                      <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center px-6 py-6 sm:px-10">
+                        <BroadcastBanner payload={broadcastPayload} />
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-          <div className="grid shrink-0 gap-4 pt-2 text-sm text-slate-600 dark:text-slate-300 sm:grid-cols-2 xl:grid-cols-5">
+          <div className="hidden shrink-0 gap-4 pt-2 text-sm text-slate-600 dark:text-slate-300 sm:grid sm:grid-cols-2 xl:grid-cols-5">
             <LegendSwatch
               label={t("game.board.legend.finishLine.label")}
               description={t("game.board.legend.finishLine.description")}
@@ -434,7 +438,7 @@ export function GameShell({
             </ul>
           </section>
 
-          <section className="flex max-h-[420px] flex-col rounded-3xl border border-slate-200 bg-white/95 p-6 shadow-md shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-950/70 dark:shadow-xl dark:shadow-slate-950/60 xl:max-h-[min(58vh,560px)] xl:p-8 2xl:max-h-[min(62vh,640px)]">
+          <section className="flex h-[260px] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white/95 p-6 shadow-md shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-950/70 dark:shadow-xl dark:shadow-slate-950/60 xl:p-8">
             <div className="mb-3 flex items-center justify-between gap-3">
               <p className="text-base font-bold tracking-tight text-slate-800 dark:text-slate-100">
                 {t("game.diary.title")}
@@ -445,7 +449,7 @@ export function GameShell({
                   : t("common.notes.other", { count: state.log.length })}
               </span>
             </div>
-            <div className="flex-1 space-y-3 overflow-y-auto pr-2 text-sm leading-relaxed text-slate-700 dark:text-slate-200">
+            <div className="app-scrollbar flex-1 space-y-3 overflow-y-auto pr-2 text-sm leading-relaxed text-slate-700 dark:text-slate-200">
               {state.log.length === 0 ? (
                 <p className="font-normal text-slate-500 dark:text-slate-500">
                   {t("game.diary.empty")}

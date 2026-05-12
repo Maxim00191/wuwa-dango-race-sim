@@ -32,8 +32,8 @@ export function TurnQueueViewer({ presentation }: TurnQueueViewerProps) {
     state === "active" && activeRacerIndex < slotCount;
 
   return (
-    <div className="mt-4 w-full min-w-0">
-      <p className="mb-2 text-base font-bold tracking-tight text-slate-800 dark:text-slate-100">
+    <div className="w-full min-w-0">
+      <p className="mb-2 text-center text-base font-bold tracking-tight text-slate-800 dark:text-slate-100">
         {t("game.queue.title")}
       </p>
       <div className="relative pb-6">
@@ -64,44 +64,48 @@ export function TurnQueueViewer({ presentation }: TurnQueueViewerProps) {
               <div
                 key={actorId}
                 data-flip-item={actorId}
-                className={`flex min-w-0 flex-col items-center rounded-2xl border px-3 py-2 text-center transition-all duration-300 ease-out ${
-                  isCurrentSlot
-                    ? "border-slate-300/95 bg-white/85 opacity-100 grayscale-0 shadow-[0_0_22px_rgba(56,189,248,0.35)] ring-2 ring-sky-400/70 dark:border-slate-600/90 dark:bg-slate-950/70"
-                    : turnResolvedPastQueue
-                      ? "border-slate-200/90 bg-slate-100/70 opacity-75 dark:border-slate-800/80 dark:bg-slate-950/45"
-                      : dimmed
-                    ? "border-slate-200/90 bg-slate-100/50 opacity-50 grayscale dark:border-slate-800/80 dark:bg-slate-950/40"
-                    : "border-slate-300/95 bg-white/85 opacity-100 grayscale-0 dark:border-slate-600/90 dark:bg-slate-950/70"
-                }`}
+                className="min-w-0"
               >
-                <span
-                  className={`inline-flex max-w-full truncate rounded-full px-2 py-0.5 text-[11px] font-semibold leading-tight ${
-                    dimmed
-                      ? "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200"
-                      : ""
-                  }`}
-                  style={
-                    dimmed
-                      ? undefined
-                      : {
-                          backgroundColor: baseHex,
-                          color: baseInkHex,
-                          boxShadow: `0 0 0 1px ${uiOutlineHex}, 0 0 0 4px ${uiOutlineSoftHex}`,
-                        }
-                  }
-                  title={displayName}
-                >
-                  {displayName}
-                </span>
-                <span
-                  className={`mt-1 font-mono text-lg font-semibold tabular-nums leading-none ${
-                    dimmed
-                      ? "text-slate-500"
-                      : "text-slate-900 dark:text-white"
+                <div
+                  className={`flex min-w-0 flex-col items-center rounded-2xl border px-3 py-2 text-center transition-[opacity,filter,box-shadow,background-color,border-color] duration-300 ease-out ${
+                    isCurrentSlot
+                      ? "border-slate-300/95 bg-white/85 opacity-100 grayscale-0 shadow-[0_0_22px_rgba(56,189,248,0.35)] ring-2 ring-sky-400/70 dark:border-slate-600/90 dark:bg-slate-950/70"
+                      : turnResolvedPastQueue
+                        ? "border-slate-200/90 bg-slate-100/70 opacity-75 dark:border-slate-800/80 dark:bg-slate-950/45"
+                        : dimmed
+                      ? "border-slate-200/90 bg-slate-100/50 opacity-50 grayscale dark:border-slate-800/80 dark:bg-slate-950/40"
+                      : "border-slate-300/95 bg-white/85 opacity-100 grayscale-0 dark:border-slate-600/90 dark:bg-slate-950/70"
                   }`}
                 >
-                  {rollLabel}
-                </span>
+                  <span
+                    className={`inline-flex max-w-full truncate rounded-full px-2 py-0.5 text-[11px] font-semibold leading-tight ${
+                      dimmed
+                        ? "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200"
+                        : ""
+                    }`}
+                    style={
+                      dimmed
+                        ? undefined
+                        : {
+                            backgroundColor: baseHex,
+                            color: baseInkHex,
+                            boxShadow: `0 0 0 1px ${uiOutlineHex}, 0 0 0 4px ${uiOutlineSoftHex}`,
+                          }
+                    }
+                    title={displayName}
+                  >
+                    {displayName}
+                  </span>
+                  <span
+                    className={`mt-1 font-mono text-lg font-semibold tabular-nums leading-none ${
+                      dimmed
+                        ? "text-slate-500"
+                        : "text-slate-900 dark:text-white"
+                    }`}
+                  >
+                    {rollLabel}
+                  </span>
+                </div>
               </div>
             );
           })}

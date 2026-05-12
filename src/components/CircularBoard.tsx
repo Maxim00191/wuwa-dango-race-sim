@@ -51,8 +51,9 @@ const TOTEM_LAYER_STEP_VIEWBOX = 24;
 const FILTER_SHADOW_BLEED = 10;
 const DANGO_HOP_DURATION_MS = 320;
 const BOARD_VIEWBOX_WIDTH = 960;
-const BOARD_VIEWBOX_HEIGHT = 700;
+const BOARD_VIEWBOX_HEIGHT = 580;
 const MAX_STACK_DEPTH_FOR_LAYOUT = ACTIVE_BASIC_DANGO_COUNT + 1;
+const TOP_STACK_CLEARANCE_FACTOR = 0.62;
 
 function displayNameForEntity(
   entityId: DangoId,
@@ -151,9 +152,12 @@ function CircularBoardComponent({
     const sidePadding =
       Math.max(TOKEN_RADIUS, laneHalfWidth) + FILTER_SHADOW_BLEED + 24;
     const topPadding =
-      TOKEN_RADIUS * 2 + topTokenLift + FILTER_SHADOW_BLEED + 18;
+      TOKEN_RADIUS +
+      topTokenLift * TOP_STACK_CLEARANCE_FACTOR +
+      FILTER_SHADOW_BLEED +
+      16;
     const bottomPadding =
-      Math.max(TOKEN_RADIUS, laneHalfWidth) + FILTER_SHADOW_BLEED + 28;
+      Math.max(TOKEN_RADIUS, laneHalfWidth) + FILTER_SHADOW_BLEED + 22;
     const centerX = viewWidth / 2;
     const orbitRadiusX = Math.max(52, viewWidth / 2 - sidePadding);
     const orbitRadiusY = Math.max(

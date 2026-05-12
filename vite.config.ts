@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
+const buildTimestamp = new Date().toISOString();
 
 function manualChunks(id: string) {
   const normalizedId = id.split(path.sep).join("/");
@@ -23,6 +24,9 @@ function manualChunks(id: string) {
 
 export default defineConfig({
   base: "/",
+  define: {
+    __BUILD_TIMESTAMP__: JSON.stringify(buildTimestamp),
+  },
   plugins: [react()],
   resolve: {
     alias: {

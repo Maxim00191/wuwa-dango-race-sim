@@ -167,7 +167,7 @@ export const zhCnDictionary: TranslationDictionary = {
         ariaLabel: "决赛顺位列表",
         placementAria: "第 {placement} 位，{name}",
         start: "开启总决赛",
-        restore: "恢复预赛顺位",
+        restore: "恢复录入的顺位",
         roles: {
           startLine: "起跑线",
           topOfStack: "叠层最上方",

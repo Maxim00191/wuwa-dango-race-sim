@@ -47,6 +47,12 @@ export default function App() {
   const normalGame = useGame();
   const tournament = useTournament(lineup.selectedBasicIds);
   const { isDark, toggle: toggleTheme } = useTheme();
+  const formattedBuildTimestamp = useMemo(() => {
+    const buildDate = new Date(__BUILD_TIMESTAMP__);
+    return Number.isNaN(buildDate.getTime())
+      ? __BUILD_TIMESTAMP__
+      : buildDate.toLocaleString();
+  }, []);
   const [workspaceView, setWorkspaceView] = useState<WorkspaceView>("normal");
   const [analysisReturnView, setAnalysisReturnView] =
     useState<Exclude<WorkspaceView, "analysis">>("normal");
@@ -246,6 +252,21 @@ export default function App() {
     !isValidBasicSelection(lineup.selectedBasicIds);
   const tournamentControlsLocked =
     tournament.race.state.phase === "running" || tournament.race.isAnimating;
+  const tournamentRestartStartsFinal =
+    tournament.race.state.mode === "tournamentFinal" ||
+    tournament.race.state.mode === "customFinal";
+  const tournamentCanLaunchFinalFromPreliminary =
+    tournament.race.state.mode === "tournamentPreliminary";
+  const tournamentRestartDisabled =
+    tournament.race.state.phase === "running" ||
+    tournament.race.isAnimating ||
+    !isValidBasicSelection(resolvedTournamentLineupBasicIds) ||
+    tournament.race.state.mode === null;
+  const tournamentLaunchFinalDisabled =
+    !tournamentCanLaunchFinalFromPreliminary ||
+    tournament.race.state.phase === "running" ||
+    tournament.race.isAnimating ||
+    !isValidBasicSelection(resolvedTournamentLineupBasicIds);
   const normalSessionLabel =
     normalGame.state.phase === "idle"
       ? t("normal.session.idle")
@@ -388,6 +409,20 @@ export default function App() {
               headerTitle={t("tournament.shell.title")}
               headerDescription={t("tournament.shell.description")}
               sessionLabel={tournamentSessionLabel}
+              startControls={
+                <button
+                  type="button"
+                  onClick={
+                    tournamentRestartStartsFinal
+                      ? tournament.startFinal
+                      : tournament.startPreliminary
+                  }
+                  disabled={tournamentRestartDisabled}
+                  className="rounded-full bg-emerald-500 px-5 py-2 text-sm font-semibold text-emerald-950 shadow-lg shadow-emerald-900/40 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
+                >
+                  {t("normal.shell.start")}
+                </button>
+              }
               setupPanel={
                 <TournamentSetupPanel
                   rosterBasics={rosterBasics}
@@ -408,9 +443,25 @@ export default function App() {
                   controlsLocked={tournamentControlsLocked}
                 />
               }
-              showSetupPanel={tournament.race.state.phase !== "running"}
-              startControls={null}
-              startShortcutDisabled
+              showSetupPanel={tournament.race.state.phase === "idle"}
+              resetAdjacentControls={
+                tournamentCanLaunchFinalFromPreliminary ? (
+                  <button
+                    type="button"
+                    onClick={tournament.startFinal}
+                    disabled={tournamentLaunchFinalDisabled}
+                    className="rounded-full bg-violet-500 px-5 py-2 text-sm font-semibold text-violet-950 shadow-lg shadow-violet-900/40 transition hover:bg-violet-400 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
+                  >
+                    {t("tournament.setup.finals.start")}
+                  </button>
+                ) : null
+              }
+              onStartSprint={
+                tournamentRestartStartsFinal
+                  ? tournament.startFinal
+                  : tournament.startPreliminary
+              }
+              startShortcutDisabled={tournamentRestartDisabled}
               onPlayTurn={tournament.race.playTurn}
               onStepAction={tournament.race.stepAction}
               onInstantTurn={tournament.race.instantFullTurn}
@@ -430,7 +481,12 @@ export default function App() {
         )}
       </main>
       <footer className="mt-auto border-t border-slate-200/70 px-4 py-6 text-center text-xs text-slate-500/80 dark:border-slate-800/70 dark:text-slate-400/80 sm:px-6 md:px-10 lg:px-14 xl:px-16 2xl:px-24">
-        <p className="mx-auto max-w-5xl leading-6">{t("footer.disclaimer")}</p>
+        <div className="mx-auto flex max-w-5xl flex-col gap-1 leading-6">
+          <p>{t("footer.disclaimer")}</p>
+          <p>
+            Build time: <time dateTime={__BUILD_TIMESTAMP__}>{formattedBuildTimestamp}</time>
+          </p>
+        </div>
       </footer>
     </div>
   );
