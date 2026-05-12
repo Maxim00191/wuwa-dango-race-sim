@@ -75,7 +75,7 @@ export const enDictionary: TranslationDictionary = {
       optionAria: "Set playback speed to {speed}x",
     },
     language: {
-      label: "Language",
+      label: "lang",
     },
   },
   theme: {
@@ -304,7 +304,7 @@ export const enDictionary: TranslationDictionary = {
       eyebrow: "Archives",
       title: "No Data Available",
       description:
-        "Run a few simulations first. Detailed analytics and performance metrics will populate here afterward.",
+        "Don't worry, the dangos are all ready! Detailed analytics and performance metrics will populate here afterward.",
       button: "Back to Track",
     },
     header: {

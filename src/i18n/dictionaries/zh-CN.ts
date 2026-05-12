@@ -63,7 +63,7 @@ export const zhCnDictionary: TranslationDictionary = {
     },
   },
   nav: {
-    brand: "索拉里斯二周年团子竞速",
+    brand: "鸣潮二周年：小团快跑模拟器",
     tagline: "周年庆典赛、共鸣者竞赛与赛况推演",
     views: {
       normal: "竞速场",
@@ -288,7 +288,7 @@ export const zhCnDictionary: TranslationDictionary = {
     empty: {
       eyebrow: "档案室",
       title: "暂无推演数据",
-      description: "去模拟界面跑几轮测试吧。演算完成后，详细的赛况分析会在这里生成。",
+      description: "别担心，团子们都准备就绪了！演算完成后，详细的赛况分析会在这里生成。",
       button: "返回赛道",
     },
     header: {
