@@ -94,7 +94,7 @@ export function AnalysisDashboard({
 
   if (!snapshot || snapshot.totalRuns === 0) {
     return (
-      <div className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center gap-6 px-4 py-16 text-center">
+      <div className="flex flex-1 flex-col items-center justify-center gap-6 px-4 py-16 text-center">
         <div className="max-w-lg space-y-3">
           <p className="text-base font-bold tracking-tight text-slate-800 dark:text-slate-100">
             {t("analysis.empty.eyebrow")}
@@ -140,7 +140,7 @@ export function AnalysisDashboard({
       : "—";
 
   return (
-    <div className="flex w-full flex-col gap-10 px-4 py-10 text-slate-900 dark:text-slate-100 sm:px-6 md:px-10 lg:px-14 xl:px-16 2xl:px-24">
+    <div className="flex w-full flex-1 flex-col gap-10 px-4 py-10 text-slate-900 dark:text-slate-100 sm:px-6 md:px-10 lg:px-14 xl:px-16 2xl:px-24">
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="space-y-2">
           <p className="text-lg font-bold tracking-tight text-slate-800 dark:text-slate-100 md:text-xl">

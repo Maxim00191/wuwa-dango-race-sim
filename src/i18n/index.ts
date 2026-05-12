@@ -16,7 +16,7 @@ export * from "@/i18n/types";
 
 export const LANGUAGE_STORAGE_KEY = "wuwa-dango-race-sim-language";
 
-export const DEFAULT_LANGUAGE: AppLanguage = "en";
+export const DEFAULT_LANGUAGE: AppLanguage = "zh-CN";
 
 const dictionaries: Record<AppLanguage, TranslationDictionary> = {
   en: enDictionary,
@@ -52,11 +52,17 @@ export function detectBrowserLanguage(): AppLanguage {
   if (typeof navigator === "undefined") {
     return DEFAULT_LANGUAGE;
   }
-  const candidate = navigator.language.toLowerCase();
+  const candidate = navigator.language?.trim().toLowerCase();
+  if (!candidate) {
+    return DEFAULT_LANGUAGE;
+  }
   if (candidate.startsWith("zh")) {
     return "zh-CN";
   }
-  return "en";
+  if (candidate.startsWith("en")) {
+    return "en";
+  }
+  return DEFAULT_LANGUAGE;
 }
 
 export function readStoredLanguage(): AppLanguage | null {

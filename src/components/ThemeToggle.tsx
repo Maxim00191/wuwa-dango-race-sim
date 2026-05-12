@@ -7,6 +7,9 @@ type ThemeToggleProps = {
 
 export function ThemeToggle({ isDark, onToggle }: ThemeToggleProps) {
   const { t } = useTranslation();
+  const currentThemeLabel = isDark
+    ? t("theme.darkShortLabel")
+    : t("theme.lightShortLabel");
 
   return (
     <button
@@ -16,9 +19,24 @@ export function ThemeToggle({ isDark, onToggle }: ThemeToggleProps) {
         isDark ? t("theme.switchToLightAria") : t("theme.switchToDarkAria")
       }
       title={isDark ? t("theme.lightTitle") : t("theme.darkTitle")}
-      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-amber-600 shadow-md shadow-slate-900/10 transition hover:border-slate-300 hover:bg-slate-50 hover:text-amber-500 dark:border-slate-700 dark:bg-slate-900/90 dark:text-amber-300 dark:shadow-slate-950/50 dark:hover:border-slate-600 dark:hover:bg-slate-800 dark:hover:text-amber-200"
+      className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-full border px-2.5 pr-3.5 shadow-md shadow-slate-900/10 transition ${
+        isDark
+          ? "border-indigo-400/60 bg-slate-900/95 text-slate-50 hover:border-indigo-300 hover:bg-slate-800 dark:shadow-slate-950/60"
+          : "border-amber-300/80 bg-white/95 text-slate-900 hover:border-amber-400 hover:bg-amber-50"
+      }`}
     >
-      {isDark ? <SunIcon /> : <MoonIcon />}
+      <span
+        className={`inline-flex h-7 w-7 items-center justify-center rounded-full ${
+          isDark
+            ? "bg-indigo-400/20 text-amber-300"
+            : "bg-amber-100 text-amber-600"
+        }`}
+      >
+        {isDark ? <SunIcon /> : <MoonIcon />}
+      </span>
+      <span className="text-sm font-semibold tracking-tight">
+        {currentThemeLabel}
+      </span>
     </button>
   );
 }

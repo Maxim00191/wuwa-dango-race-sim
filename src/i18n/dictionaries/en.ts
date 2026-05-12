@@ -83,6 +83,12 @@ export const enDictionary: TranslationDictionary = {
     switchToDarkAria: "Switch to night theme",
     lightTitle: "Daylight theme",
     darkTitle: "Night theme",
+    lightShortLabel: "Light",
+    darkShortLabel: "Dark",
+  },
+  footer: {
+    disclaimer:
+      "This website is a fan-made simulation and does not represent actual in-game code or mechanics. It may produce behaviors inconsistent with the official game. All content is only for reference and entertainment. This is a purely fan-made project and is not affiliated with the official game.",
   },
   normal: {
     session: {

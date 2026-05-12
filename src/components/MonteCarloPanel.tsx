@@ -73,7 +73,8 @@ export function MonteCarloPanel({
   return (
     <section className="w-full border-b border-slate-200/90 bg-gradient-to-r from-slate-50/95 via-white/90 to-slate-50/95 px-4 py-6 dark:border-slate-800/80 dark:from-slate-950/90 dark:via-slate-900/80 dark:to-slate-950/90 sm:px-6 md:px-10 lg:px-14 xl:px-16 2xl:px-24">
       <div className="mx-auto w-full max-w-[1440px]">
-        <div className="grid gap-6 rounded-[2.5rem] border border-slate-200/80 bg-white/75 p-5 shadow-[0_28px_90px_-48px_rgba(15,23,42,0.45)] backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-950/45 dark:shadow-[0_28px_90px_-48px_rgba(2,6,23,0.85)] md:p-6 xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] xl:gap-8">
+        <div className="grid gap-6 rounded-[2.5rem] border border-slate-200/80 bg-white/75 p-5 shadow-[0_10px_32px_-18px_rgba(15,23,42,0.32)] backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-950/45 dark:shadow-[0_10px_32px_-18px_rgba(2,6,23,0.55)] md:p-6 xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] xl:gap-8">
+   
           <div className="min-w-0">
             <div className="flex h-full flex-col justify-between gap-8 rounded-[2rem] bg-gradient-to-br from-white/55 via-white/15 to-slate-100/60 p-2 dark:from-white/[0.04] dark:via-transparent dark:to-slate-900/35 md:p-3">
               <div className="space-y-4 px-1 py-1 md:px-2">

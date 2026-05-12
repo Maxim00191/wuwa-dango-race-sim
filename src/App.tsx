@@ -273,155 +273,160 @@ export default function App() {
         isDarkTheme={isDark}
         onToggleTheme={toggleTheme}
       />
-      {workspaceView === "normal" ? (
-        <>
-          <MonteCarloPanel
-            heading={t("normal.monteCarlo.heading")}
-            title={t("normal.monteCarlo.title")}
-            description={t("normal.monteCarlo.description")}
-            lineupBasicIds={resolvedNormalLineupBasicIds}
-            runDisabled={normalMonteCarloRunDisabled}
-            progress={monteCarloProgress}
-            isStopping={monteCarloIsStopping}
-            scenarioOptions={[
-              {
-                id: "normalRace",
-                label: t("normal.monteCarlo.scenario.label"),
-                description: t("normal.monteCarlo.scenario.description"),
-              },
-            ]}
-            selectedScenarioId="normalRace"
-            onSelectedScenarioChange={() => {}}
-            onRunBatch={requestNormalMonteCarloBatch}
-            onAbortRun={abortMonteCarloRun}
+      <main className="flex flex-1 flex-col">
+        {workspaceView === "normal" ? (
+          <>
+            <MonteCarloPanel
+              heading={t("normal.monteCarlo.heading")}
+              title={t("normal.monteCarlo.title")}
+              description={t("normal.monteCarlo.description")}
+              lineupBasicIds={resolvedNormalLineupBasicIds}
+              runDisabled={normalMonteCarloRunDisabled}
+              progress={monteCarloProgress}
+              isStopping={monteCarloIsStopping}
+              scenarioOptions={[
+                {
+                  id: "normalRace",
+                  label: t("normal.monteCarlo.scenario.label"),
+                  description: t("normal.monteCarlo.scenario.description"),
+                },
+              ]}
+              selectedScenarioId="normalRace"
+              onSelectedScenarioChange={() => {}}
+              onRunBatch={requestNormalMonteCarloBatch}
+              onAbortRun={abortMonteCarloRun}
+            />
+            <GameShell
+              state={normalGame.state}
+              rankingState={normalGame.rankingState}
+              broadcastPayload={normalGame.broadcastPayload}
+              boardCells={normalGame.boardCells}
+              boardEffects={normalGame.boardEffects}
+              hoppingEntityIds={normalGame.hoppingEntityIds}
+              idleParticipantIds={idleParticipantIds}
+              headerEyebrow={t("normal.shell.eyebrow")}
+              headerTitle={t("normal.shell.title")}
+              headerDescription={t("normal.shell.description")}
+              sessionLabel={normalSessionLabel}
+              setupPanel={
+                <DangoPicker
+                  rosterBasics={rosterBasics}
+                  selectedBasicIds={lineup.selectedBasicIds}
+                  onSetLineup={lineup.setLineup}
+                  onToggleBasicId={lineup.toggleSelectedBasicId}
+                  onClearSelections={lineup.clearSelectedBasicIds}
+                />
+              }
+              showSetupPanel={normalGame.state.phase === "idle"}
+              startControls={
+                <button
+                  type="button"
+                  onClick={() =>
+                    normalGame.start(createNormalRaceSetup(lineup.selectedBasicIds))
+                  }
+                  disabled={normalStartDisabled}
+                  className="rounded-full bg-emerald-500 px-5 py-2 text-sm font-semibold text-emerald-950 shadow-lg shadow-emerald-900/40 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
+                >
+                  {t("normal.shell.start")}
+                </button>
+              }
+              onPlayTurn={normalGame.playTurn}
+              onStepAction={normalGame.stepAction}
+              onInstantTurn={normalGame.instantFullTurn}
+              onInstantGame={normalGame.instantSimulateGame}
+              onReset={normalGame.reset}
+              isAnimating={normalGame.isAnimating}
+              playTurnEnabled={normalGame.playTurnEnabled}
+              autoPlayEnabled={normalGame.autoPlayEnabled}
+              onAutoPlayEnabledChange={normalGame.setAutoPlayEnabled}
+            />
+          </>
+        ) : workspaceView === "tournament" ? (
+          <>
+            <MonteCarloPanel
+              heading={t("tournament.monteCarlo.heading")}
+              title={t("tournament.monteCarlo.title")}
+              description={t("tournament.monteCarlo.description")}
+              lineupBasicIds={resolvedTournamentLineupBasicIds}
+              runDisabled={tournamentMonteCarloRunDisabled}
+              progress={monteCarloProgress}
+              isStopping={monteCarloIsStopping}
+              scenarioOptions={[
+                {
+                  id: "tournament",
+                  label: t("tournament.monteCarlo.scenarios.tournament.label"),
+                  description: t("tournament.monteCarlo.scenarios.tournament.description"),
+                },
+                {
+                  id: "final",
+                  label: t("tournament.monteCarlo.scenarios.final.label"),
+                  description: t("tournament.monteCarlo.scenarios.final.description"),
+                },
+              ]}
+              selectedScenarioId={selectedTournamentMonteCarloScenarioId}
+              onSelectedScenarioChange={(scenarioId) =>
+                setSelectedTournamentMonteCarloScenarioId(
+                  scenarioId as "tournament" | "final"
+                )
+              }
+              onRunBatch={requestTournamentMonteCarloBatch}
+              onAbortRun={abortMonteCarloRun}
+            />
+            <GameShell
+              state={tournament.race.state}
+              rankingState={tournament.race.rankingState}
+              broadcastPayload={tournament.race.broadcastPayload}
+              boardCells={tournament.race.boardCells}
+              boardEffects={tournament.race.boardEffects}
+              hoppingEntityIds={tournament.race.hoppingEntityIds}
+              idleParticipantIds={idleParticipantIds}
+              headerEyebrow={t("tournament.shell.eyebrow")}
+              headerTitle={t("tournament.shell.title")}
+              headerDescription={t("tournament.shell.description")}
+              sessionLabel={tournamentSessionLabel}
+              setupPanel={
+                <TournamentSetupPanel
+                  rosterBasics={rosterBasics}
+                  selectedBasicIds={lineup.selectedBasicIds}
+                  onSetLineup={lineup.setLineup}
+                  onToggleBasicId={lineup.toggleSelectedBasicId}
+                  onClearSelections={lineup.clearSelectedBasicIds}
+                  finalPlacements={tournament.finalPlacements}
+                  preliminaryPlacements={tournament.preliminaryPlacements}
+                  onSetFinalPlacements={tournament.setFinalPlacements}
+                  onMovePlacement={tournament.moveFinalPlacement}
+                  onStartPreliminary={tournament.startPreliminary}
+                  onStartFinal={tournament.startFinal}
+                  onRestorePreliminaryPlacements={
+                    tournament.restorePreliminaryPlacements
+                  }
+                  onReset={tournament.resetTournament}
+                  controlsLocked={tournamentControlsLocked}
+                />
+              }
+              showSetupPanel={tournament.race.state.phase !== "running"}
+              startControls={null}
+              onPlayTurn={tournament.race.playTurn}
+              onStepAction={tournament.race.stepAction}
+              onInstantTurn={tournament.race.instantFullTurn}
+              onInstantGame={tournament.race.instantSimulateGame}
+              onReset={tournament.clearRace}
+              isAnimating={tournament.race.isAnimating}
+              playTurnEnabled={tournament.race.playTurnEnabled}
+              autoPlayEnabled={tournament.race.autoPlayEnabled}
+              onAutoPlayEnabledChange={tournament.race.setAutoPlayEnabled}
+            />
+          </>
+        ) : (
+          <AnalysisDashboard
+            snapshot={monteCarloSnapshot}
+            onNavigateSimulation={() => setWorkspaceView(analysisReturnView)}
           />
-          <GameShell
-            state={normalGame.state}
-            rankingState={normalGame.rankingState}
-            broadcastPayload={normalGame.broadcastPayload}
-            boardCells={normalGame.boardCells}
-            boardEffects={normalGame.boardEffects}
-            hoppingEntityIds={normalGame.hoppingEntityIds}
-            idleParticipantIds={idleParticipantIds}
-            headerEyebrow={t("normal.shell.eyebrow")}
-            headerTitle={t("normal.shell.title")}
-            headerDescription={t("normal.shell.description")}
-            sessionLabel={normalSessionLabel}
-            setupPanel={
-              <DangoPicker
-                rosterBasics={rosterBasics}
-                selectedBasicIds={lineup.selectedBasicIds}
-                onSetLineup={lineup.setLineup}
-                onToggleBasicId={lineup.toggleSelectedBasicId}
-                onClearSelections={lineup.clearSelectedBasicIds}
-              />
-            }
-            showSetupPanel={normalGame.state.phase === "idle"}
-            startControls={
-              <button
-                type="button"
-                onClick={() =>
-                  normalGame.start(createNormalRaceSetup(lineup.selectedBasicIds))
-                }
-                disabled={normalStartDisabled}
-                className="rounded-full bg-emerald-500 px-5 py-2 text-sm font-semibold text-emerald-950 shadow-lg shadow-emerald-900/40 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
-              >
-                {t("normal.shell.start")}
-              </button>
-            }
-            onPlayTurn={normalGame.playTurn}
-            onStepAction={normalGame.stepAction}
-            onInstantTurn={normalGame.instantFullTurn}
-            onInstantGame={normalGame.instantSimulateGame}
-            onReset={normalGame.reset}
-            isAnimating={normalGame.isAnimating}
-            playTurnEnabled={normalGame.playTurnEnabled}
-            autoPlayEnabled={normalGame.autoPlayEnabled}
-            onAutoPlayEnabledChange={normalGame.setAutoPlayEnabled}
-          />
-        </>
-      ) : workspaceView === "tournament" ? (
-        <>
-          <MonteCarloPanel
-            heading={t("tournament.monteCarlo.heading")}
-            title={t("tournament.monteCarlo.title")}
-            description={t("tournament.monteCarlo.description")}
-            lineupBasicIds={resolvedTournamentLineupBasicIds}
-            runDisabled={tournamentMonteCarloRunDisabled}
-            progress={monteCarloProgress}
-            isStopping={monteCarloIsStopping}
-            scenarioOptions={[
-              {
-                id: "tournament",
-                label: t("tournament.monteCarlo.scenarios.tournament.label"),
-                description: t("tournament.monteCarlo.scenarios.tournament.description"),
-              },
-              {
-                id: "final",
-                label: t("tournament.monteCarlo.scenarios.final.label"),
-                description: t("tournament.monteCarlo.scenarios.final.description"),
-              },
-            ]}
-            selectedScenarioId={selectedTournamentMonteCarloScenarioId}
-            onSelectedScenarioChange={(scenarioId) =>
-              setSelectedTournamentMonteCarloScenarioId(
-                scenarioId as "tournament" | "final"
-              )
-            }
-            onRunBatch={requestTournamentMonteCarloBatch}
-            onAbortRun={abortMonteCarloRun}
-          />
-          <GameShell
-            state={tournament.race.state}
-            rankingState={tournament.race.rankingState}
-            broadcastPayload={tournament.race.broadcastPayload}
-            boardCells={tournament.race.boardCells}
-            boardEffects={tournament.race.boardEffects}
-            hoppingEntityIds={tournament.race.hoppingEntityIds}
-            idleParticipantIds={idleParticipantIds}
-            headerEyebrow={t("tournament.shell.eyebrow")}
-            headerTitle={t("tournament.shell.title")}
-            headerDescription={t("tournament.shell.description")}
-            sessionLabel={tournamentSessionLabel}
-            setupPanel={
-              <TournamentSetupPanel
-                rosterBasics={rosterBasics}
-                selectedBasicIds={lineup.selectedBasicIds}
-                onSetLineup={lineup.setLineup}
-                onToggleBasicId={lineup.toggleSelectedBasicId}
-                onClearSelections={lineup.clearSelectedBasicIds}
-                finalPlacements={tournament.finalPlacements}
-                preliminaryPlacements={tournament.preliminaryPlacements}
-                onSetFinalPlacements={tournament.setFinalPlacements}
-                onMovePlacement={tournament.moveFinalPlacement}
-                onStartPreliminary={tournament.startPreliminary}
-                onStartFinal={tournament.startFinal}
-                onRestorePreliminaryPlacements={
-                  tournament.restorePreliminaryPlacements
-                }
-                onReset={tournament.resetTournament}
-                controlsLocked={tournamentControlsLocked}
-              />
-            }
-            showSetupPanel={tournament.race.state.phase !== "running"}
-            startControls={null}
-            onPlayTurn={tournament.race.playTurn}
-            onStepAction={tournament.race.stepAction}
-            onInstantTurn={tournament.race.instantFullTurn}
-            onInstantGame={tournament.race.instantSimulateGame}
-            onReset={tournament.clearRace}
-            isAnimating={tournament.race.isAnimating}
-            playTurnEnabled={tournament.race.playTurnEnabled}
-            autoPlayEnabled={tournament.race.autoPlayEnabled}
-            onAutoPlayEnabledChange={tournament.race.setAutoPlayEnabled}
-          />
-        </>
-      ) : (
-        <AnalysisDashboard
-          snapshot={monteCarloSnapshot}
-          onNavigateSimulation={() => setWorkspaceView(analysisReturnView)}
-        />
-      )}
+        )}
+      </main>
+      <footer className="mt-auto border-t border-slate-200/70 px-4 py-6 text-center text-xs text-slate-500/80 dark:border-slate-800/70 dark:text-slate-400/80 sm:px-6 md:px-10 lg:px-14 xl:px-16 2xl:px-24">
+        <p className="mx-auto max-w-5xl leading-6">{t("footer.disclaimer")}</p>
+      </footer>
     </div>
   );
 }

@@ -199,10 +199,35 @@ export function blendHexColors(
   });
 }
 
+function shouldPreferLightTextForVividFill(
+  fillHex: string,
+  lightContrast: number
+): boolean {
+  if (lightContrast < 2.7) {
+    return false;
+  }
+  const rgb = parseHexColor(fillHex);
+  if (!rgb) {
+    return false;
+  }
+  const hsl = rgbToHsl(rgb);
+  return (
+    (hsl.s >= 0.58 && hsl.l <= 0.72) ||
+    (hsl.s >= 0.72 && hsl.l <= 0.78)
+  );
+}
+
 export function accessibleTextHexForFill(fillHex: string): string {
-  const lightContrast = contrastRatio(LIGHT_TEXT_HEX, fillHex);
-  const darkContrast = contrastRatio(DARK_TEXT_HEX, fillHex);
-  return lightContrast >= darkContrast ? LIGHT_TEXT_HEX : DARK_TEXT_HEX;
+  const normalizedFillHex = normalizeHexColor(fillHex);
+  const lightContrast = contrastRatio(LIGHT_TEXT_HEX, normalizedFillHex);
+  const darkContrast = contrastRatio(DARK_TEXT_HEX, normalizedFillHex);
+  if (
+    lightContrast >= darkContrast ||
+    shouldPreferLightTextForVividFill(normalizedFillHex, lightContrast)
+  ) {
+    return LIGHT_TEXT_HEX;
+  }
+  return DARK_TEXT_HEX;
 }
 
 export function ensureContrastColor(

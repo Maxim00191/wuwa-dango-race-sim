@@ -144,7 +144,7 @@ export function GameShell({
   ]);
 
   return (
-    <div className="flex min-h-screen w-full flex-col gap-6 px-4 py-8 text-slate-900 dark:text-slate-100 sm:px-6 md:px-10 lg:gap-8 lg:px-14 xl:px-16 2xl:px-24">
+    <div className="flex w-full flex-1 flex-col gap-6 px-4 py-8 text-slate-900 dark:text-slate-100 sm:px-6 md:px-10 lg:gap-8 lg:px-14 xl:px-16 2xl:px-24">
       <header className="flex w-full flex-col gap-3">
         <p className="text-lg font-bold tracking-tight text-slate-800 dark:text-slate-100 md:text-xl">
           {headerEyebrow}

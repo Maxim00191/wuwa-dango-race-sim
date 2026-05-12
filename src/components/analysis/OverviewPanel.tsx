@@ -141,14 +141,14 @@ function StabilitySpotlight({ rows }: { rows: PlacementRowDatum[] }) {
   const swingiest = pickSwingiest(rows);
   return (
     <section className="grid gap-4">
-      <div className="rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-900 to-slate-800 p-6 text-slate-50 shadow-md shadow-slate-900/20 dark:border-slate-700 dark:from-slate-900 dark:to-slate-950">
-        <p className="text-base font-bold tracking-tight text-slate-100">
+      <div className="rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-slate-100 p-6 text-slate-900 shadow-md shadow-slate-900/10 dark:border-slate-700 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 dark:text-slate-50">
+        <p className="text-base font-bold tracking-tight text-slate-700 dark:text-slate-100">
           {t("analysis.overview.stabilityLensEyebrow")}
         </p>
-        <h3 className="mt-1 text-2xl font-bold tracking-tight text-white">
+        <h3 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
           {t("analysis.overview.stabilityLensTitle")}
         </h3>
-        <p className="mt-3 text-sm text-slate-300">
+        <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
           {t("analysis.overview.stabilityLensDescription")}
         </p>
       </div>
@@ -220,12 +220,12 @@ function DistributionRow({ row }: { row: PlacementRowDatum }) {
   const { t } = useTranslation();
   const gradient = stackedBarGradient(row);
   return (
-    <article className="rounded-3xl border border-slate-200 bg-slate-50/90 p-5 dark:border-slate-800 dark:bg-slate-950/50">
+    <article className="rounded-3xl border border-slate-200 bg-slate-50/90 p-5 shadow-md shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-950/50 dark:shadow-slate-950/30">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div className="min-w-0 w-full">
           <div className="flex flex-wrap items-center gap-3">
             <span
-              className="inline-flex items-center rounded-full px-3 py-1 text-sm font-bold ring-1 ring-black/10"
+              className="inline-flex items-center rounded-full px-3 py-1 text-sm font-bold shadow-sm shadow-slate-900/10 ring-1 ring-black/10 dark:shadow-slate-950/20"
               style={{
                 backgroundColor: colorWithAlpha(row.accentHex, 0.18),
                 color: row.accentHex,
@@ -244,7 +244,7 @@ function DistributionRow({ row }: { row: PlacementRowDatum }) {
               })}
             </span>
           </div>
-          <div className="mt-4 overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700">
+          <div className="mt-4 overflow-hidden rounded-2xl bg-white shadow-sm shadow-slate-900/10 ring-1 ring-slate-200 dark:bg-slate-900 dark:shadow-slate-950/25 dark:ring-slate-700">
             <div className="grid grid-cols-6 border-b border-slate-200 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:border-slate-700 dark:text-slate-400">
               {row.rates.map((_, placementIndex) => (
                 <div
@@ -256,7 +256,7 @@ function DistributionRow({ row }: { row: PlacementRowDatum }) {
               ))}
             </div>
             <div
-              className="h-12 rounded-b-2xl"
+              className="h-12 rounded-b-2xl shadow-inner shadow-slate-900/10 dark:shadow-slate-950/20"
               style={{ background: gradient }}
             />
             <div className="grid grid-cols-6 text-xs font-semibold text-slate-600 dark:text-slate-300">
@@ -272,7 +272,7 @@ function DistributionRow({ row }: { row: PlacementRowDatum }) {
           </div>
         </div>
         <div className="grid shrink-0 gap-3 sm:grid-cols-3 xl:w-[21rem] xl:grid-cols-1">
-          <div className="rounded-2xl bg-white px-4 py-3 shadow-sm shadow-slate-900/5 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700">
+          <div className="rounded-2xl bg-white px-4 py-3 shadow-md shadow-slate-900/8 ring-1 ring-slate-200 dark:bg-slate-900 dark:shadow-slate-950/25 dark:ring-slate-700">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-500">
               {t("analysis.overview.winRate")}
             </p>
@@ -280,7 +280,7 @@ function DistributionRow({ row }: { row: PlacementRowDatum }) {
               {formatPercent(row.winRate)}
             </p>
           </div>
-          <div className="rounded-2xl bg-white px-4 py-3 shadow-sm shadow-slate-900/5 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700">
+          <div className="rounded-2xl bg-white px-4 py-3 shadow-md shadow-slate-900/8 ring-1 ring-slate-200 dark:bg-slate-900 dark:shadow-slate-950/25 dark:ring-slate-700">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-500">
               {t("analysis.overview.podiumRate")}
             </p>
@@ -288,7 +288,7 @@ function DistributionRow({ row }: { row: PlacementRowDatum }) {
               {formatPercent(row.podiumRate)}
             </p>
           </div>
-          <div className="rounded-2xl bg-white px-4 py-3 shadow-sm shadow-slate-900/5 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700">
+          <div className="rounded-2xl bg-white px-4 py-3 shadow-md shadow-slate-900/8 ring-1 ring-slate-200 dark:bg-slate-900 dark:shadow-slate-950/25 dark:ring-slate-700">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-500">
               {t("analysis.overview.bottomTwoRate")}
             </p>

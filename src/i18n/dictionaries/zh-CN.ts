@@ -83,6 +83,12 @@ export const zhCnDictionary: TranslationDictionary = {
     switchToDarkAria: "切换至夜色主题",
     lightTitle: "白昼主题",
     darkTitle: "夜色主题",
+    lightShortLabel: "浅色",
+    darkShortLabel: "深色",
+  },
+  footer: {
+    disclaimer:
+      "本网站仅提供基于个人创作的模拟程序，并不代表实际游戏内代码运行情况，可能会产生与游戏不符合的表现，所有内容仅供参考和娱乐。本站仅为玩家二创内容，与官方无关。",
   },
   normal: {
     session: {
