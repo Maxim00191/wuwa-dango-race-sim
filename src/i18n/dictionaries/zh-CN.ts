@@ -22,7 +22,7 @@ export const zhCnDictionary: TranslationDictionary = {
     hiyuki: "绯雪",
     phoebe: "菲比",
     cartethyia: "卡提希娅",
-    jinhsi: "今夕",
+    jinhsi: "今汐",
     changli: "长离",
     calcharo: "卡卡罗",
     augusta: "奥古斯塔",
@@ -211,7 +211,7 @@ export const zhCnDictionary: TranslationDictionary = {
       },
       c: {
         label: "编组 C",
-        description: "今夕、长离、卡卡罗、奥古斯塔、尤诺、弗洛洛",
+        description: "今汐、长离、卡卡罗、奥古斯塔、尤诺、弗洛洛",
       },
     },
   },
@@ -433,6 +433,16 @@ export const zhCnDictionary: TranslationDictionary = {
         "{actor} 收束节奏，下回合将压轴行动。",
       calcharoLastPlaceBoost:
         "{actor} 身处末位却骤然爆发，额外获得 3 格移动。",
+      augustaGovernorAuthority:
+        "{actor} 发动总督权柄，本回合跳过行动，并将在下回合压轴出手。",
+      iunoAnchoredDestiny:
+        "{actor} 锚定命途，将 {aheadTarget} 与 {behindTarget} 一并牵引到自己所在的格子。",
+      iunoAnchoredDestinyAhead:
+        "{actor} 锚定命途，将前方相邻名次的 {target} 牵引到自己所在的格子。",
+      iunoAnchoredDestinyBehind:
+        "{actor} 锚定命途，将后方相邻名次的 {target} 牵引到自己所在的格子。",
+      phrolovaBottomBoost:
+        "{actor} 在叠层底部布局得手，本回合额外获得 3 格移动。",
     },
   },
   banner: {

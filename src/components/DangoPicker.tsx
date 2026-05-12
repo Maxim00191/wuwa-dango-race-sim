@@ -308,7 +308,7 @@ export function DangoPicker({
           })}
         </div>
       ) : (
-        <div className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-3">
+        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
           {lineupGroups.map((group) => {
             const isActiveGroup = haveSameLineupMembers(
               group.characterIds,
@@ -336,8 +336,8 @@ export function DangoPicker({
                     : undefined,
                 }}
               >
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div className="space-y-2">
+                <div className="flex flex-wrap items-start justify-between gap-4 sm:flex-nowrap">
+                  <div className="min-w-0 flex-1 space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <p
                         className="text-sm font-bold uppercase tracking-[0.22em]"
@@ -360,11 +360,11 @@ export function DangoPicker({
                           : t("lineup.groups.comingSoon")}
                       </span>
                     </div>
-                    <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
+                    <p className="break-words text-sm leading-6 text-slate-600 dark:text-slate-300">
                       {t(group.descriptionKey)}
                     </p>
                   </div>
-                  <div className="flex flex-col items-stretch gap-2 sm:min-w-44">
+                  <div className="flex w-full shrink-0 flex-col items-stretch gap-2 sm:w-auto sm:min-w-44">
                     <span className="text-right text-xs font-semibold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
                       {group.characters.length} / {ACTIVE_BASIC_DANGO_COUNT}
                     </span>

@@ -17,10 +17,15 @@ export type Attribute =
 export type EntitySkillState = {
   sequentialDiceOrdinal?: number;
   hasUsedMidpointLeap?: boolean;
+  hasUsedAnchoredDestiny?: boolean;
   previousRoll?: number;
   hasMetAbby?: boolean;
   comebackActive?: boolean;
   actLastNextRound?: boolean;
+  actLastNextRoundOrder?: number;
+  skipTurnThisRound?: boolean;
+  augustaServingDelayedTurn?: boolean;
+  phrolovaBottomBoostReady?: boolean;
 };
 
 export type TravelDirection = "clockwise" | "counterClockwise";
@@ -62,6 +67,8 @@ export type PostMovementHookContext = {
   endCellIndex: CellIndex;
   travelDirection: TravelDirection;
   landingCells: CellIndex[];
+  startRaceDisplacement: number;
+  endRaceDisplacement: number;
 };
 
 export type PostMovementHookHandler = (
@@ -88,6 +95,40 @@ export type TurnRollPreparationHookHandler = (
   state: GameState,
   context: TurnRollPreparationContext
 ) => TurnRollPreparationResolution;
+
+export type RoundStartHookContext = {
+  turnIndex: number;
+  actorId: DangoId;
+  cellIndex: CellIndex;
+  orderedActorIds: DangoId[];
+};
+
+export type RoundStartHookResolution = {
+  state: GameState;
+  skillNarrative?: LocalizedText;
+};
+
+export type RoundStartHookHandler = (
+  state: GameState,
+  context: RoundStartHookContext
+) => RoundStartHookResolution;
+
+export type RoundEndHookContext = {
+  turnIndex: number;
+  actorId: DangoId;
+  cellIndex: CellIndex;
+  orderedActorIds: DangoId[];
+};
+
+export type RoundEndHookResolution = {
+  state: GameState;
+  skillNarrative?: LocalizedText;
+};
+
+export type RoundEndHookHandler = (
+  state: GameState,
+  context: RoundEndHookContext
+) => RoundEndHookResolution;
 
 export type MovementEvaluationContext = {
   turnIndex: number;
@@ -134,7 +175,22 @@ export type MovementStepHookHandler = (
   context: MovementStepHookContext
 ) => MovementStepHookResult;
 
+export type DirectTopLandingHookContext = {
+  turnIndex: number;
+  actorId: DangoId;
+  cellIndex: CellIndex;
+  directlyAboveId: DangoId;
+  trigger: "movement" | "cellEffect" | "timeRift";
+};
+
+export type DirectTopLandingHookHandler = (
+  state: GameState,
+  context: DirectTopLandingHookContext
+) => SkillHookResolution;
+
 export type CharacterSkillHooks = {
+  atRoundStart?: RoundStartHookHandler;
+  atRoundEnd?: RoundEndHookHandler;
   beforeTurn?: SkillHookHandler;
   afterDiceRoll?: SkillHookHandler;
   afterMovement?: PostMovementHookHandler;
@@ -144,6 +200,7 @@ export type CharacterSkillHooks = {
   afterTurnRolls?: TurnRollPreparationHookHandler;
   resolveMovement?: MovementEvaluationHookHandler;
   afterMovementStep?: MovementStepHookHandler;
+  afterDirectTopLanding?: DirectTopLandingHookHandler;
 };
 
 export type CellEffectTriggerContext = {
@@ -261,6 +318,19 @@ export type PlaybackTeleportSegment = {
   toCell: CellIndex;
 };
 
+export type PlaybackStackTeleportMove = {
+  entityId: DangoId;
+  fromCell: CellIndex;
+};
+
+export type PlaybackStackTeleportSegment = {
+  kind: "stackTeleport";
+  actorId: DangoId;
+  moves: PlaybackStackTeleportMove[];
+  toCell: CellIndex;
+  stackBottomToTop: DangoId[];
+};
+
 export type PlaybackSlideSegment = {
   kind: "slide";
   travelingIds: DangoId[];
@@ -287,6 +357,7 @@ export type PlaybackSegment =
   | PlaybackSkillSegment
   | PlaybackHopsSegment
   | PlaybackTeleportSegment
+  | PlaybackStackTeleportSegment
   | PlaybackSlideSegment
   | PlaybackCellEffectSegment
   | PlaybackVictorySegment;
@@ -351,6 +422,7 @@ export type GameState = {
   log: GameLogEntry[];
   lastTurnPlayback: TurnPlaybackPlan | null;
   pendingTurn: PendingTurnResolution | null;
+  actLastNextRoundOrderCounter: number;
   playbackStamp: number;
 };
 

@@ -106,6 +106,38 @@ export function teleportEntitySliceCellsOnly(
   return nextCells;
 }
 
+export type StackTeleportMove = {
+  entityId: string;
+  fromCellIndex: number;
+};
+
+export function applyStackTeleportCellsOnly(
+  cells: Map<number, string[]>,
+  moves: StackTeleportMove[],
+  destinationCellIndex: number,
+  destinationStackBottomToTop: string[]
+): Map<number, string[]> {
+  const nextCells = cloneCellMap(cells);
+  for (const move of moves) {
+    const sourceStack = nextCells.get(move.fromCellIndex);
+    if (!sourceStack?.includes(move.entityId)) {
+      continue;
+    }
+    const remaining = sourceStack.filter((id) => id !== move.entityId);
+    if (remaining.length === 0) {
+      nextCells.delete(move.fromCellIndex);
+    } else {
+      nextCells.set(move.fromCellIndex, remaining);
+    }
+  }
+  if (destinationStackBottomToTop.length === 0) {
+    nextCells.delete(destinationCellIndex);
+  } else {
+    nextCells.set(destinationCellIndex, [...destinationStackBottomToTop]);
+  }
+  return nextCells;
+}
+
 export function mergeWithAbbyBottomRule(
   existingBottomToTop: string[],
   incomingBottomToTop: string[]

@@ -1,7 +1,7 @@
-import { LAP_DISTANCE_IN_CLOCKWISE_STEPS } from "@/constants/board";
 import { ABBY_ID } from "@/constants/ids";
 import { characterParam, text } from "@/i18n";
 import { rollInclusive } from "@/services/characters/dice";
+import { hasCrossedMidpoint } from "@/services/midpoint";
 import {
   findCellIndexForEntity,
   teleportEntitySliceCellsOnly,
@@ -14,8 +14,6 @@ import type {
   PostMovementHookContext,
   SkillHookResolution,
 } from "@/types/game";
-
-const MIDPOINT_DISTANCE = LAP_DISTANCE_IN_CLOCKWISE_STEPS / 2;
 
 function rollAemeathDice(
   state: GameState,
@@ -58,7 +56,7 @@ function resolveAemeathMidpointLeap(
   if (!entity || entity.skillState.hasUsedMidpointLeap) {
     return { state };
   }
-  if (entity.raceDisplacement < MIDPOINT_DISTANCE) {
+  if (!hasCrossedMidpoint(context)) {
     return { state };
   }
   const originCellIndex = findCellIndexForEntity(state.cells, context.rollerId);

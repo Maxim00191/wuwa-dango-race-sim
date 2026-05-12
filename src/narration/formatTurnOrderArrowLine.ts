@@ -19,6 +19,9 @@ export function formatTurnOrderArrowLine(
     if (segment.kind === "teleport") {
       return getCharacterName("abby");
     }
+    if (segment.kind === "stackTeleport") {
+      return getCharacterName(segment.actorId);
+    }
     if (segment.kind === "slide") {
       return bonusSlideLabel;
     }

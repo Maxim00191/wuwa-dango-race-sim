@@ -63,6 +63,9 @@ function accentDangoIdForTurnIntro(
     if (segment.kind === "teleport") {
       return ABBY_ID;
     }
+    if (segment.kind === "stackTeleport") {
+      return segment.actorId;
+    }
     if (
       segment.kind === "idle" ||
       segment.kind === "roll" ||
@@ -289,7 +292,9 @@ export function useGame() {
               ? step.travelingIds
               : step.kind === "slide"
                 ? step.travelingIds
-                : step.entityIds;
+                : step.kind === "teleport"
+                  ? step.entityIds
+                  : step.movedIds;
           setHoppingEntityIds(new Set(movers));
           await delayMilliseconds(getScaledDurationMs(ATOMIC_STEP_DELAY_MS));
         }
@@ -357,8 +362,11 @@ export function useGame() {
         const segment = playback.segments[segmentIndex]!;
         const chunk = segmentChunks[segmentIndex] ?? [];
 
-        if (segment.kind === "teleport") {
-          const accentDangoId = segment.entityIds[segment.entityIds.length - 1];
+        if (segment.kind === "teleport" || segment.kind === "stackTeleport") {
+          const accentDangoId =
+            segment.kind === "teleport"
+              ? segment.entityIds[segment.entityIds.length - 1]
+              : segment.actorId;
           await shineBanner(
             {
               variant: "teleport",

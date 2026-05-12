@@ -3,8 +3,8 @@ import { rollStandardBasicDice } from "@/services/characters/basic";
 import { teleportEntitySliceCellsOnly } from "@/services/stateCells";
 import type {
   CharacterDefinition,
+  DirectTopLandingHookContext,
   GameState,
-  SkillHookContext,
   SkillHookResolution,
 } from "@/types/game";
 
@@ -12,14 +12,18 @@ const JINHSI_STACK_ASCEND_CHANCE = 0.4;
 
 function resolveJinhsiStackAscend(
   state: GameState,
-  context: SkillHookContext
+  context: DirectTopLandingHookContext
 ): SkillHookResolution {
   const stack = state.cells.get(context.cellIndex);
   if (!stack) {
     return { state };
   }
-  const actorIndex = stack.indexOf(context.rollerId);
-  if (actorIndex === -1 || actorIndex >= stack.length - 1) {
+  const actorIndex = stack.indexOf(context.actorId);
+  if (
+    actorIndex === -1 ||
+    actorIndex >= stack.length - 1 ||
+    stack[actorIndex + 1] !== context.directlyAboveId
+  ) {
     return { state };
   }
   if (Math.random() >= JINHSI_STACK_ASCEND_CHANCE) {
@@ -32,13 +36,13 @@ function resolveJinhsiStackAscend(
         state.cells,
         context.cellIndex,
         context.cellIndex,
-        [context.rollerId]
+        [context.actorId]
       ),
     },
     segments: [
       {
         kind: "teleport",
-        entityIds: [context.rollerId],
+        entityIds: [context.actorId],
         fromCell: context.cellIndex,
         toCell: context.cellIndex,
       },
@@ -58,6 +62,6 @@ export const jinhsiCharacter: CharacterDefinition = {
   travelDirection: "clockwise",
   activateAfterTurnIndex: 0,
   skillHooks: {
-    beforeTurn: resolveJinhsiStackAscend,
+    afterDirectTopLanding: resolveJinhsiStackAscend,
   },
 };

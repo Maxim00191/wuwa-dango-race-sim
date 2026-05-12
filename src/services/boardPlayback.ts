@@ -1,5 +1,6 @@
 import { clockwiseDistanceBetweenInclusive } from "@/services/circular";
 import {
+  applyStackTeleportCellsOnly,
   cloneCellMap,
   findCellIndexForEntity,
   relocateActorLedPortionCellsOnly,
@@ -28,6 +29,13 @@ export type AtomicPlaybackStep =
       entityIds: DangoId[];
       fromCell: CellIndex;
       toCell: CellIndex;
+    }
+  | {
+      kind: "stackTeleport";
+      actorId: DangoId;
+      movedIds: DangoId[];
+      toCell: CellIndex;
+      stackBottomToTop: DangoId[];
     }
   | {
       kind: "slide";
@@ -92,6 +100,25 @@ export function expandPlaybackToAtomicSteps(
         segment.fromCell,
         segment.toCell,
         segment.entityIds
+      );
+      continue;
+    }
+    if (segment.kind === "stackTeleport") {
+      atomic.push({
+        kind: "stackTeleport",
+        actorId: segment.actorId,
+        movedIds: segment.moves.map((move) => move.entityId),
+        toCell: segment.toCell,
+        stackBottomToTop: segment.stackBottomToTop,
+      });
+      cells = applyStackTeleportCellsOnly(
+        cells,
+        segment.moves.map((move) => ({
+          entityId: move.entityId,
+          fromCellIndex: move.fromCell,
+        })),
+        segment.toCell,
+        segment.stackBottomToTop
       );
       continue;
     }
@@ -177,6 +204,26 @@ export function expandPlaybackToSegmentAtomicChunks(
       chunks.push(chunk);
       continue;
     }
+    if (segment.kind === "stackTeleport") {
+      chunk.push({
+        kind: "stackTeleport",
+        actorId: segment.actorId,
+        movedIds: segment.moves.map((move) => move.entityId),
+        toCell: segment.toCell,
+        stackBottomToTop: segment.stackBottomToTop,
+      });
+      cells = applyStackTeleportCellsOnly(
+        cells,
+        segment.moves.map((move) => ({
+          entityId: move.entityId,
+          fromCellIndex: move.fromCell,
+        })),
+        segment.toCell,
+        segment.stackBottomToTop
+      );
+      chunks.push(chunk);
+      continue;
+    }
     if (segment.kind === "slide") {
       chunk.push({
         kind: "slide",
@@ -226,6 +273,17 @@ export function applyAtomicCellsStep(
       step.entityIds
     );
   }
+  if (step.kind === "stackTeleport") {
+    return applyStackTeleportCellsOnly(
+      cells,
+      step.movedIds.map((entityId) => ({
+        entityId,
+        fromCellIndex: findCellIndexForEntity(cells, entityId) ?? step.toCell,
+      })),
+      step.toCell,
+      step.stackBottomToTop
+    );
+  }
   return teleportEntitySliceCellsOnly(
     cells,
     step.fromCell,
@@ -251,6 +309,23 @@ export function applyAtomicStepToEntities(
           ...runtime,
           cellIndex: step.toCell,
           raceDisplacement: id === ABBY_ID ? 0 : runtime.raceDisplacement,
+        },
+      };
+    }
+    return nextEntities;
+  }
+  if (step.kind === "stackTeleport") {
+    let nextEntities = { ...entities };
+    for (const id of step.movedIds) {
+      const runtime = nextEntities[id];
+      if (!runtime) {
+        continue;
+      }
+      nextEntities = {
+        ...nextEntities,
+        [id]: {
+          ...runtime,
+          cellIndex: step.toCell,
         },
       };
     }

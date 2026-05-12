@@ -466,6 +466,16 @@ export const enDictionary: TranslationDictionary = {
         "{actor} delays her momentum and will act last next round.",
       calcharoLastPlaceBoost:
         "{actor} claws back from last place and gains 3 extra steps.",
+      augustaGovernorAuthority:
+        "{actor} claims Governor's Authority, skips this round, and will act last next round.",
+      iunoAnchoredDestiny:
+        "{actor} anchors fate and pulls {aheadTarget} and {behindTarget} onto the same tile.",
+      iunoAnchoredDestinyAhead:
+        "{actor} anchors fate and pulls {target} onto the same tile from one rank ahead.",
+      iunoAnchoredDestinyBehind:
+        "{actor} anchors fate and pulls {target} onto the same tile from one rank behind.",
+      phrolovaBottomBoost:
+        "{actor} schemes from the base of the stack and gains 3 extra steps.",
     },
   },
   banner: {
