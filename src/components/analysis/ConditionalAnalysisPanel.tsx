@@ -64,67 +64,69 @@ function ConditionalHeatmap({
   }, [rows, selectedWinnerId]);
 
   return (
-    <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm shadow-slate-900/5 dark:border-slate-700 dark:bg-slate-950/70">
-      <div className="grid grid-cols-[minmax(11rem,1.2fr)_repeat(6,minmax(0,1fr))] border-b border-slate-200 bg-slate-50 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-400">
-        <div className="px-4 py-3">{t("analysis.conditional.tableDango")}</div>
-        {rows[0]?.rates.map((_, placementIndex) => (
-          <div key={`conditional-header-${placementIndex}`} className="px-2 py-3 text-center">
-            {t(`common.placements.${placementIndex}`)}
+    <div className="overflow-x-auto rounded-3xl border border-slate-200 bg-white shadow-sm shadow-slate-900/5 dark:border-slate-700 dark:bg-slate-950/70">
+      <div className="min-w-[44rem]">
+        <div className="grid grid-cols-[minmax(10rem,1.2fr)_repeat(6,minmax(4.5rem,1fr))] border-b border-slate-200 bg-slate-50 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-400">
+          <div className="px-4 py-3">{t("analysis.conditional.tableDango")}</div>
+          {rows[0]?.rates.map((_, placementIndex) => (
+            <div key={`conditional-header-${placementIndex}`} className="px-2 py-3 text-center">
+              {t(`common.placements.${placementIndex}`)}
+            </div>
+          ))}
+        </div>
+        {orderedRows.map((row) => (
+          <div
+            key={`conditional-${row.basicId}`}
+            className="grid grid-cols-[minmax(10rem,1.2fr)_repeat(6,minmax(4.5rem,1fr))] border-b border-slate-200 last:border-b-0 dark:border-slate-800"
+          >
+            <div className="flex items-center gap-3 px-4 py-3">
+              <span
+                className="inline-flex h-3 w-3 rounded-full"
+                style={{ backgroundColor: row.accentHex }}
+              />
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold tracking-tight text-slate-900 dark:text-slate-50">
+                  {row.label}
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {t("analysis.conditional.averageFinish", {
+                    value: row.meanPlacement.toFixed(2),
+                  })}
+                </p>
+              </div>
+            </div>
+            {row.rates.map((rate, placementIndex) => {
+              const isWinnerCell = row.basicId === selectedWinnerId && placementIndex === 0;
+              const alpha = isWinnerCell ? 0.92 : 0.08 + (rate / 100) * 0.72;
+              const cellHex = blendHexColors(row.accentHex, heatmapSurfaceHex, alpha);
+              const textColor = accessibleTextHexForFill(cellHex);
+              return (
+                <div
+                  key={`${row.basicId}-${placementIndex}`}
+                  className="flex min-h-[4.5rem] items-center justify-center border-l border-slate-200 px-2 py-3 text-center dark:border-slate-800"
+                  style={{
+                    backgroundColor: colorWithAlpha(row.accentHex, alpha),
+                    color: textColor,
+                  }}
+                >
+                  <div>
+                    <p className="text-sm font-bold tracking-tight sm:text-base">
+                      {formatPercent(rate)}
+                    </p>
+                    <p className="text-[11px] font-semibold tracking-[0.16em] opacity-80">
+                      {sampleSize > 0
+                        ? t("analysis.conditional.runs", {
+                            count: row.counts[placementIndex] ?? 0,
+                          })
+                        : t("analysis.conditional.runs", { count: 0 })}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         ))}
       </div>
-      {orderedRows.map((row) => (
-        <div
-          key={`conditional-${row.basicId}`}
-          className="grid grid-cols-[minmax(11rem,1.2fr)_repeat(6,minmax(0,1fr))] border-b border-slate-200 last:border-b-0 dark:border-slate-800"
-        >
-          <div className="flex items-center gap-3 px-4 py-3">
-            <span
-              className="inline-flex h-3 w-3 rounded-full"
-              style={{ backgroundColor: row.accentHex }}
-            />
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold tracking-tight text-slate-900 dark:text-slate-50">
-                {row.label}
-              </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                {t("analysis.conditional.averageFinish", {
-                  value: row.meanPlacement.toFixed(2),
-                })}
-              </p>
-            </div>
-          </div>
-          {row.rates.map((rate, placementIndex) => {
-            const isWinnerCell = row.basicId === selectedWinnerId && placementIndex === 0;
-            const alpha = isWinnerCell ? 0.92 : 0.08 + (rate / 100) * 0.72;
-            const cellHex = blendHexColors(row.accentHex, heatmapSurfaceHex, alpha);
-            const textColor = accessibleTextHexForFill(cellHex);
-            return (
-              <div
-                key={`${row.basicId}-${placementIndex}`}
-                className="flex min-h-[4.5rem] items-center justify-center border-l border-slate-200 px-2 py-3 text-center dark:border-slate-800"
-                style={{
-                  backgroundColor: colorWithAlpha(row.accentHex, alpha),
-                  color: textColor,
-                }}
-              >
-                <div>
-                  <p className="text-base font-bold tracking-tight">
-                    {formatPercent(rate)}
-                  </p>
-                  <p className="text-[11px] font-semibold tracking-[0.16em] opacity-80">
-                    {sampleSize > 0
-                      ? t("analysis.conditional.runs", {
-                          count: row.counts[placementIndex] ?? 0,
-                        })
-                      : t("analysis.conditional.runs", { count: 0 })}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ))}
     </div>
   );
 }
@@ -145,30 +147,30 @@ function ConditionalSummary({
   const likelyRunnerUp = pickRunnerUp(otherRows);
   const mostLikelyLast = pickMostLikelyLast(otherRows);
   return (
-    <div className="grid gap-4">
-      <div className="rounded-3xl border border-slate-200 bg-slate-900 p-6 text-slate-50 shadow-md shadow-slate-900/20 dark:border-slate-700">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-300">
+    <div className="grid grid-cols-3 gap-2 md:grid-cols-4 lg:grid-cols-6">
+      <div className="min-h-0 rounded-2xl border border-slate-200 bg-slate-900 p-2.5 text-slate-50 shadow-md shadow-slate-900/20 dark:border-slate-700 sm:rounded-3xl sm:p-3">
+        <p className="truncate text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-400">
           {t("analysis.conditional.scenarioSlice")}
         </p>
-        <h3 className="mt-2 text-2xl font-bold tracking-tight text-white">
+        <h3 className="mt-1 truncate text-sm font-bold leading-tight tracking-tight text-white sm:text-base">
           {t("analysis.conditional.matchingRuns", {
             count: sampleSize.toLocaleString(),
           })}
         </h3>
-        <p className="mt-2 text-sm text-slate-300">
+        <p className="mt-1 line-clamp-2 text-[10px] leading-tight text-slate-400">
           {t("analysis.conditional.matchingRunsHint", {
             rate: formatPercent(totalRuns > 0 ? (sampleSize / totalRuns) * 100 : 0),
           })}
         </p>
       </div>
-      <div className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-md shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-900/60">
-        <p className="text-base font-bold tracking-tight text-slate-900 dark:text-slate-50">
+      <div className="min-h-0 rounded-2xl border border-slate-200 bg-white/90 p-2.5 shadow-md shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-900/60 sm:rounded-3xl sm:p-3">
+        <p className="truncate text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-400 dark:text-slate-500">
           {t("analysis.conditional.likelyRunnerUp")}
         </p>
-        <p className="mt-2 text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+        <p className="mt-1 truncate text-sm font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50">
           {likelyRunnerUp?.label ?? "—"}
         </p>
-        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+        <p className="mt-1 line-clamp-2 text-[10px] leading-tight text-slate-400 dark:text-slate-500">
           {(likelyRunnerUp?.rates[1] ?? 0) > 0
             ? t("analysis.conditional.secondPlaceChance", {
                 rate: formatPercent(likelyRunnerUp?.rates[1] ?? 0),
@@ -176,14 +178,14 @@ function ConditionalSummary({
             : t("analysis.conditional.noMatchingRuns")}
         </p>
       </div>
-      <div className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-md shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-900/60">
-        <p className="text-base font-bold tracking-tight text-slate-900 dark:text-slate-50">
+      <div className="min-h-0 rounded-2xl border border-slate-200 bg-white/90 p-2.5 shadow-md shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-900/60 sm:rounded-3xl sm:p-3">
+        <p className="truncate text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-400 dark:text-slate-500">
           {t("analysis.conditional.likelyLast")}
         </p>
-        <p className="mt-2 text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+        <p className="mt-1 truncate text-sm font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50">
           {mostLikelyLast?.label ?? "—"}
         </p>
-        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+        <p className="mt-1 line-clamp-2 text-[10px] leading-tight text-slate-400 dark:text-slate-500">
           {(mostLikelyLast?.rates[mostLikelyLast.rates.length - 1] ?? 0) > 0
             ? t("analysis.conditional.sixthPlaceChance", {
                 rate: formatPercent(
@@ -237,7 +239,7 @@ export function ConditionalAnalysisPanel({
 
   return (
     <div className="grid gap-6">
-      <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-md shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-900/60 dark:shadow-2xl dark:shadow-slate-950/60">
+      <section className="rounded-[1.75rem] border border-slate-200 bg-white/90 p-4 shadow-md shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-900/60 dark:shadow-2xl dark:shadow-slate-950/60 sm:rounded-3xl sm:p-6">
         <p className="text-base font-bold tracking-tight text-slate-800 dark:text-slate-100">
           {t("analysis.conditional.eyebrow")}
         </p>
@@ -257,7 +259,7 @@ export function ConditionalAnalysisPanel({
                 key={`winner-${basicId}`}
                 type="button"
                 onClick={() => onSelectedWinnerIdChange(basicId)}
-                className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                className={`inline-flex min-h-11 items-center justify-center rounded-full border px-4 py-2 text-sm font-semibold transition ${
                   selected
                     ? "border-violet-400 bg-violet-50 text-violet-950 shadow-md shadow-violet-900/10 dark:border-violet-500 dark:bg-violet-950/40 dark:text-violet-100"
                     : "border-slate-300 bg-white text-slate-700 hover:border-slate-400 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-200"

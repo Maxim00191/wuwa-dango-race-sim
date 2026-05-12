@@ -19,14 +19,14 @@ export function ThemeToggle({ isDark, onToggle }: ThemeToggleProps) {
         isDark ? t("theme.switchToLightAria") : t("theme.switchToDarkAria")
       }
       title={isDark ? t("theme.lightTitle") : t("theme.darkTitle")}
-      className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-full border px-2.5 pr-3.5 shadow-md shadow-slate-900/10 transition ${
+      className={`inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border px-2 shadow-sm shadow-slate-900/10 transition sm:h-10 sm:gap-2 sm:px-2.5 sm:pr-3.5 sm:shadow-md ${
         isDark
           ? "border-indigo-400/60 bg-slate-900/95 text-slate-50 hover:border-indigo-300 hover:bg-slate-800 dark:shadow-slate-950/60"
           : "border-amber-300/80 bg-white/95 text-slate-900 hover:border-amber-400 hover:bg-amber-50"
       }`}
     >
       <span
-        className={`inline-flex h-7 w-7 items-center justify-center rounded-full ${
+        className={`inline-flex h-6 w-6 items-center justify-center rounded-full sm:h-7 sm:w-7 ${
           isDark
             ? "bg-indigo-400/20 text-amber-300"
             : "bg-amber-100 text-amber-600"
@@ -34,7 +34,7 @@ export function ThemeToggle({ isDark, onToggle }: ThemeToggleProps) {
       >
         {isDark ? <SunIcon /> : <MoonIcon />}
       </span>
-      <span className="text-sm font-semibold tracking-tight">
+      <span className="hidden text-xs font-semibold tracking-tight sm:inline sm:text-sm">
         {currentThemeLabel}
       </span>
     </button>

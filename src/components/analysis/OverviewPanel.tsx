@@ -215,28 +215,28 @@ function StabilitySpotlight({ rows }: { rows: PlacementRowDatum[] }) {
                 {Math.round(row.stabilityScore)}
               </span>
             </div>
-            <div className="mt-5 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-slate-950/70">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-500">
+            <div className="mt-4 grid grid-cols-3 gap-2 md:grid-cols-4 lg:grid-cols-6">
+              <div className="min-h-0 rounded-xl bg-slate-50 px-2 py-2 dark:bg-slate-950/70">
+                <p className="truncate text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-400 dark:text-slate-500">
                   {t("analysis.overview.averageFinishShort")}
                 </p>
-                <p className="mt-2 text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+                <p className="mt-1 truncate text-sm font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50">
                   {row.meanPlacement.toFixed(2)}
                 </p>
               </div>
-              <div className="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-slate-950/70">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-500">
+              <div className="min-h-0 rounded-xl bg-slate-50 px-2 py-2 dark:bg-slate-950/70">
+                <p className="truncate text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-400 dark:text-slate-500">
                   {t("analysis.overview.standardDeviation")}
                 </p>
-                <p className="mt-2 text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+                <p className="mt-1 truncate text-sm font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50">
                   {row.standardDeviation.toFixed(2)}
                 </p>
               </div>
-              <div className="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-slate-950/70">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-500">
+              <div className="min-h-0 rounded-xl bg-slate-50 px-2 py-2 dark:bg-slate-950/70">
+                <p className="truncate text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-400 dark:text-slate-500">
                   {t("analysis.overview.boomOrBust")}
                 </p>
-                <p className="mt-2 text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+                <p className="mt-1 truncate text-sm font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50">
                   {formatPercent(row.boomBustRate)}
                 </p>
               </div>
@@ -312,28 +312,28 @@ function DistributionRow({ row }: { row: PlacementRowDatum }) {
             </div>
           </div>
         </div>
-        <div className="grid shrink-0 gap-3 sm:grid-cols-3 xl:w-[21rem] xl:grid-cols-1">
-          <div className="rounded-2xl bg-white px-4 py-3 shadow-md shadow-slate-900/8 ring-1 ring-slate-200 dark:bg-slate-900 dark:shadow-slate-950/25 dark:ring-slate-700">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-500">
+        <div className="grid shrink-0 grid-cols-3 gap-2 md:grid-cols-4 lg:grid-cols-6 xl:w-[21rem] xl:grid-cols-1">
+          <div className="min-h-0 rounded-xl bg-white px-2 py-2 shadow-md shadow-slate-900/8 ring-1 ring-slate-200 dark:bg-slate-900 dark:shadow-slate-950/25 dark:ring-slate-700">
+            <p className="truncate text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-400 dark:text-slate-500">
               {t("analysis.overview.winRate")}
             </p>
-            <p className="mt-2 text-lg font-bold tracking-tight text-slate-900 dark:text-slate-50">
+            <p className="mt-1 truncate text-sm font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50">
               {formatPercent(row.winRate)}
             </p>
           </div>
-          <div className="rounded-2xl bg-white px-4 py-3 shadow-md shadow-slate-900/8 ring-1 ring-slate-200 dark:bg-slate-900 dark:shadow-slate-950/25 dark:ring-slate-700">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-500">
+          <div className="min-h-0 rounded-xl bg-white px-2 py-2 shadow-md shadow-slate-900/8 ring-1 ring-slate-200 dark:bg-slate-900 dark:shadow-slate-950/25 dark:ring-slate-700">
+            <p className="truncate text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-400 dark:text-slate-500">
               {t("analysis.overview.podiumRate")}
             </p>
-            <p className="mt-2 text-lg font-bold tracking-tight text-slate-900 dark:text-slate-50">
+            <p className="mt-1 truncate text-sm font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50">
               {formatPercent(row.podiumRate)}
             </p>
           </div>
-          <div className="rounded-2xl bg-white px-4 py-3 shadow-md shadow-slate-900/8 ring-1 ring-slate-200 dark:bg-slate-900 dark:shadow-slate-950/25 dark:ring-slate-700">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-500">
+          <div className="min-h-0 rounded-xl bg-white px-2 py-2 shadow-md shadow-slate-900/8 ring-1 ring-slate-200 dark:bg-slate-900 dark:shadow-slate-950/25 dark:ring-slate-700">
+            <p className="truncate text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-400 dark:text-slate-500">
               {t("analysis.overview.bottomTwoRate")}
             </p>
-            <p className="mt-2 text-lg font-bold tracking-tight text-slate-900 dark:text-slate-50">
+            <p className="mt-1 truncate text-sm font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50">
               {formatPercent(row.bottomTwoRate)}
             </p>
           </div>

@@ -72,9 +72,9 @@ export function LanguageSwitcher() {
   return (
     <div
       ref={rootRef}
-      className="relative flex items-center gap-2 rounded-full border border-slate-200 bg-white/90 pl-2 pr-2 shadow-md shadow-slate-900/10 dark:border-slate-700 dark:bg-slate-900/90 dark:shadow-slate-950/50"
+      className="relative flex min-w-0 items-center gap-1 rounded-full border border-slate-200 bg-white/90 pl-1 pr-1 shadow-sm shadow-slate-900/10 dark:border-slate-700 dark:bg-slate-900/90 dark:shadow-slate-950/50 sm:gap-2 sm:pl-2 sm:pr-2 sm:shadow-md"
     >
-      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100/90 text-slate-500 ring-1 ring-slate-200/80 dark:bg-slate-950/80 dark:text-slate-400 dark:ring-slate-800">
+      <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100/90 text-slate-500 ring-1 ring-slate-200/80 dark:bg-slate-950/80 dark:text-slate-400 dark:ring-slate-800 sm:h-9 sm:w-9">
         <GlobeIcon />
       </span>
       <label
@@ -93,7 +93,7 @@ export function LanguageSwitcher() {
           aria-controls={listboxId}
           onClick={() => setIsOpen((current) => !current)}
           onKeyDown={handleTriggerKeyDown}
-          className={`inline-flex h-9 min-w-[7.5rem] items-center justify-between gap-3 rounded-full border px-4 text-sm font-semibold shadow-inner shadow-slate-900/5 outline-none transition ${
+          className={`inline-flex h-8 min-w-0 items-center justify-between gap-1.5 rounded-full border px-2 text-xs font-semibold shadow-inner shadow-slate-900/5 outline-none transition sm:h-10 sm:gap-3 sm:px-4 sm:text-sm sm:min-w-[7.5rem] ${
             isOpen
               ? "border-violet-400 bg-white text-slate-900 ring-2 ring-violet-400/60 ring-offset-2 ring-offset-white dark:border-violet-500 dark:bg-slate-950 dark:text-slate-50 dark:ring-offset-slate-900"
               : "border-slate-200/80 bg-slate-100/90 text-slate-800 hover:border-slate-300 hover:bg-white dark:border-slate-800 dark:bg-slate-950/80 dark:text-slate-100 dark:shadow-slate-950/20 dark:hover:border-slate-700 dark:hover:bg-slate-950"

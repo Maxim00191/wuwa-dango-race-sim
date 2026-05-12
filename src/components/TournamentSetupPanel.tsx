@@ -191,13 +191,13 @@ export function TournamentSetupPanel({
         onClearSelections={onClearSelections}
       />
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-        <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-md shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-950/55 dark:shadow-slate-950/50">
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] xl:gap-6">
+        <section className="rounded-[1.75rem] border border-slate-200 bg-white/90 p-4 shadow-md shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-950/55 dark:shadow-slate-950/50 sm:rounded-3xl sm:p-6">
           <div className="space-y-2">
             <p className="text-base font-bold tracking-tight text-slate-800 dark:text-slate-100">
               {t("tournament.setup.preliminary.eyebrow")}
             </p>
-            <h3 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+            <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50 sm:text-2xl">
               {t("tournament.setup.preliminary.title")}
             </h3>
             <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -209,14 +209,14 @@ export function TournamentSetupPanel({
               type="button"
               onClick={onStartPreliminary}
               disabled={!lineupComplete || controlsLocked}
-              className="rounded-full bg-emerald-500 px-5 py-2 text-sm font-semibold text-emerald-950 shadow-lg shadow-emerald-900/35 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
+              className="inline-flex min-h-11 items-center justify-center rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-emerald-950 shadow-lg shadow-emerald-900/35 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none sm:px-5 dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
             >
               {t("tournament.setup.preliminary.start")}
             </button>
             <button
               type="button"
               onClick={onReset}
-              className="rounded-full border border-slate-300 px-5 py-2 text-sm font-semibold text-slate-800 transition hover:border-slate-400 hover:text-slate-950 dark:border-slate-700 dark:text-slate-100 dark:hover:border-slate-600"
+              className="inline-flex min-h-11 items-center justify-center rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-800 transition hover:border-slate-400 hover:text-slate-950 sm:px-5 dark:border-slate-700 dark:text-slate-100 dark:hover:border-slate-600"
             >
               {t("tournament.setup.preliminary.reset")}
             </button>
@@ -231,7 +231,7 @@ export function TournamentSetupPanel({
                   {preliminaryPlacements.map((basicId, index) => (
                     <span
                       key={`prelim-${basicId}`}
-                      className="rounded-full border border-violet-300 bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-900 dark:border-violet-700 dark:bg-violet-950/50 dark:text-violet-100"
+                      className="inline-flex min-h-9 items-center rounded-full border border-violet-300 bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-900 dark:border-violet-700 dark:bg-violet-950/50 dark:text-violet-100"
                     >
                       #{index + 1} {getCharacterName(basicId)}
                     </span>
@@ -246,12 +246,12 @@ export function TournamentSetupPanel({
           </div>
         </section>
 
-        <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-md shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-950/55 dark:shadow-slate-950/50">
+        <section className="rounded-[1.75rem] border border-slate-200 bg-white/90 p-4 shadow-md shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-950/55 dark:shadow-slate-950/50 sm:rounded-3xl sm:p-6">
           <div className="space-y-2">
             <p className="text-base font-bold tracking-tight text-slate-800 dark:text-slate-100">
               {t("tournament.setup.finals.eyebrow")}
             </p>
-            <h3 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+            <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50 sm:text-2xl">
               {t("tournament.setup.finals.title")}
             </h3>
             <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -287,7 +287,7 @@ export function TournamentSetupPanel({
                     onDragOver={(event) => handlePlacementDragOver(event, index)}
                     onDrop={handlePlacementDrop}
                     onDragEnd={commitPreviewPlacements}
-                    className={`flex cursor-grab flex-wrap items-center justify-between gap-3 rounded-2xl border px-4 py-3 transition focus:outline-none focus:ring-2 focus:ring-violet-400/70 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-950 ${
+                    className={`flex min-h-14 cursor-grab flex-wrap items-center justify-between gap-3 rounded-2xl border px-4 py-3 transition focus:outline-none focus:ring-2 focus:ring-violet-400/70 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-950 ${
                       isDragged
                         ? "border-violet-400 bg-violet-100/80 opacity-65 shadow-lg shadow-violet-900/10 dark:border-violet-500 dark:bg-violet-950/60"
                         : "border-slate-200 bg-slate-50/90 shadow-sm shadow-slate-900/5 hover:border-violet-300 hover:bg-violet-50/80 dark:border-slate-800 dark:bg-slate-900/70 dark:hover:border-violet-700 dark:hover:bg-violet-950/35"
@@ -321,7 +321,7 @@ export function TournamentSetupPanel({
               type="button"
               onClick={onStartFinal}
               disabled={!lineupComplete || controlsLocked}
-              className="rounded-full bg-violet-500 px-5 py-2 text-sm font-semibold text-violet-950 shadow-lg shadow-violet-900/35 transition hover:bg-violet-400 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
+              className="inline-flex min-h-11 items-center justify-center rounded-full bg-violet-500 px-4 py-2 text-sm font-semibold text-violet-950 shadow-lg shadow-violet-900/35 transition hover:bg-violet-400 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none sm:px-5 dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
             >
               {t("tournament.setup.finals.start")}
             </button>
@@ -330,7 +330,7 @@ export function TournamentSetupPanel({
                 type="button"
                 onClick={onRestorePreliminaryPlacements}
                 disabled={!canRestorePreliminary}
-                className="rounded-full border border-slate-300 px-5 py-2 text-sm font-semibold text-slate-800 transition hover:border-slate-400 hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:text-slate-100"
+                className="inline-flex min-h-11 items-center justify-center rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-800 transition hover:border-slate-400 hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-40 sm:px-5 dark:border-slate-700 dark:text-slate-100"
               >
                 {t("tournament.setup.finals.restore")}
               </button>

@@ -109,7 +109,7 @@ export function AnalysisDashboard({
         <button
           type="button"
           onClick={onNavigateSimulation}
-          className="rounded-full bg-emerald-500 px-8 py-3 text-sm font-semibold text-emerald-950 shadow-lg shadow-emerald-900/40 transition hover:bg-emerald-400"
+          className="inline-flex min-h-11 items-center justify-center rounded-full bg-emerald-500 px-8 py-3 text-sm font-semibold text-emerald-950 shadow-lg shadow-emerald-900/40 transition hover:bg-emerald-400"
         >
           {t("analysis.empty.button")}
         </button>
@@ -140,13 +140,13 @@ export function AnalysisDashboard({
       : "—";
 
   return (
-    <div className="flex w-full flex-1 flex-col gap-10 px-4 py-10 text-slate-900 dark:text-slate-100 sm:px-6 md:px-10 lg:px-14 xl:px-16 2xl:px-24">
-      <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+    <div className="flex w-full flex-1 flex-col gap-6 px-3 py-6 text-slate-900 dark:text-slate-100 sm:gap-8 sm:px-6 sm:py-8 md:px-10 lg:gap-10 lg:px-14 xl:px-16 2xl:px-24">
+      <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-2">
           <p className="text-lg font-bold tracking-tight text-slate-800 dark:text-slate-100 md:text-xl">
             {t("analysis.header.eyebrow")}
           </p>
-          <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50 md:text-4xl">
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50 sm:text-3xl md:text-4xl">
             {tText(snapshot.scenarioLabel)}
           </h2>
           <p className="max-w-2xl text-sm font-normal text-slate-500 dark:text-slate-400 md:text-base">
@@ -158,13 +158,13 @@ export function AnalysisDashboard({
         <button
           type="button"
           onClick={onNavigateSimulation}
-          className="self-start rounded-full border border-slate-300 px-5 py-2 text-sm font-semibold text-slate-800 transition hover:border-slate-400 hover:text-slate-950 md:self-auto dark:border-slate-600 dark:text-slate-100 dark:hover:text-white"
+          className="inline-flex min-h-11 items-center justify-center self-start rounded-full border border-slate-300 px-5 py-2 text-sm font-semibold text-slate-800 transition hover:border-slate-400 hover:text-slate-950 lg:self-auto dark:border-slate-600 dark:text-slate-100 dark:hover:text-white"
         >
           {t("analysis.header.back")}
         </button>
       </header>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-3 gap-2 md:grid-cols-4 lg:grid-cols-6">
         <MetricHighlightCard
           label={
             snapshot.scenarioKind === "tournament"
@@ -223,7 +223,7 @@ export function AnalysisDashboard({
         />
       </section>
 
-      <section className="flex flex-wrap gap-3">
+      <section className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap sm:gap-3">
         {availableTabs.map((tabId) => {
           const selected = tabId === activeTab;
           const label =
@@ -237,7 +237,7 @@ export function AnalysisDashboard({
               key={tabId}
               type="button"
               onClick={() => setActiveTab(tabId)}
-              className={`rounded-full border px-5 py-2.5 text-sm font-semibold transition ${
+              className={`inline-flex min-h-11 items-center justify-center rounded-full border px-5 py-2.5 text-sm font-semibold transition ${
                 selected
                   ? "border-violet-400 bg-violet-50 text-violet-950 shadow-md shadow-violet-900/10 dark:border-violet-500 dark:bg-violet-950/40 dark:text-violet-100"
                   : "border-slate-300 bg-white text-slate-700 hover:border-slate-400 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-200"
@@ -276,14 +276,16 @@ function MetricHighlightCard({
   hint,
 }: MetricHighlightCardProps) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-inner shadow-slate-900/5 dark:border-slate-800 dark:bg-slate-950/70 dark:shadow-slate-950/40">
-      <p className="text-sm font-bold tracking-tight text-slate-700 dark:text-slate-200">
+    <div className="min-h-0 rounded-2xl border border-slate-200 bg-white/90 p-2.5 shadow-inner shadow-slate-900/5 dark:border-slate-800 dark:bg-slate-950/70 dark:shadow-slate-950/40 sm:p-3">
+      <p className="truncate text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-400 dark:text-slate-500">
         {label}
       </p>
-      <p className="mt-3 font-mono text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+      <p className="mt-1.5 truncate font-mono text-sm font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50 sm:text-base">
         {value}
       </p>
-      <p className="mt-2 text-xs font-normal text-slate-500 dark:text-slate-500">{hint}</p>
+      <p className="mt-1 line-clamp-2 text-[10px] font-normal leading-tight text-slate-400 dark:text-slate-500">
+        {hint}
+      </p>
     </div>
   );
 }

@@ -71,9 +71,9 @@ export function MonteCarloPanel({
   };
 
   return (
-    <section className="w-full border-b border-slate-200/90 bg-gradient-to-r from-slate-50/95 via-white/90 to-slate-50/95 px-4 py-6 dark:border-slate-800/80 dark:from-slate-950/90 dark:via-slate-900/80 dark:to-slate-950/90 sm:px-6 md:px-10 lg:px-14 xl:px-16 2xl:px-24">
+    <section className="w-full border-b border-slate-200/90 bg-gradient-to-r from-slate-50/95 via-white/90 to-slate-50/95 px-3 py-5 dark:border-slate-800/80 dark:from-slate-950/90 dark:via-slate-900/80 dark:to-slate-950/90 sm:px-6 sm:py-6 md:px-10 lg:px-14 xl:px-16 2xl:px-24">
       <div className="mx-auto w-full max-w-[1440px]">
-        <div className="grid gap-6 rounded-[2.5rem] border border-slate-200/80 bg-white/75 p-5 shadow-[0_10px_32px_-18px_rgba(15,23,42,0.32)] backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-950/45 dark:shadow-[0_10px_32px_-18px_rgba(2,6,23,0.55)] md:p-6 xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] xl:gap-8">
+        <div className="grid gap-5 rounded-[1.75rem] border border-slate-200/80 bg-white/75 p-4 shadow-[0_10px_32px_-18px_rgba(15,23,42,0.32)] backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-950/45 dark:shadow-[0_10px_32px_-18px_rgba(2,6,23,0.55)] sm:rounded-[2.5rem] md:p-6 xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] xl:gap-8">
    
           <div className="min-w-0">
             <div className="flex h-full flex-col justify-between gap-8 rounded-[2rem] bg-gradient-to-br from-white/55 via-white/15 to-slate-100/60 p-2 dark:from-white/[0.04] dark:via-transparent dark:to-slate-900/35 md:p-3">
@@ -82,7 +82,7 @@ export function MonteCarloPanel({
                   {heading}
                 </p>
                 <div className="space-y-3">
-                  <h2 className="max-w-2xl text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50 md:text-[2rem]">
+                  <h2 className="max-w-2xl text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50 sm:text-2xl md:text-[2rem]">
                     {title}
                   </h2>
                   <p className="max-w-xl text-sm leading-6 text-slate-500 dark:text-slate-400 md:text-[15px]">
@@ -98,7 +98,7 @@ export function MonteCarloPanel({
                       return (
                         <span
                           key={basicId}
-                          className="rounded-full bg-white px-3.5 py-1.5 text-xs font-medium text-slate-700 shadow-sm shadow-slate-900/5 ring-1 ring-slate-200/80 dark:bg-slate-950/80 dark:text-slate-200 dark:ring-slate-800 dark:shadow-slate-950/30"
+                          className="inline-flex min-h-8 items-center rounded-full bg-white px-3.5 py-1.5 text-xs font-medium text-slate-700 shadow-sm shadow-slate-900/5 ring-1 ring-slate-200/80 dark:bg-slate-950/80 dark:text-slate-200 dark:ring-slate-800 dark:shadow-slate-950/30"
                         >
                           {label}
                         </span>
@@ -128,7 +128,7 @@ export function MonteCarloPanel({
                         disabled={isRunning}
                         aria-pressed={selected}
                         onClick={() => onSelectedScenarioChange(scenario.id)}
-                        className={`relative overflow-hidden rounded-[1.65rem] border px-5 py-4 text-left transition ${
+                        className={`relative min-h-24 overflow-hidden rounded-[1.65rem] border px-4 py-4 text-left transition sm:px-5 ${
                           selected
                             ? "border-violet-300/90 bg-gradient-to-br from-violet-500/18 via-white to-fuchsia-500/12 text-violet-950 shadow-lg shadow-violet-900/10 ring-1 ring-violet-300/70 dark:border-violet-500/70 dark:from-violet-500/22 dark:via-slate-950 dark:to-fuchsia-500/18 dark:text-violet-100 dark:ring-violet-500/40"
                             : "border-slate-200/85 bg-white/78 text-slate-800 shadow-sm shadow-slate-900/5 hover:border-slate-300 hover:bg-white dark:border-slate-800 dark:bg-slate-950/65 dark:text-slate-100 dark:hover:border-slate-700 dark:hover:bg-slate-950/80"
@@ -162,14 +162,14 @@ export function MonteCarloPanel({
               ) : null}
               <div className="rounded-[1.9rem] bg-slate-100/70 p-4 ring-1 ring-slate-200/80 dark:bg-slate-900/45 dark:ring-slate-800/80 md:p-5">
                 <div className="grid gap-4">
-                  <div className="flex flex-wrap items-center justify-end gap-2.5">
+                  <div className="grid grid-cols-4 items-stretch gap-2 sm:gap-2.5">
                     {PRESET_BATCH_SIZES.map((batchSize) => (
                       <button
                         key={batchSize}
                         type="button"
                         disabled={runDisabled || isRunning}
                         onClick={() => onRunBatch(selectedScenarioId, batchSize)}
-                        className="inline-flex min-h-[2.9rem] items-center justify-center rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-fuchsia-950/25 transition hover:from-violet-500 hover:to-fuchsia-500 disabled:cursor-not-allowed disabled:from-slate-300 disabled:to-slate-300 disabled:text-slate-500 disabled:shadow-none dark:disabled:from-slate-700 dark:disabled:to-slate-700"
+                        className="inline-flex min-h-11 w-full min-w-0 items-center justify-center rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-600 px-2 py-2 text-center text-[11px] font-semibold leading-snug text-white shadow-lg shadow-fuchsia-950/25 transition hover:from-violet-500 hover:to-fuchsia-500 disabled:cursor-not-allowed disabled:from-slate-300 disabled:to-slate-300 disabled:text-slate-500 disabled:shadow-none sm:px-3 sm:text-xs md:min-h-12 md:px-4 md:text-sm dark:disabled:from-slate-700 dark:disabled:to-slate-700"
                       >
                         {t("monteCarlo.runBatch", {
                           count: batchSize.toLocaleString(),
@@ -183,7 +183,7 @@ export function MonteCarloPanel({
                       onClick={() =>
                         setShowCustomControls((current) => !current)
                       }
-                      className={`inline-flex min-h-[2.9rem] items-center justify-center rounded-full px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:shadow-none ${
+                      className={`inline-flex min-h-11 w-full min-w-0 items-center justify-center rounded-full px-2 py-2 text-center text-[11px] font-semibold leading-snug transition disabled:cursor-not-allowed disabled:shadow-none sm:px-3 sm:text-xs md:min-h-12 md:px-4 md:text-sm ${
                         showCustomControls
                           ? "bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-lg shadow-fuchsia-950/25 hover:from-violet-500 hover:to-fuchsia-500 disabled:from-slate-300 disabled:to-slate-300 disabled:text-slate-500 dark:disabled:from-slate-700 dark:disabled:to-slate-700"
                           : "bg-white/90 text-slate-700 ring-1 ring-slate-200 hover:bg-white hover:text-slate-900 dark:bg-slate-950/70 dark:text-slate-200 dark:ring-slate-800 dark:hover:bg-slate-950 dark:hover:text-slate-50 dark:disabled:bg-slate-800 dark:disabled:text-slate-500 dark:disabled:ring-slate-800"

@@ -162,14 +162,16 @@ function InsightCard({
   hint: string;
 }) {
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white/90 p-5 shadow-md shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-900/60">
-      <p className="text-sm font-bold tracking-tight text-slate-700 dark:text-slate-200">
+    <div className="min-h-0 rounded-2xl border border-slate-200 bg-white/90 p-2.5 shadow-md shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-900/60 sm:rounded-3xl sm:p-3">
+      <p className="truncate text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-400 dark:text-slate-500">
         {label}
       </p>
-      <p className="mt-3 text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+      <p className="mt-1.5 truncate text-sm font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50 sm:text-base">
         {value}
       </p>
-      <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{hint}</p>
+      <p className="mt-1 line-clamp-2 text-[10px] leading-tight text-slate-400 dark:text-slate-500">
+        {hint}
+      </p>
     </div>
   );
 }
@@ -307,7 +309,7 @@ export function MetaInsightsPanel({
         <p className="mt-3 max-w-3xl text-sm text-slate-500 dark:text-slate-400">
           {t("analysis.overview.metaDescription")}
         </p>
-        <div className="mt-6 grid gap-4 md:grid-cols-3">
+        <div className="mt-6 grid grid-cols-3 gap-2 md:grid-cols-4 lg:grid-cols-6">
           <InsightCard
             label={t("analysis.overview.passengerLeader")}
             value={passengerLeader?.label ?? "—"}
