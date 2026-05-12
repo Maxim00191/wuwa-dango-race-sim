@@ -178,10 +178,12 @@ function resolveIunoAnchoredDestiny(
     nextDestinationStack
   );
   const nextEntities = { ...spentState.entities };
+  const destinationRaceDisplacement = entity.raceDisplacement;
   for (const move of moves) {
     nextEntities[move.entityId] = {
       ...nextEntities[move.entityId]!,
       cellIndex: destinationCellIndex,
+      raceDisplacement: destinationRaceDisplacement,
     };
   }
   return {
@@ -196,6 +198,7 @@ function resolveIunoAnchoredDestiny(
         actorId: context.rollerId,
         moves,
         toCell: destinationCellIndex,
+        toRaceDisplacement: destinationRaceDisplacement,
         stackBottomToTop: nextDestinationStack,
       },
     ],

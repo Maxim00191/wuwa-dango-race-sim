@@ -1,8 +1,8 @@
 import type {
-  HeadlessSimulationOutcome,
   HeadlessSimulationScenario,
 } from "@/services/gameEngine";
 import { simulateHeadlessScenario } from "@/services/gameEngine";
+import type { HeadlessSimulationOutcome } from "@/types/monteCarlo";
 
 export type MonteCarloRunnerControls = {
   totalRuns: number;

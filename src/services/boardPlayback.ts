@@ -35,6 +35,7 @@ export type AtomicPlaybackStep =
       actorId: DangoId;
       movedIds: DangoId[];
       toCell: CellIndex;
+      toRaceDisplacement: number;
       stackBottomToTop: DangoId[];
     }
   | {
@@ -109,6 +110,7 @@ export function expandPlaybackToAtomicSteps(
         actorId: segment.actorId,
         movedIds: segment.moves.map((move) => move.entityId),
         toCell: segment.toCell,
+        toRaceDisplacement: segment.toRaceDisplacement,
         stackBottomToTop: segment.stackBottomToTop,
       });
       cells = applyStackTeleportCellsOnly(
@@ -210,6 +212,7 @@ export function expandPlaybackToSegmentAtomicChunks(
         actorId: segment.actorId,
         movedIds: segment.moves.map((move) => move.entityId),
         toCell: segment.toCell,
+        toRaceDisplacement: segment.toRaceDisplacement,
         stackBottomToTop: segment.stackBottomToTop,
       });
       cells = applyStackTeleportCellsOnly(
@@ -326,6 +329,7 @@ export function applyAtomicStepToEntities(
         [id]: {
           ...runtime,
           cellIndex: step.toCell,
+          raceDisplacement: step.toRaceDisplacement,
         },
       };
     }

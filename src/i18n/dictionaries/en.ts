@@ -9,7 +9,7 @@ export const enDictionary: TranslationDictionary = {
     "zh-CN": "简体中文",
   },
   characters: {
-    bot1: "Basic Dango",
+    bot1: "Plain Dango",
     mornye: "Mornye",
     aemeath: "Aemeath",
     lynae: "Lynae",
@@ -318,6 +318,11 @@ export const enDictionary: TranslationDictionary = {
       conditional: "If They Win...",
       tournament: "Tournament Flow",
     },
+    contexts: {
+      sprint: "Sprint Analytics",
+      qualifier: "Qualifier Analytics",
+      final: "Finals Analytics",
+    },
     metrics: {
       averageTournamentLength: "Avg Cup Length",
       averageRaceLength: "Avg Sprint Length",
@@ -339,16 +344,16 @@ export const enDictionary: TranslationDictionary = {
       winRateTitleTournament: "Who dominates the Tournament?",
       winRateTitleRace: "Who claims the Anniversary Sprint the most?",
       finalOnly: "Final placements only",
-      averageFinish: "Avg placement: {value}",
+      averageFinish: "Avg Rank: {value}",
       stabilityLensEyebrow: "Consistency Check",
       stabilityLensTitle: "How reliable is each competitor?",
       stabilityLensDescription:
         "High consistency means predictable placements. Low consistency means wild swings between 1st place and dead last.",
-      mostStable: "Rock Solid",
-      mostVolatile: "Wildcard",
+      mostStable: "Steady as a Rock",
+      mostVolatile: "Rollercoaster",
       averageFinishShort: "Avg Finish",
       standardDeviation: "Std Dev",
-      boomOrBust: "Feast or Famine",
+      boomOrBust: "Hero or Zero",
       distributionEyebrow: "Placement Distribution",
       distributionTitle: "The complete 1st-to-6th breakdown",
       distributionHint:
@@ -357,6 +362,31 @@ export const enDictionary: TranslationDictionary = {
       winRate: "Win Rate",
       podiumRate: "Top 3 Rate",
       bottomTwoRate: "Bottom 2 Rate",
+      metaEyebrow: "Mechanic Utilization Analysis",
+      metaTitle: "Hitchhiking Gains, Stacking Mechanics, and Cell Events",
+      metaDescription:
+        "These tables separate self-driven progress from carried progress, then cross-reference stack roles and special cells against final win conversion.",
+      passengerLeader: "Hitchhiking Efficiency King",
+      passengerLeaderHint: "Highest title conversion once carried progress takes over: {rate}",
+      driverLeader: "Bottom of the Stack",
+      driverLeaderHint: "Spends {rate} of observed turns at the bottom of the stack",
+      resilienceLeader: "Hindrance Survival King",
+      resilienceLeaderHint: "Wins {rate} of scenarios after hitting Hindrance devices",
+      passengerEfficiencyTitle: "Hitchhiking Efficiency Rankings",
+      stackEcosystemTitle: "Stack Ecosystem Exposure",
+      trapAffinityTitle: "Cell Trigger Rate & Resilience",
+      carriedShare: "Carried Share",
+      carriedPerRide: "Carry / Ride",
+      carriedLeadConversion: "Carried Lead -> Win",
+      driverShare: "Bottom",
+      passengerShare: "Passenger",
+      crownShare: "Top",
+      soloShare: "Solo",
+      hindranceRate: "Hindrance Rate",
+      hindranceResilience: "Hindrance -> Win",
+      highHindranceConversion: "2+ Hindrance -> Win",
+      propulsionRate: "Propulsion Rate",
+      timeRiftRate: "Time Rift Rate",
     },
     conditional: {
       eyebrow: "Scenario Analytics",
@@ -364,7 +394,7 @@ export const enDictionary: TranslationDictionary = {
       description:
         "Pick a champion to filter the simulations. See who usually rides their coattails to 2nd place, and who gets left in the dust.",
       tableDango: "Competitor",
-      averageFinish: "Avg placement: {value}",
+      averageFinish: "Avg Rank: {value}",
       runs: "{count} matches",
       scenarioSlice: "Specific Scenario",
       matchingRuns: "{count} matching games",
@@ -378,33 +408,63 @@ export const enDictionary: TranslationDictionary = {
     },
     tournament: {
       eyebrow: "Tournament Analytics",
-      title: "Seeding Momentum & Underdog Upsets",
+      title: "Prelim Momentum & Final Comebacks",
       description:
         "See how preliminary performance translates to final victory. Find out who chokes under pressure and who thrives from behind.",
-      topSeedConverts: "Top Seed Conversion",
+      topSeedConverts: "Prelim Leader Conversion",
       topSeedConvertsHint:
         "How often the 1st place prelim winner also wins the Final",
       bottomHalfComeback: "Underdog Comeback",
       bottomHalfComebackHint:
-        "How often the 4th, 5th, or 6th place prelim seed wins the Final",
+        "How often the 4th, 5th, or 6th place qualifier wins the Final",
       bestFrontrunner: "Best Frontrunner",
-      bestRecoveryArtist: "Comeback King",
-      topSeedHint: "{rate} win rate if seeded 1st in prelims",
-      underdogHint: "{rate} win rate if seeded 4th-6th in prelims",
-      noTopSeedData: "Not enough top-seed data yet",
+      bestRecoveryArtist: "Comeback Kid",
+      bestDebtSurvivor: "Best Back-Row Starter",
+      topSeedHint: "{rate} win rate after finishing 1st in prelims",
+      underdogHint: "{rate} win rate after finishing 4th-6th in prelims",
+      maxDebtHint: "{rate} win rate from the furthest-back Final start",
+      noTopSeedData: "Not enough Prelim leader data yet",
       noUnderdogData: "Not enough comeback data yet",
+      noMaxDebtData: "Not enough furthest-back start data yet",
+      maxDebtComeback: "Back-Row Comeback",
+      maxDebtComebackHint:
+        "How often a racer wins the Final after starting furthest from the finish",
+      overallChoke: "Overall Choke Rate",
+      overallChokeHint: "Top 2 qualifier finishers that fall into the Final bottom 2",
+      overallClutch: "Overall Clutch Rate",
+      overallClutchHint: "Bottom 2 qualifier finishers that recover to a Final podium",
+      averageShift: "Avg Rank Shift",
+      averageShiftHint: "Final rank minus Qualifier rank across tournament entries",
+      seedDecayEyebrow: "Final Starting Position Decay",
+      seedDecayTitle: "Final win rate by exact starting position",
+      seedDecayDescription:
+        "Each starting-position bucket only uses Final races, where racers begin in different spots before stacking can develop.",
+      seedLabel: "Starting Position {value}",
+      volatilityEyebrow: "Volatility & Shift Index",
+      volatilityTitle: "Choke and clutch rates by racer",
+      rankShift: "Rank Shift",
+      chokeRate: "Choke Rate",
+      clutchRate: "Clutch Rate",
+      deprivationEyebrow: "Prelim vs Final Performance Gap",
+      deprivationTitle: "Average rank in Qualifier vs Final",
       conversionEyebrow: "Individual Conversion Rates",
       conversionTitle: "Early Leads vs Comeback Potential",
       titles: "Qualified {count} times",
       ifFirstInPrelims: "If 1st in Prelims",
       ifFourthToSixthInPrelims: "If 4th-6th in Prelims",
+      ifStartAtMaxDebt: "If Starting Furthest Back",
       matchingPrelimRuns: "{count} prelim matches",
       underdogEntries: "{count} underdog scenarios",
+      maxDebtEntries: "{count} furthest-back finals",
+      qualifierWinnerPlacementEyebrow: "Qualifier Winner Fallout",
+      qualifierWinnerPlacementTitle: "Where does the qualifier winner finish?",
+      qualifierWinnerPlacementDescription:
+        "This strips away character identity and shows the final landing distribution for whoever entered the Grand Final as the qualifier champion.",
       transitionEyebrow: "Placement Heatmap",
       totalTitles: "{count} total wins",
       transitionDescription:
         "Rows represent Preliminary rank, columns represent Final rank. Read horizontally to see how early seeding predicts the final outcome.",
-      prelimHeader: "Prelim Rank",
+      prelimHeader: "Prelim \\ Final",
     },
   },
   simulation: {
@@ -420,12 +480,12 @@ export const enDictionary: TranslationDictionary = {
       abbyResetScheduled:
         "{actor} fell too far behind and will be warped back to the starting line next turn.",
       abbyTeleport:
-        "{actor} flashes back to the start lantern, charging up for another run.",
+        "{actor} turns into a beam of light and flashes back to the start, ready for a new charge.",
       standby:
         "{actor} is still warming up on the sidelines. The boss will drop in once the pace picks up.",
       roll: "{actor} rolled a {value}.",
       skipNotBottom:
-        "{actor} is piggybacking on another dango.",
+        "{actor} is riding on another dango's back, just going with the flow.",
       move:
         "{actor} eagerly advances {steps} steps {direction}.",
       cellPropulsion:
@@ -463,11 +523,11 @@ export const enDictionary: TranslationDictionary = {
       jinhsiStackAscend:
         "{actor} surges through the stack and claims the highest perch.",
       changliActLastNextRound:
-        "{actor} delays her momentum and will act last next round.",
+        "{actor} gathers her rhythm and will perform the grand finale next round.",
       calcharoLastPlaceBoost:
         "{actor} claws back from last place and gains 3 extra steps.",
       augustaGovernorAuthority:
-        "{actor} claims Governor's Authority, skips this round, and will act last next round.",
+        "{actor} exercises Governor's Authority, skips this round, and will deliver the grand finale next round.",
       iunoAnchoredDestiny:
         "{actor} anchors fate and pulls {aheadTarget} and {behindTarget} onto the same tile.",
       iunoAnchoredDestinyAhead:
@@ -475,7 +535,7 @@ export const enDictionary: TranslationDictionary = {
       iunoAnchoredDestinyBehind:
         "{actor} anchors fate and pulls {target} onto the same tile from one rank behind.",
       phrolovaBottomBoost:
-        "{actor} schemes from the base of the stack and gains 3 extra steps.",
+        "{actor} successfully plots from the base of the stack and gains 3 extra steps.",
     },
   },
   banner: {
@@ -490,10 +550,10 @@ export const enDictionary: TranslationDictionary = {
     },
     idle: {
       standbyHeadline: "{actor} is warming up",
-      standbyDetail: "Saving energy for the mid-game chaos",
+      standbyDetail: "The best is yet to come; the boss will join later.",
       blockedHeadline: "{actor} yields control",
       blockedDetailWithRoll:
-        "Rolled a {value}, but the dango at the bottom is driving",
+        "Rolled a {value}, but the dango at the bottom is the driver.",
       blockedDetail: "Just enjoying the free ride right now",
     },
     roll: {

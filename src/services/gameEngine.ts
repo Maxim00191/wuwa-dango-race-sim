@@ -55,6 +55,14 @@ import type {
   TurnQueueAttachment,
   TurnRollPlan,
 } from "@/types/game";
+import type {
+  CellEffectAnalyticsKey,
+  HeadlessRaceBasicMetrics,
+  HeadlessRaceDeepMetrics,
+  HeadlessSimulationOutcome,
+  OneTimeSkillKey,
+  StackRoleKey,
+} from "@/types/monteCarlo";
 
 function shuffleOrderStableCopy(ids: string[]): string[] {
   const copy = [...ids];
@@ -1024,17 +1032,20 @@ function executeStepwiseMovement(
   state: GameState,
   actingEntityId: DangoId,
   diceValue: number,
-  travelDirection: TravelDirection
+  travelDirection: TravelDirection,
+  telemetry?: HeadlessRaceTelemetryCollector
 ): {
   state: GameState;
   segments: PlaybackSegment[];
   finalLandingCellIndex: number | null;
   finalLandingPreviousStackBottomToTop: DangoId[];
+  carriedBasicIds: DangoId[];
 } {
   const segments: PlaybackSegment[] = [];
   let nextState = state;
   let finalLandingCellIndex: number | null = null;
   let finalLandingPreviousStackBottomToTop: DangoId[] = [];
+  const carriedBasicIds = new Set<DangoId>();
   if (diceValue === 0) {
     const restingCellIndex = findCellIndexForEntity(nextState.cells, actingEntityId);
     const restingStack =
@@ -1053,6 +1064,7 @@ function executeStepwiseMovement(
       segments,
       finalLandingCellIndex,
       finalLandingPreviousStackBottomToTop,
+      carriedBasicIds: [],
     };
   }
   for (let stepNumber = 1; stepNumber <= diceValue; stepNumber++) {
@@ -1063,6 +1075,7 @@ function executeStepwiseMovement(
         segments,
         finalLandingCellIndex,
         finalLandingPreviousStackBottomToTop,
+        carriedBasicIds: [...carriedBasicIds],
       };
     }
     const activeStack = nextState.cells.get(fromCellIndex)!;
@@ -1073,9 +1086,18 @@ function executeStepwiseMovement(
         segments,
         finalLandingCellIndex,
         finalLandingPreviousStackBottomToTop,
+        carriedBasicIds: [...carriedBasicIds],
       };
     }
     const travelingIds = activeStack.slice(actorIndexInStack);
+    if (telemetry) {
+      recordHeadlessCarriedMovementStep(
+        actingEntityId,
+        travelingIds,
+        telemetry,
+        carriedBasicIds
+      );
+    }
     const toCellIndex =
       travelDirection === "clockwise"
         ? addClockwise(fromCellIndex, 1)
@@ -1123,6 +1145,7 @@ function executeStepwiseMovement(
     segments,
     finalLandingCellIndex,
     finalLandingPreviousStackBottomToTop,
+    carriedBasicIds: [...carriedBasicIds],
   };
 }
 
@@ -1250,6 +1273,227 @@ function applySkillHooksAfterAffectedMovement(
   return { state: nextState, segments };
 }
 
+type HeadlessRaceTelemetryCollector = {
+  basicMetricsById: Record<string, HeadlessRaceBasicMetrics>;
+};
+
+type OneTimeSkillFlagDefinition = {
+  actorId: DangoId;
+  skillKey: OneTimeSkillKey;
+  isActivated: (state: GameState) => boolean;
+};
+
+const ONE_TIME_SKILL_FLAG_DEFINITIONS: OneTimeSkillFlagDefinition[] = [
+  {
+    actorId: "aemeath",
+    skillKey: "aemeathMidpointLeap",
+    isActivated: (state) => Boolean(state.entities.aemeath?.skillState.hasUsedMidpointLeap),
+  },
+  {
+    actorId: "iuno",
+    skillKey: "iunoAnchoredDestiny",
+    isActivated: (state) =>
+      Boolean(state.entities.iuno?.skillState.hasUsedAnchoredDestiny),
+  },
+  {
+    actorId: "hiyuki",
+    skillKey: "hiyukiMetAbby",
+    isActivated: (state) => Boolean(state.entities.hiyuki?.skillState.hasMetAbby),
+  },
+  {
+    actorId: "cartethyia",
+    skillKey: "cartethyiaComebackAwaken",
+    isActivated: (state) =>
+      Boolean(state.entities.cartethyia?.skillState.comebackActive),
+  },
+];
+
+function createHeadlessRoleObservationCounts(): HeadlessRaceBasicMetrics["roleObservationCounts"] {
+  return {
+    solo: 0,
+    driver: 0,
+    passenger: 0,
+    crown: 0,
+  };
+}
+
+function createHeadlessCellEffectCounts(): HeadlessRaceBasicMetrics["cellEffectTriggerCounts"] {
+  return {
+    propulsionDevice: 0,
+    hindranceDevice: 0,
+    timeRift: 0,
+  };
+}
+
+function createHeadlessRaceTelemetryCollector(
+  setup: RaceSetup
+): HeadlessRaceTelemetryCollector {
+  return {
+    basicMetricsById: Object.fromEntries(
+      setup.selectedBasicIds.map((basicId) => [
+        basicId,
+        {
+          startingDisplacement: setup.startingDisplacementById[basicId] ?? 0,
+          ownTurnProgress: 0,
+          passiveProgress: 0,
+          carriedProgress: 0,
+          activeTurnCount: 0,
+          passengerRideTurnCount: 0,
+          roleObservationCounts: createHeadlessRoleObservationCounts(),
+          cellEffectTriggerCounts: createHeadlessCellEffectCounts(),
+          oneTimeSkillActivationTurnBySkillKey: {},
+        },
+      ])
+    ),
+  };
+}
+
+function getBasicStackRole(state: GameState, basicId: DangoId): StackRoleKey | null {
+  const cellIndex = findCellIndexForEntity(state.cells, basicId);
+  if (cellIndex === null) {
+    return null;
+  }
+  const stack = state.cells.get(cellIndex);
+  if (!stack) {
+    return null;
+  }
+  const actorIndex = stack.indexOf(basicId);
+  if (actorIndex === -1) {
+    return null;
+  }
+  if (stack.length === 1) {
+    return "solo";
+  }
+  if (actorIndex === 0) {
+    return "driver";
+  }
+  if (actorIndex === stack.length - 1) {
+    return "crown";
+  }
+  return "passenger";
+}
+
+function recordHeadlessRoleObservations(
+  state: GameState,
+  telemetry: HeadlessRaceTelemetryCollector
+): void {
+  for (const basicId of Object.keys(telemetry.basicMetricsById)) {
+    const metrics = telemetry.basicMetricsById[basicId];
+    if (!metrics) {
+      continue;
+    }
+    const role = getBasicStackRole(state, basicId);
+    if (!role) {
+      continue;
+    }
+    metrics.roleObservationCounts[role] += 1;
+  }
+}
+
+function recordHeadlessActiveTurn(
+  actorId: DangoId,
+  telemetry: HeadlessRaceTelemetryCollector
+): void {
+  const metrics = telemetry.basicMetricsById[actorId];
+  if (!metrics) {
+    return;
+  }
+  metrics.activeTurnCount += 1;
+}
+
+function recordHeadlessCarriedMovementStep(
+  actorId: DangoId,
+  travelingIds: DangoId[],
+  telemetry: HeadlessRaceTelemetryCollector,
+  carriedBasicIds: Set<DangoId>
+): void {
+  for (const travelingId of travelingIds) {
+    if (travelingId === actorId || travelingId === ABBY_ID) {
+      continue;
+    }
+    const metrics = telemetry.basicMetricsById[travelingId];
+    if (!metrics) {
+      continue;
+    }
+    metrics.carriedProgress += 1;
+    carriedBasicIds.add(travelingId);
+  }
+}
+
+function recordHeadlessPassengerRideTurns(
+  basicIds: Iterable<DangoId>,
+  telemetry: HeadlessRaceTelemetryCollector
+): void {
+  for (const basicId of basicIds) {
+    const metrics = telemetry.basicMetricsById[basicId];
+    if (!metrics) {
+      continue;
+    }
+    metrics.passengerRideTurnCount += 1;
+  }
+}
+
+function buildPlacementIndexByBasicId(placements: DangoId[]): Record<string, number> {
+  return Object.fromEntries(
+    placements.map((basicId, placementIndex) => [basicId, placementIndex])
+  );
+}
+
+function recordHeadlessTurnProgress(
+  previousState: GameState,
+  nextState: GameState,
+  actorId: DangoId,
+  telemetry: HeadlessRaceTelemetryCollector
+): void {
+  for (const [basicId, metrics] of Object.entries(telemetry.basicMetricsById)) {
+    const previousDisplacement =
+      previousState.entities[basicId]?.raceDisplacement ?? 0;
+    const nextDisplacement = nextState.entities[basicId]?.raceDisplacement ?? 0;
+    const gainedProgress = nextDisplacement - previousDisplacement;
+    if (gainedProgress <= 0) {
+      continue;
+    }
+    if (basicId === actorId) {
+      metrics.ownTurnProgress += gainedProgress;
+      continue;
+    }
+    metrics.passiveProgress += gainedProgress;
+  }
+}
+
+function recordHeadlessCellEffectTrigger(
+  telemetry: HeadlessRaceTelemetryCollector,
+  actorId: DangoId,
+  effectId: CellEffectAnalyticsKey
+): void {
+  const metrics = telemetry.basicMetricsById[actorId];
+  if (!metrics) {
+    return;
+  }
+  metrics.cellEffectTriggerCounts[effectId] += 1;
+}
+
+function captureHeadlessSkillActivations(
+  previousState: GameState,
+  nextState: GameState,
+  telemetry: HeadlessRaceTelemetryCollector,
+  turnIndex: number
+): void {
+  for (const definition of ONE_TIME_SKILL_FLAG_DEFINITIONS) {
+    const metrics = telemetry.basicMetricsById[definition.actorId];
+    if (!metrics) {
+      continue;
+    }
+    if (metrics.oneTimeSkillActivationTurnBySkillKey[definition.skillKey] !== undefined) {
+      continue;
+    }
+    if (!definition.isActivated(nextState) || definition.isActivated(previousState)) {
+      continue;
+    }
+    metrics.oneTimeSkillActivationTurnBySkillKey[definition.skillKey] = turnIndex;
+  }
+}
+
 function resolveMovementStabilization(
   state: GameState,
   actingEntityId: DangoId,
@@ -1258,7 +1502,8 @@ function resolveMovementStabilization(
   travelDirection: TravelDirection,
   boardEffectByCellIndex: Map<number, string | null>,
   finalLandingCellIndex: number | null,
-  finalLandingPreviousStackBottomToTop: DangoId[]
+  finalLandingPreviousStackBottomToTop: DangoId[],
+  telemetry?: HeadlessRaceTelemetryCollector
 ): { state: GameState; segments: PlaybackSegment[] } {
   let resolvedState = state;
   const segments: PlaybackSegment[] = [];
@@ -1280,6 +1525,13 @@ function resolveMovementStabilization(
   });
   resolvedState = effectOutcome?.state ?? state;
   if (effectOutcome) {
+    if (telemetry) {
+      recordHeadlessCellEffectTrigger(
+        telemetry,
+        actingEntityId,
+        effectOutcome.effectId as CellEffectAnalyticsKey
+      );
+    }
     const effectMessage =
       effectOutcome.message ?? text(CELL_EFFECT_LOG_KEY_BY_ID[effectOutcome.effectId]);
     segments.push({
@@ -1354,7 +1606,8 @@ function resolvePostMovementPhase(
   travelDirection: TravelDirection,
   boardEffectByCellIndex: Map<number, string | null>,
   finalLandingCellIndex: number | null,
-  finalLandingPreviousStackBottomToTop: DangoId[]
+  finalLandingPreviousStackBottomToTop: DangoId[],
+  telemetry?: HeadlessRaceTelemetryCollector
 ): { state: GameState; segments: PlaybackSegment[] } {
   const segments: PlaybackSegment[] = [];
   const landingCells = buildStepLandingCells(
@@ -1370,7 +1623,8 @@ function resolvePostMovementPhase(
     travelDirection,
     boardEffectByCellIndex,
     finalLandingCellIndex,
-    finalLandingPreviousStackBottomToTop
+    finalLandingPreviousStackBottomToTop,
+    telemetry
   );
   let nextState = stabilizedOutcome.state;
   segments.push(...stabilizedOutcome.segments);
@@ -1463,32 +1717,53 @@ function resolveTurnForEntity(
   boardEffectByCellIndex: Map<number, string | null>,
   plan: TurnRollPlan | undefined,
   allInitialRollsById: Record<DangoId, number | undefined>,
-  allResolvedRollsById: Record<DangoId, number | undefined>
+  allResolvedRollsById: Record<DangoId, number | undefined>,
+  telemetry?: HeadlessRaceTelemetryCollector
 ): { state: GameState; segments: PlaybackSegment[] } {
   const segments: PlaybackSegment[] = [];
   const character = CHARACTER_BY_ID[actingEntityId];
+  if (telemetry) {
+    recordHeadlessRoleObservations(state, telemetry);
+    recordHeadlessActiveTurn(actingEntityId, telemetry);
+  }
+  const finalizeResolvedTurn = (
+    resolved: { state: GameState; segments: PlaybackSegment[] }
+  ) => {
+    if (telemetry) {
+      captureHeadlessSkillActivations(
+        state,
+        resolved.state,
+        telemetry,
+        resolved.state.turnIndex
+      );
+      recordHeadlessTurnProgress(state, resolved.state, actingEntityId, telemetry);
+    }
+    return resolved;
+  };
   if (!character) {
-    return { state, segments };
+    return finalizeResolvedTurn({ state, segments });
   }
   const shouldStandbyBoss =
     character.role === "boss" &&
     state.turnIndex <= character.activateAfterTurnIndex;
   if (shouldStandbyBoss) {
-    return finalizeActorTurnResolution(
-      appendLog(state, {
-        kind: "standby",
-        message: text("simulation.log.standby", {
-          actor: characterParam(actingEntityId),
+    return finalizeResolvedTurn(
+      finalizeActorTurnResolution(
+        appendLog(state, {
+          kind: "standby",
+          message: text("simulation.log.standby", {
+            actor: characterParam(actingEntityId),
+          }),
         }),
-      }),
-      actingEntityId,
-      [
-        {
-          kind: "idle",
-          actorId: actingEntityId,
-          reason: "standby",
-        },
-      ]
+        actingEntityId,
+        [
+          {
+            kind: "idle",
+            actorId: actingEntityId,
+            reason: "standby",
+          },
+        ]
+      )
     );
   }
   const actingEntity = state.entities[actingEntityId];
@@ -1542,10 +1817,14 @@ function resolveTurnForEntity(
         message: afterTurnOutcome.skillNarrative,
       });
     }
-    return finalizeActorTurnResolution(skippedState, actingEntityId, skippedSegments);
+    return finalizeResolvedTurn(
+      finalizeActorTurnResolution(skippedState, actingEntityId, skippedSegments)
+    );
   }
   if (!plan) {
-    return finalizeActorTurnResolution(state, actingEntityId, segments);
+    return finalizeResolvedTurn(
+      finalizeActorTurnResolution(state, actingEntityId, segments)
+    );
   }
   const movementOutcome = resolveMovementDiceValue(
     state,
@@ -1639,7 +1918,9 @@ function resolveTurnForEntity(
   }
   const activeCellIndex = findCellIndexForEntity(nextState.cells, actingEntityId);
   if (activeCellIndex === null) {
-    return finalizeActorTurnResolution(nextState, actingEntityId, segments);
+    return finalizeResolvedTurn(
+      finalizeActorTurnResolution(nextState, actingEntityId, segments)
+    );
   }
   const activeStack = nextState.cells.get(activeCellIndex)!;
   const actorIndexInStack = activeStack.indexOf(actingEntityId);
@@ -1677,7 +1958,9 @@ function resolveTurnForEntity(
         message: afterTurnOutcome.skillNarrative,
       });
     }
-    return finalizeActorTurnResolution(skippedState, actingEntityId, skippedSegments);
+    return finalizeResolvedTurn(
+      finalizeActorTurnResolution(skippedState, actingEntityId, skippedSegments)
+    );
   }
   const executedMovementStepCount = resolveExecutedMovementStepCount(
     nextState,
@@ -1690,10 +1973,14 @@ function resolveTurnForEntity(
     movementStartState,
     actingEntityId,
     executedMovementStepCount,
-    character.travelDirection
+    character.travelDirection,
+    telemetry
   );
   nextState = movementResult.state;
   segments.push(...movementResult.segments);
+  if (telemetry) {
+    recordHeadlessPassengerRideTurns(movementResult.carriedBasicIds, telemetry);
+  }
   nextState = appendLog(nextState, {
     kind: "move",
     message: text("simulation.log.move", {
@@ -1710,7 +1997,8 @@ function resolveTurnForEntity(
     character.travelDirection,
     boardEffectByCellIndex,
     movementResult.finalLandingCellIndex,
-    movementResult.finalLandingPreviousStackBottomToTop
+    movementResult.finalLandingPreviousStackBottomToTop,
+    telemetry
   );
   const afterEffectState = postMovementOutcome.state;
   segments.push(...postMovementOutcome.segments);
@@ -1736,7 +2024,9 @@ function resolveTurnForEntity(
       message: afterTurnOutcome.skillNarrative,
     });
   }
-  return finalizeActorTurnResolution(nextState, actingEntityId, segments);
+  return finalizeResolvedTurn(
+    finalizeActorTurnResolution(nextState, actingEntityId, segments)
+  );
 }
 
 function buildPendingTurnResolution(
@@ -1796,7 +2086,10 @@ function createTurnPlaybackPlan(
   };
 }
 
-function openNextTurnWithDicePlans(state: GameState): {
+function openNextTurnWithDicePlans(
+  state: GameState,
+  telemetry?: HeadlessRaceTelemetryCollector
+): {
   state: GameState;
   pendingTurn: PendingTurnResolution;
   openingSegments: PlaybackSegment[];
@@ -1868,12 +2161,16 @@ function openNextTurnWithDicePlans(state: GameState): {
     allInitialRollsById,
     allResolvedRollsById
   );
+  if (telemetry) {
+    captureHeadlessSkillActivations(state, nextState, telemetry, nextState.turnIndex);
+  }
   return { state: nextState, pendingTurn, openingSegments };
 }
 
 function applyStepAction(
   state: GameState,
-  boardEffectByCellIndex: Map<number, string | null>
+  boardEffectByCellIndex: Map<number, string | null>,
+  telemetry?: HeadlessRaceTelemetryCollector
 ): GameState {
   if (state.phase !== "running" || state.winnerId) {
     return state;
@@ -1886,7 +2183,7 @@ function applyStepAction(
   let turnOrderForBanner: DangoId[] | undefined;
 
   if (!pending) {
-    const opened = openNextTurnWithDicePlans(working);
+    const opened = openNextTurnWithDicePlans(working, telemetry);
     working = opened.state;
     pending = opened.pendingTurn;
     openingSegments.push(...opened.openingSegments);
@@ -1905,7 +2202,8 @@ function applyStepAction(
     boardEffectByCellIndex,
     pending.plansByActorId[actorId],
     pending.allInitialRollsById,
-    pending.allResolvedRollsById
+    pending.allResolvedRollsById,
+    telemetry
   );
   working = resolved.state;
   const segments = [...openingSegments, ...resolved.segments];
@@ -1931,8 +2229,17 @@ function applyStepAction(
   }
 
   if (nextIndex >= pending.orderedActorIds.length) {
+    const preRoundEndState = working;
     const roundEndOutcome = applyRoundEndSkillHooks(working, pending.orderedActorIds);
     working = roundEndOutcome.state;
+    if (telemetry) {
+      captureHeadlessSkillActivations(
+        preRoundEndState,
+        working,
+        telemetry,
+        working.turnIndex
+      );
+    }
     segments.push(...roundEndOutcome.closingSegments);
     const finalized = evaluateAbbyResetScheduling({
       ...working,
@@ -1974,7 +2281,8 @@ function applyStepAction(
 
 function applyInstantFullTurn(
   state: GameState,
-  boardEffectByCellIndex: Map<number, string | null>
+  boardEffectByCellIndex: Map<number, string | null>,
+  telemetry?: HeadlessRaceTelemetryCollector
 ): GameState {
   if (state.phase !== "running" || state.winnerId) {
     return state;
@@ -1983,7 +2291,7 @@ function applyInstantFullTurn(
   let working = state;
 
   if (!working.pendingTurn) {
-    const opened = openNextTurnWithDicePlans(working);
+    const opened = openNextTurnWithDicePlans(working, telemetry);
     working = { ...opened.state, pendingTurn: opened.pendingTurn };
   }
 
@@ -1999,7 +2307,8 @@ function applyInstantFullTurn(
       boardEffectByCellIndex,
       p.plansByActorId[actorId],
       p.allInitialRollsById,
-      p.allResolvedRollsById
+      p.allResolvedRollsById,
+      telemetry
     );
     working = resolved.state;
     const nextIdx = p.nextActorIndex + 1;
@@ -2013,8 +2322,17 @@ function applyInstantFullTurn(
     }
 
     if (nextIdx >= p.orderedActorIds.length) {
+      const preRoundEndState = working;
       const roundEndOutcome = applyRoundEndSkillHooks(working, p.orderedActorIds);
       working = roundEndOutcome.state;
+      if (telemetry) {
+        captureHeadlessSkillActivations(
+          preRoundEndState,
+          working,
+          telemetry,
+          working.turnIndex
+        );
+      }
       working = evaluateAbbyResetScheduling({
         ...working,
         pendingTurn: null,
@@ -2074,61 +2392,52 @@ export type HeadlessSimulationScenario =
       selectedBasicIds: DangoId[];
     };
 
-export type HeadlessSimulationOutcome = {
-  scenarioKind: HeadlessSimulationScenario["kind"];
-  winnerBasicId: DangoId | null;
-  turnsAtFinish: number;
-  preliminaryTurnsAtFinish: number;
-  finalTurnsAtFinish: number;
-  preliminaryWinnerBasicId: DangoId | null;
-  finalPlacements: DangoId[];
-  preliminaryPlacements: DangoId[] | null;
-  stackCarrierObservationCountByBasicId: Record<string, number>;
-};
-
-function tallyBasicStackTopsAcrossCells(
-  state: GameState,
-  tallies: Record<string, number>
-): void {
-  for (const [, stackBottomToTop] of state.cells) {
-    const topId = stackBottomToTop[stackBottomToTop.length - 1];
-    if (!topId || topId === ABBY_ID) {
-      continue;
-    }
-    tallies[topId] = (tallies[topId] ?? 0) + 1;
-  }
-}
-
 type HeadlessRaceResult = {
   state: GameState;
-  stackCarrierObservationCountByBasicId: Record<string, number>;
+  metrics: HeadlessRaceDeepMetrics;
 };
+
+function buildHeadlessRaceMetrics(
+  setup: RaceSetup,
+  state: GameState,
+  telemetry: HeadlessRaceTelemetryCollector
+): HeadlessRaceDeepMetrics {
+  const startingDisplacements = setup.selectedBasicIds.map(
+    (basicId) => setup.startingDisplacementById[basicId] ?? 0
+  );
+  const maxProgressDebt = Math.min(0, ...startingDisplacements);
+  return {
+    mode: setup.mode,
+    winnerBasicId: state.winnerId,
+    turnsAtFinish: state.turnIndex,
+    finalPlacements: deriveBasicPlacementsFromRace(state),
+    startingPlacementByBasicId: buildPlacementIndexByBasicId(
+      setup.selectedBasicIds
+    ),
+    startedWithMaxProgressDebtBasicIds:
+      maxProgressDebt < 0
+        ? setup.selectedBasicIds.filter(
+            (basicId) =>
+              (setup.startingDisplacementById[basicId] ?? 0) === maxProgressDebt
+          )
+        : [],
+    basicMetricsById: telemetry.basicMetricsById,
+  };
+}
 
 function simulateHeadlessRace(
   setup: RaceSetup,
   boardEffectByCellIndex: Map<number, string | null>
 ): HeadlessRaceResult {
   let working = createRunningSessionFromSetup(setup);
-  const stackCarrierObservationCountByBasicId: Record<string, number> = {};
+  const telemetry = createHeadlessRaceTelemetryCollector(setup);
   while (working.phase === "running" && !working.winnerId) {
-    working = applyInstantFullTurn(working, boardEffectByCellIndex);
-    tallyBasicStackTopsAcrossCells(working, stackCarrierObservationCountByBasicId);
+    working = applyInstantFullTurn(working, boardEffectByCellIndex, telemetry);
   }
   return {
     state: working,
-    stackCarrierObservationCountByBasicId,
+    metrics: buildHeadlessRaceMetrics(setup, working, telemetry),
   };
-}
-
-function mergeTallies(
-  source: Record<string, number>,
-  target: Record<string, number>
-): Record<string, number> {
-  const merged = { ...target };
-  for (const [basicId, observationCount] of Object.entries(source)) {
-    merged[basicId] = (merged[basicId] ?? 0) + observationCount;
-  }
-  return merged;
 }
 
 export function simulateHeadlessScenario(
@@ -2147,8 +2456,14 @@ export function simulateHeadlessScenario(
       preliminaryWinnerBasicId: null,
       finalPlacements,
       preliminaryPlacements: null,
-      stackCarrierObservationCountByBasicId:
-        race.stackCarrierObservationCountByBasicId,
+      raceMetrics: {
+        preliminary: null,
+        final: race.metrics,
+      },
+      modeMetrics: {
+        kind: "singleRace",
+        finalStartingPlacementByBasicId: race.metrics.startingPlacementByBasicId,
+      },
     };
   }
 
@@ -2164,20 +2479,32 @@ export function simulateHeadlessScenario(
     boardEffectByCellIndex
   );
   const finalPlacements = deriveBasicPlacementsFromRace(finalRace.state);
+  const preliminaryWinnerBasicId =
+    preliminaryRace.state.winnerId ?? preliminaryPlacements[0] ?? null;
+  const finalWinnerBasicId = finalRace.state.winnerId ?? finalPlacements[0] ?? null;
   return {
     scenarioKind: scenario.kind,
-    winnerBasicId: finalRace.state.winnerId ?? finalPlacements[0] ?? null,
+    winnerBasicId: finalWinnerBasicId,
     turnsAtFinish: preliminaryRace.state.turnIndex + finalRace.state.turnIndex,
     preliminaryTurnsAtFinish: preliminaryRace.state.turnIndex,
     finalTurnsAtFinish: finalRace.state.turnIndex,
-    preliminaryWinnerBasicId:
-      preliminaryRace.state.winnerId ?? preliminaryPlacements[0] ?? null,
+    preliminaryWinnerBasicId,
     finalPlacements,
     preliminaryPlacements,
-    stackCarrierObservationCountByBasicId: mergeTallies(
-      preliminaryRace.stackCarrierObservationCountByBasicId,
-      finalRace.stackCarrierObservationCountByBasicId
-    ),
+    raceMetrics: {
+      preliminary: preliminaryRace.metrics,
+      final: finalRace.metrics,
+    },
+    modeMetrics: {
+      kind: "tournament",
+      preliminaryPlacementByBasicId: buildPlacementIndexByBasicId(
+        preliminaryPlacements
+      ),
+      finalStartingPlacementByBasicId: finalRace.metrics.startingPlacementByBasicId,
+      qualifierWinnerRetainedTitle:
+        preliminaryWinnerBasicId !== null &&
+        preliminaryWinnerBasicId === finalWinnerBasicId,
+    },
   };
 }
 

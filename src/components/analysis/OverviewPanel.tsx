@@ -1,8 +1,12 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { MetaInsightsPanel } from "@/components/analysis/MetaInsightsPanel";
 import { useTranslation } from "@/i18n/useTranslation";
 import { useSafeDangoColors } from "@/services/dangoColors";
 import type { DangoId } from "@/types/game";
-import type { MonteCarloAggregateSnapshot } from "@/types/monteCarlo";
+import type {
+  MonteCarloAggregateSnapshot,
+  MonteCarloRaceContext,
+} from "@/types/monteCarlo";
 import {
   colorWithAlpha,
   derivePlacementRows,
@@ -13,6 +17,12 @@ import {
 type OverviewPanelProps = {
   snapshot: MonteCarloAggregateSnapshot;
 };
+
+const RACE_CONTEXT_OPTIONS: MonteCarloRaceContext[] = [
+  "sprint",
+  "qualifier",
+  "final",
+];
 
 function sortRows(rows: PlacementRowDatum[]): PlacementRowDatum[] {
   return [...rows].sort((left, right) => {
@@ -72,9 +82,15 @@ function stackedBarGradient(row: PlacementRowDatum): string {
 function WinRateOverview({
   rows,
   scenarioKind,
+  selectedContext,
+  availableContexts,
+  onSelectedContextChange,
 }: {
   rows: PlacementRowDatum[];
   scenarioKind: MonteCarloAggregateSnapshot["scenarioKind"];
+  selectedContext: MonteCarloRaceContext;
+  availableContexts: MonteCarloRaceContext[];
+  onSelectedContextChange: (context: MonteCarloRaceContext) => void;
 }) {
   const { t } = useTranslation();
   return (
@@ -90,9 +106,25 @@ function WinRateOverview({
               : t("analysis.overview.winRateTitleRace")}
           </h3>
         </div>
-        <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-950/70 dark:text-slate-300">
-          {t("analysis.overview.finalOnly")}
-        </span>
+        <div className="flex flex-wrap gap-3 rounded-2xl bg-slate-100/80 p-1.5 dark:bg-slate-950/70">
+          {availableContexts.map((context) => {
+            const selected = context === selectedContext;
+            return (
+              <button
+                key={context}
+                type="button"
+                onClick={() => onSelectedContextChange(context)}
+                className={`min-h-11 rounded-xl border px-4 py-2.5 text-sm font-bold tracking-tight shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#86efac] focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900 ${
+                  selected
+                    ? "border-[#86efac] bg-[#86efac] text-slate-950 shadow-md shadow-emerald-900/15 dark:border-[#86efac] dark:bg-[#86efac] dark:text-slate-950"
+                    : "border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-500 dark:hover:bg-slate-800"
+                }`}
+              >
+                {t(`analysis.contexts.${context}`)}
+              </button>
+            );
+          })}
+        </div>
       </div>
       <div className="mt-6 space-y-4">
         {rows.map((row) => (
@@ -219,6 +251,9 @@ function StabilitySpotlight({ rows }: { rows: PlacementRowDatum[] }) {
 function DistributionRow({ row }: { row: PlacementRowDatum }) {
   const { t } = useTranslation();
   const gradient = stackedBarGradient(row);
+  const placementGridStyle = {
+    gridTemplateColumns: `repeat(${Math.max(row.rates.length, 1)}, minmax(0, 1fr))`,
+  };
   return (
     <article className="rounded-3xl border border-slate-200 bg-slate-50/90 p-5 shadow-md shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-950/50 dark:shadow-slate-950/30">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
@@ -245,7 +280,10 @@ function DistributionRow({ row }: { row: PlacementRowDatum }) {
             </span>
           </div>
           <div className="mt-4 overflow-hidden rounded-2xl bg-white shadow-sm shadow-slate-900/10 ring-1 ring-slate-200 dark:bg-slate-900 dark:shadow-slate-950/25 dark:ring-slate-700">
-            <div className="grid grid-cols-6 border-b border-slate-200 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:border-slate-700 dark:text-slate-400">
+            <div
+              className="grid border-b border-slate-200 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:border-slate-700 dark:text-slate-400"
+              style={placementGridStyle}
+            >
               {row.rates.map((_, placementIndex) => (
                 <div
                   key={`${row.basicId}-header-${placementIndex}`}
@@ -259,7 +297,10 @@ function DistributionRow({ row }: { row: PlacementRowDatum }) {
               className="h-12 rounded-b-2xl shadow-inner shadow-slate-900/10 dark:shadow-slate-950/20"
               style={{ background: gradient }}
             />
-            <div className="grid grid-cols-6 text-xs font-semibold text-slate-600 dark:text-slate-300">
+            <div
+              className="grid text-xs font-semibold text-slate-600 dark:text-slate-300"
+              style={placementGridStyle}
+            >
               {row.rates.map((rate, placementIndex) => (
                 <div
                   key={`${row.basicId}-rate-${placementIndex}`}
@@ -331,6 +372,23 @@ function PlacementDistributionPanel({ rows }: { rows: PlacementRowDatum[] }) {
 export function OverviewPanel({ snapshot }: OverviewPanelProps) {
   const { getCharacterName } = useTranslation();
   const getSafeDangoColors = useSafeDangoColors();
+  const initialContext: MonteCarloRaceContext =
+    snapshot.scenarioKind === "normalRace" ? "sprint" : "final";
+  const [selectedContext, setSelectedContext] =
+    useState<MonteCarloRaceContext>(initialContext);
+  const availableContexts = useMemo(
+    () =>
+      RACE_CONTEXT_OPTIONS.filter(
+        (context) => (snapshot.raceCountByContext[context] ?? 0) > 0
+      ),
+    [snapshot.raceCountByContext]
+  );
+  useEffect(() => {
+    if (availableContexts.includes(selectedContext)) {
+      return;
+    }
+    setSelectedContext(availableContexts[0] ?? initialContext);
+  }, [availableContexts, initialContext, selectedContext]);
   const resolveRowColors = useMemo(
     () => (basicId: DangoId) => {
       const { chartHex, chartInkHex } = getSafeDangoColors(basicId);
@@ -346,7 +404,8 @@ export function OverviewPanel({ snapshot }: OverviewPanelProps) {
       sortRows(
         derivePlacementRows(
           snapshot.selectedBasicIds,
-          snapshot.finalPlacementCountsByBasicId,
+          snapshot.basicAnalyticsByContext[selectedContext]
+            ?.placementCountsByBasicId ?? snapshot.finalPlacementCountsByBasicId,
           getCharacterName,
           resolveRowColors
         )
@@ -354,6 +413,8 @@ export function OverviewPanel({ snapshot }: OverviewPanelProps) {
     [
       getCharacterName,
       resolveRowColors,
+      selectedContext,
+      snapshot.basicAnalyticsByContext,
       snapshot.finalPlacementCountsByBasicId,
       snapshot.selectedBasicIds,
     ]
@@ -362,10 +423,17 @@ export function OverviewPanel({ snapshot }: OverviewPanelProps) {
   return (
     <div className="grid gap-6">
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
-        <WinRateOverview rows={rows} scenarioKind={snapshot.scenarioKind} />
+        <WinRateOverview
+          rows={rows}
+          scenarioKind={snapshot.scenarioKind}
+          selectedContext={selectedContext}
+          availableContexts={availableContexts}
+          onSelectedContextChange={setSelectedContext}
+        />
         <StabilitySpotlight rows={rows} />
       </div>
       <PlacementDistributionPanel rows={rows} />
+      <MetaInsightsPanel snapshot={snapshot} selectedContext={selectedContext} />
     </div>
   );
 }

@@ -328,6 +328,7 @@ export type PlaybackStackTeleportSegment = {
   actorId: DangoId;
   moves: PlaybackStackTeleportMove[];
   toCell: CellIndex;
+  toRaceDisplacement: number;
   stackBottomToTop: DangoId[];
 };
 

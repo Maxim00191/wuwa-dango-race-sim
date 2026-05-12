@@ -20,6 +20,7 @@ import { isValidBasicSelection } from "@/services/gameEngine";
 import {
   absorbHeadlessOutcomeIntoAggregate,
   createEmptyMonteCarloAggregate,
+  finalizeMonteCarloAggregate,
 } from "@/services/monteCarloAggregate";
 import { runMonteCarloBatch } from "@/services/monteCarloRunner";
 import { BASIC_CHARACTER_LIST } from "@/services/characters";
@@ -163,7 +164,7 @@ export default function App() {
       if (aggregate.totalRuns === 0) {
         return;
       }
-      setMonteCarloSnapshot(aggregate);
+      setMonteCarloSnapshot(finalizeMonteCarloAggregate(aggregate));
       setAnalysisReturnView(returnView);
       setWorkspaceView("analysis");
     },

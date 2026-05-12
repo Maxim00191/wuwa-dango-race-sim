@@ -48,7 +48,7 @@ export function AnalysisDashboard({
   const { getCharacterName, t, tText } = useTranslation();
   const availableTabs = useMemo<DashboardTabId[]>(
     () =>
-      snapshot?.scenarioKind === "tournament"
+      snapshot?.scenarioKind === "tournament" || snapshot?.scenarioKind === "final"
         ? ["overview", "conditional", "tournament"]
         : ["overview", "conditional"],
     [snapshot?.scenarioKind]
