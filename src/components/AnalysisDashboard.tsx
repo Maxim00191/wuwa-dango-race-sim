@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ConditionalAnalysisPanel } from "@/components/analysis/ConditionalAnalysisPanel";
 import { OverviewPanel } from "@/components/analysis/OverviewPanel";
 import { TournamentInsights } from "@/components/analysis/TournamentInsights";
-import { useTranslation } from "@/i18n/LanguageContext";
+import { useTranslation } from "@/i18n/useTranslation";
 import {
   derivePlacementRows,
   formatPercent,

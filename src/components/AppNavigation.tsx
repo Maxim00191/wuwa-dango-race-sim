@@ -1,6 +1,6 @@
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { useTranslation } from "@/i18n/LanguageContext";
+import { useTranslation } from "@/i18n/useTranslation";
 
 export type WorkspaceView = "normal" | "tournament" | "analysis";
 

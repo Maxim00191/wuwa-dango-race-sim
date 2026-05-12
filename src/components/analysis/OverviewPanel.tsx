@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useTranslation } from "@/i18n/LanguageContext";
+import { useTranslation } from "@/i18n/useTranslation";
 import { useSafeDangoColors } from "@/services/dangoColors";
 import type { DangoId } from "@/types/game";
 import type { MonteCarloAggregateSnapshot } from "@/types/monteCarlo";

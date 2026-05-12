@@ -10,7 +10,7 @@ import { MonteCarloPanel } from "@/components/MonteCarloPanel";
 import { TournamentSetupPanel } from "@/components/TournamentSetupPanel";
 import { ABBY_ID } from "@/constants/ids";
 import { text, type LocalizedText } from "@/i18n";
-import { useTranslation } from "@/i18n/LanguageContext";
+import { useTranslation } from "@/i18n/useTranslation";
 import { useGame } from "@/hooks/useGame";
 import { useLineupSelection } from "@/hooks/useLineupSelection";
 import { useTheme } from "@/hooks/useTheme";

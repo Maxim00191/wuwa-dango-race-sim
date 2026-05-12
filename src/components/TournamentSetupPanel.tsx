@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type DragEvent, type KeyboardEvent } from "react";
 import { ACTIVE_BASIC_DANGO_COUNT } from "@/constants/ids";
 import { DangoPicker } from "@/components/DangoPicker";
-import { useTranslation } from "@/i18n/LanguageContext";
+import { useTranslation } from "@/i18n/useTranslation";
 import { useListFlipAnimation } from "@/hooks/useListFlipAnimation";
 import { CHARACTER_BY_ID } from "@/services/characters";
 import { getFinalStartCellIndexForPlacement } from "@/services/raceSetup";

@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { ATTRIBUTE_META } from "@/constants/attributes";
 import { ACTIVE_BASIC_DANGO_COUNT } from "@/constants/ids";
 import { useTheme } from "@/hooks/useTheme";
-import { useTranslation } from "@/i18n/LanguageContext";
+import { useTranslation } from "@/i18n/useTranslation";
 import { colorWithAlpha } from "@/services/colorUtils";
 import { groupCharactersByAttribute } from "@/services/characterGrouping";
 import {

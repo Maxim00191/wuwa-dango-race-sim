@@ -8,8 +8,9 @@ import {
   useState,
 } from "react";
 import { characterParam, text } from "@/i18n";
-import { useTranslation } from "@/i18n/LanguageContext";
+import { useTranslation } from "@/i18n/useTranslation";
 import { ABBY_ID } from "@/constants/ids";
+import { scalePlaybackDurationMs } from "@/hooks/playbackSettings";
 import { BOARD_CELL_EFFECT_LOOKUP } from "@/services/boardCellEffectLookup";
 import {
   applyAtomicCellsStep,
@@ -36,7 +37,6 @@ import {
   formatTurnOrderFromActorIds,
 } from "@/narration/formatTurnOrderArrowLine";
 import {
-  scalePlaybackDurationMs,
   usePlaybackSettings,
 } from "@/hooks/usePlaybackSettings";
 

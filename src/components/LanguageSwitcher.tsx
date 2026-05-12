@@ -1,4 +1,4 @@
-import { useTranslation } from "@/i18n/LanguageContext";
+import { useTranslation } from "@/i18n/useTranslation";
 
 export function LanguageSwitcher() {
   const { language, setLanguage, t } = useTranslation();

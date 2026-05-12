@@ -1,7 +1,5 @@
 import {
-  createContext,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useState,
@@ -14,20 +12,13 @@ import {
   translate,
   translateContent,
   type AppLanguage,
-  type LocalizedText,
   type TranslatableContent,
   type TranslationParams,
 } from "@/i18n";
-
-type LanguageContextValue = {
-  language: AppLanguage;
-  setLanguage: (nextLanguage: AppLanguage) => void;
-  t: (key: string, params?: TranslationParams) => string;
-  tText: (content: TranslatableContent | null | undefined) => string;
-  getCharacterName: (id: string) => string;
-};
-
-const LanguageContext = createContext<LanguageContextValue | null>(null);
+import {
+  LanguageContext,
+  type LanguageContextValue,
+} from "@/i18n/translationContext";
 
 type LanguageProviderProps = {
   children: ReactNode;
@@ -90,19 +81,4 @@ export function LanguageProvider({ children }: LanguageProviderProps) {
       {children}
     </LanguageContext.Provider>
   );
-}
-
-export function useTranslation() {
-  const context = useContext(LanguageContext);
-  if (!context) {
-    throw new Error("useTranslation must be used within LanguageProvider");
-  }
-  return context;
-}
-
-export function useLocalizedText(
-  content: LocalizedText | string | null | undefined
-): string {
-  const { tText } = useTranslation();
-  return tText(content);
 }

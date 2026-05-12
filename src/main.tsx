@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import App from "@/App";
 import "@/index.css";
 import { LanguageProvider } from "@/i18n/LanguageContext";
-import { PlaybackSettingsProvider } from "@/hooks/usePlaybackSettings";
+import { PlaybackSettingsProvider } from "@/hooks/PlaybackSettingsProvider";
 
 const container = document.getElementById("root");
 

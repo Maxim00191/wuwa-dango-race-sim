@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ACTIVE_BASIC_DANGO_COUNT } from "@/constants/ids";
-import { useTranslation } from "@/i18n/LanguageContext";
+import { useTranslation } from "@/i18n/useTranslation";
 import type { DangoId } from "@/types/game";
 
 export type MonteCarloScenarioOption = {

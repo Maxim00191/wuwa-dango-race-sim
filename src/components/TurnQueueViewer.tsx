@@ -1,4 +1,4 @@
-import { useTranslation } from "@/i18n/LanguageContext";
+import { useTranslation } from "@/i18n/useTranslation";
 import {
   useSafeDangoColors,
 } from "@/services/dangoColors";

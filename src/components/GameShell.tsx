@@ -5,13 +5,13 @@ import {
   type BroadcastBannerPayload,
 } from "@/components/BroadcastBanner";
 import { CircularBoard } from "@/components/CircularBoard";
-import { useTranslation } from "@/i18n/LanguageContext";
+import { useTranslation } from "@/i18n/useTranslation";
+import { PLAYBACK_SPEED_OPTIONS } from "@/hooks/playbackSettings";
 import { CHARACTER_BY_ID } from "@/services/characters";
 import {
   useSafeDangoColors,
 } from "@/services/dangoColors";
 import {
-  PLAYBACK_SPEED_OPTIONS,
   usePlaybackSettings,
 } from "@/hooks/usePlaybackSettings";
 import { useListFlipAnimation } from "@/hooks/useListFlipAnimation";

@@ -5,11 +5,11 @@ import {
 } from "react";
 import { CELL_COUNT, FINISH_LINE_CELL_INDEX } from "@/constants/board";
 import { ACTIVE_BASIC_DANGO_COUNT } from "@/constants/ids";
+import { scalePlaybackDurationMs } from "@/hooks/playbackSettings";
 import {
-  scalePlaybackDurationMs,
   usePlaybackSettings,
 } from "@/hooks/usePlaybackSettings";
-import { useTranslation } from "@/i18n/LanguageContext";
+import { useTranslation } from "@/i18n/useTranslation";
 import {
   angleForCellIndex,
   ellipseOutwardUnitAtAngle,

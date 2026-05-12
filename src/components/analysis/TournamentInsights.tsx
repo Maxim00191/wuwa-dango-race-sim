@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTheme } from "@/hooks/useTheme";
-import { useTranslation } from "@/i18n/LanguageContext";
+import { useTranslation } from "@/i18n/useTranslation";
 import { useSafeDangoColors } from "@/services/dangoColors";
 import type { DangoId } from "@/types/game";
 import type { MonteCarloAggregateSnapshot } from "@/types/monteCarlo";

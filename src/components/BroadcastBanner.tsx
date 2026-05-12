@@ -1,6 +1,6 @@
 import type { DangoId } from "@/types/game";
 import { useTheme } from "@/hooks/useTheme";
-import { useTranslation } from "@/i18n/LanguageContext";
+import { useTranslation } from "@/i18n/useTranslation";
 import type { TranslatableContent } from "@/i18n";
 import { useSafeDangoColors } from "@/services/dangoColors";
 import {
