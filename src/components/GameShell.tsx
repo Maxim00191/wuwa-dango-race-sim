@@ -347,7 +347,7 @@ export function GameShell({
                         boardEffects={boardEffects}
                         hoppingEntityIds={hoppingEntityIds}
                       />
-                      <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center px-4 py-5 sm:px-10 sm:py-6">
+                      <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center px-4 py-5 sm:px-10 sm:py-6 md:px-16 md:py-10 lg:px-24 lg:py-14">
                         <BroadcastBanner payload={broadcastPayload} />
                       </div>
                     </div>

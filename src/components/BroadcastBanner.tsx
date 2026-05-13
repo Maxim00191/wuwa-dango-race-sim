@@ -52,15 +52,15 @@ const variantShell: Record<
 };
 
 const headlineClass: Record<BroadcastBannerPayload["variant"], string> = {
-  turn: "text-xs font-bold leading-tight text-slate-900 dark:text-white sm:text-sm",
-  roll: "text-xs font-bold leading-tight text-sky-900 dark:text-sky-50 sm:text-sm",
-  skill: "text-xs font-extrabold leading-tight text-amber-950 dark:text-amber-50 sm:text-sm",
-  idle: "text-[11px] font-semibold leading-snug text-slate-800 dark:text-slate-50 sm:text-xs",
-  teleport: "text-[11px] font-bold leading-snug text-fuchsia-950 dark:text-fuchsia-50 sm:text-xs",
-  slide: "text-[11px] font-bold leading-snug text-emerald-950 dark:text-emerald-50 sm:text-xs",
-  effect: "text-[11px] font-bold leading-snug text-violet-950 dark:text-violet-50 sm:text-xs",
+  turn: "text-xs font-bold leading-tight text-slate-900 dark:text-white sm:text-sm md:text-lg lg:text-xl",
+  roll: "text-xs font-bold leading-tight text-sky-900 dark:text-sky-50 sm:text-sm md:text-lg lg:text-xl",
+  skill: "text-xs font-extrabold leading-tight text-amber-950 dark:text-amber-50 sm:text-sm md:text-lg lg:text-xl",
+  idle: "text-[11px] font-semibold leading-snug text-slate-800 dark:text-slate-50 sm:text-xs md:text-base lg:text-lg",
+  teleport: "text-[11px] font-bold leading-snug text-fuchsia-950 dark:text-fuchsia-50 sm:text-xs md:text-base lg:text-lg",
+  slide: "text-[11px] font-bold leading-snug text-emerald-950 dark:text-emerald-50 sm:text-xs md:text-base lg:text-lg",
+  effect: "text-[11px] font-bold leading-snug text-violet-950 dark:text-violet-50 sm:text-xs md:text-base lg:text-lg",
   victory:
-    "text-sm font-black leading-tight tracking-tight text-white drop-shadow-sm sm:text-base",
+    "text-sm font-black leading-tight tracking-tight text-white drop-shadow-sm sm:text-base md:text-xl lg:text-2xl",
 };
 
 export function BroadcastBanner({ payload }: BroadcastBannerProps) {
@@ -88,22 +88,22 @@ export function BroadcastBanner({ payload }: BroadcastBannerProps) {
         }
       : undefined;
   const wrapperClass = accentHex
-    ? `pointer-events-none m-auto w-full max-w-[14rem] rounded-lg border px-2.5 py-1.5 text-center backdrop-blur-md sm:max-w-[15rem] ${
+    ? `pointer-events-none m-auto w-full max-w-[14rem] rounded-lg border px-2.5 py-1.5 text-center backdrop-blur-md animate-banner-pop sm:max-w-[16rem] md:max-w-[24rem] lg:max-w-[30rem] md:px-5 md:py-3.5 lg:px-8 lg:py-5 lg:rounded-2xl ${
         payload.variant === "skill" ? "animate-pulse" : ""
       }`
-    : `pointer-events-none m-auto w-full max-w-[14rem] rounded-lg px-2.5 py-1.5 text-center shadow-sm shadow-slate-900/10 backdrop-blur-md dark:shadow-slate-950/40 sm:max-w-[15rem] ${variantShell[payload.variant]}`;
+    : `pointer-events-none m-auto w-full max-w-[14rem] rounded-lg px-2.5 py-1.5 text-center shadow-sm shadow-slate-900/10 backdrop-blur-md animate-banner-pop dark:shadow-slate-950/40 sm:max-w-[16rem] md:max-w-[24rem] lg:max-w-[30rem] md:px-5 md:py-3.5 lg:px-8 lg:py-5 lg:rounded-2xl ${variantShell[payload.variant]}`;
   const headlineResolved =
     accentHex !== null
-      ? "text-xs font-bold leading-tight drop-shadow-sm sm:text-sm"
+      ? "text-xs font-bold leading-tight drop-shadow-sm sm:text-sm md:text-lg lg:text-xl"
       : headlineClass[payload.variant];
   const detailResolved =
     accentHex !== null
       ? payload.variant === "victory"
-        ? "mt-0.5 text-[9px] font-normal tracking-normal sm:text-[10px]"
-        : "mt-0.5 text-[10px] font-normal leading-snug sm:text-[11px]"
+        ? "mt-1 text-[9px] font-normal tracking-normal sm:text-[10px] md:text-sm lg:text-base"
+        : "mt-1 text-[10px] font-normal leading-snug sm:text-[11px] md:text-base lg:text-lg"
       : payload.variant === "victory"
-        ? "mt-0.5 text-[9px] font-normal tracking-normal text-amber-100/85 sm:text-[10px]"
-        : "mt-0.5 text-[10px] font-normal leading-snug text-slate-600 dark:text-slate-300 sm:text-[11px]";
+        ? "mt-1 text-[9px] font-normal tracking-normal text-amber-100/85 sm:text-[10px] md:text-sm lg:text-base"
+        : "mt-1 text-[10px] font-normal leading-snug text-slate-600 dark:text-slate-300 sm:text-[11px] md:text-base lg:text-lg";
   return (
     <div className={wrapperClass} style={accentShell}>
       <p className={headlineResolved} style={accentTextHex ? { color: accentTextHex } : undefined}>
