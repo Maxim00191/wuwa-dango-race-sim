@@ -112,7 +112,7 @@ export const enDictionary: TranslationDictionary = {
     },
     shell: {
       eyebrow: "Anniversary Grounds",
-      title: "Solaris Sprint",
+      title: "Cubie Derby Sprint",
       description:
         "Hop, stack, and utilize track devices to dominate the single-match celebration circuit.",
       start: "Commence the Sprint",
@@ -149,7 +149,7 @@ export const enDictionary: TranslationDictionary = {
     },
     shell: {
       eyebrow: "Tournament Center",
-      title: "Solaris Celebration Cup",
+      title: "Cubie Derby Celebration Cup",
       description:
         "Complete a preliminary round to determine final seeding, or manually arrange a custom dream match.",
     },

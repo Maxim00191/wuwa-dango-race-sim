@@ -111,7 +111,7 @@ export const zhCnDictionary: TranslationDictionary = {
     },
     shell: {
       eyebrow: "二周年赛场",
-      title: "索拉里斯冲刺",
+      title: "小团快跑冲刺赛",
       description:
         "跳跃、叠层、利用赛道装置，在单场庆典规则下争夺第一名。",
       start: "开始竞赛",
@@ -146,7 +146,7 @@ export const zhCnDictionary: TranslationDictionary = {
     },
     shell: {
       eyebrow: "赛事中心",
-      title: "索拉里斯庆典杯",
+      title: "小团快跑庆典杯",
       description:
         "完成预赛以决定总决赛的顺位，或者你也可以直接自定义一场梦幻决赛。",
     },
