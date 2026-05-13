@@ -35,7 +35,7 @@ const RACE_MODES: RaceMode[] = [
   "tournamentFinal",
   "customFinal",
 ];
-const RACE_CONTEXTS: MonteCarloRaceContext[] = ["sprint", "qualifier", "final"];
+const RACE_CONTEXTS: MonteCarloRaceContext[] = ["sprint", "preliminary", "final"];
 
 function createPlacementVector(participantCount: number): PlacementCountVector {
   return Array.from({ length: participantCount }, () => 0);
@@ -192,12 +192,12 @@ function createModeAnalytics(
   }
   return {
     kind: "tournament",
-    qualifierPlacementDynamics: createSeedDynamics(participantCount),
+    preliminaryPlacementDynamics: createSeedDynamics(participantCount),
     finalStartingPlacementDynamics: createSeedDynamics(participantCount),
-    qualifierToFinalRankShift: createRankShiftDynamics(selectedBasicIds),
-    qualifierWinnerRetainedTitleRate: 0,
-    qualifierWinnerRetainedTitleRateByBasicId: zeroes,
-    qualifierWinnerFinalPlacementRates: Array.from(
+    preliminaryToFinalRankShift: createRankShiftDynamics(selectedBasicIds),
+    preliminaryWinnerRetainedTitleRate: 0,
+    preliminaryWinnerRetainedTitleRateByBasicId: zeroes,
+    preliminaryWinnerFinalPlacementRates: Array.from(
       { length: participantCount },
       () => 0
     ),
@@ -211,14 +211,14 @@ function createRankShiftDynamics(
   selectedBasicIds: DangoId[]
 ): MonteCarloRankShiftDynamics {
   return {
-    averageFinalMinusQualifierRankByBasicId: Object.fromEntries(
+    averageFinalMinusPreliminaryRankByBasicId: Object.fromEntries(
       selectedBasicIds.map((basicId) => [basicId, null])
     ),
     chokeRateByBasicId: createNumberRecord(selectedBasicIds),
     clutchRateByBasicId: createNumberRecord(selectedBasicIds),
     chokeOpportunityCountByBasicId: createNumberRecord(selectedBasicIds),
     clutchOpportunityCountByBasicId: createNumberRecord(selectedBasicIds),
-    overallAverageFinalMinusQualifierRank: null,
+    overallAverageFinalMinusPreliminaryRank: null,
     overallChokeRate: 0,
     overallClutchRate: 0,
   };
@@ -396,7 +396,7 @@ function contextForRaceMode(mode: RaceMode): MonteCarloRaceContext {
     return "sprint";
   }
   if (mode === "tournamentPreliminary") {
-    return "qualifier";
+    return "preliminary";
   }
   return "final";
 }
@@ -892,7 +892,7 @@ function finalizeContextAnalytics(
 function finalizeRankShiftDynamics(
   aggregate: MonteCarloAggregateSnapshot
 ): MonteCarloRankShiftDynamics {
-  const averageFinalMinusQualifierRankByBasicId = Object.fromEntries(
+  const averageFinalMinusPreliminaryRankByBasicId = Object.fromEntries(
     aggregate.selectedBasicIds.map((basicId) => {
       const count = aggregate.tournamentRankShiftCountByBasicId[basicId] ?? 0;
       const sum = aggregate.tournamentRankShiftSumByBasicId[basicId] ?? 0;
@@ -925,14 +925,14 @@ function finalizeRankShiftDynamics(
     totalClutches += clutches;
   }
   return {
-    averageFinalMinusQualifierRankByBasicId,
+    averageFinalMinusPreliminaryRankByBasicId,
     chokeRateByBasicId,
     clutchRateByBasicId,
     chokeOpportunityCountByBasicId:
       aggregate.tournamentChokeOpportunityCountByBasicId,
     clutchOpportunityCountByBasicId:
       aggregate.tournamentClutchOpportunityCountByBasicId,
-    overallAverageFinalMinusQualifierRank:
+    overallAverageFinalMinusPreliminaryRank:
       totalShiftCount > 0 ? totalShiftSum / totalShiftCount : null,
     overallChokeRate: toPercent(totalChokes, totalChokeOpportunities),
     overallClutchRate: toPercent(totalClutches, totalClutchOpportunities),
@@ -979,23 +979,23 @@ function finalizeModeAnalytics(
       startedWithMaxDebtRateByBasicId,
     };
   }
-  const qualifierWinnerRetainedTitleRateByBasicId = createNumberRecord(
+  const preliminaryWinnerRetainedTitleRateByBasicId = createNumberRecord(
     aggregate.selectedBasicIds
   );
   let retainedTitleCount = 0;
   for (const basicId of aggregate.selectedBasicIds) {
     const matrix = aggregate.preliminaryToFinalCountsByBasicId[basicId] ?? [];
-    const qualifierWinnerSample = sumCounts(matrix[0] ?? []);
+    const preliminaryWinnerSample = sumCounts(matrix[0] ?? []);
     const retainedTitleWins = matrix[0]?.[0] ?? 0;
-    qualifierWinnerRetainedTitleRateByBasicId[basicId] = toPercent(
+    preliminaryWinnerRetainedTitleRateByBasicId[basicId] = toPercent(
       retainedTitleWins,
-      qualifierWinnerSample
+      preliminaryWinnerSample
     );
     retainedTitleCount += retainedTitleWins;
   }
   return {
     kind: "tournament",
-    qualifierPlacementDynamics: buildSeedDynamics(
+    preliminaryPlacementDynamics: buildSeedDynamics(
       aggregate,
       aggregate.preliminaryToFinalCountsByBasicId
     ),
@@ -1003,14 +1003,14 @@ function finalizeModeAnalytics(
       aggregate,
       aggregate.startingToFinalCountsByBasicId
     ),
-    qualifierToFinalRankShift: finalizeRankShiftDynamics(aggregate),
-    qualifierWinnerRetainedTitleRate: toPercent(
+    preliminaryToFinalRankShift: finalizeRankShiftDynamics(aggregate),
+    preliminaryWinnerRetainedTitleRate: toPercent(
       retainedTitleCount,
       aggregate.totalRuns
     ),
-    qualifierWinnerRetainedTitleRateByBasicId,
-    qualifierWinnerFinalPlacementRates:
-      aggregate.qualifierWinnerFinalPlacementCounts.map((count) =>
+    preliminaryWinnerRetainedTitleRateByBasicId,
+    preliminaryWinnerFinalPlacementRates:
+      aggregate.preliminaryWinnerFinalPlacementCounts.map((count) =>
         toPercent(count, aggregate.totalRuns)
       ),
     maxDebtComebackRate: toPercent(totalMaxDebtWins, aggregate.totalRuns),
@@ -1059,7 +1059,7 @@ export function createEmptyMonteCarloAggregate(
     sumFinalTurns: 0,
     minTurns: Number.POSITIVE_INFINITY,
     maxTurns: 0,
-    qualifierWinnerFinalPlacementCounts: createPlacementVector(participantCount),
+    preliminaryWinnerFinalPlacementCounts: createPlacementVector(participantCount),
     basicMetricTotalsByBasicId: createBasicMetricTotalsRecord(selectedBasicIds),
     startedFinalWithMaxDebtCountByBasicId: createNumberRecord(selectedBasicIds),
     wonFinalFromMaxDebtCountByBasicId: createNumberRecord(selectedBasicIds),
@@ -1143,10 +1143,10 @@ export function absorbHeadlessOutcomeIntoAggregate(
     );
     const bottomTwoStart = Math.max(aggregate.participantCount - 2, 0);
     for (const basicId of aggregate.selectedBasicIds) {
-      const qualifierPlacementIndex = preliminaryPlacementIndexByBasicId[basicId];
+      const preliminaryPlacementIndex = preliminaryPlacementIndexByBasicId[basicId];
       const finalPlacementIndex = finalPlacementIndexByBasicId[basicId];
       if (
-        qualifierPlacementIndex === undefined ||
+        preliminaryPlacementIndex === undefined ||
         finalPlacementIndex === undefined
       ) {
         continue;
@@ -1154,10 +1154,10 @@ export function absorbHeadlessOutcomeIntoAggregate(
       aggregate.tournamentRankShiftSumByBasicId[basicId] =
         (aggregate.tournamentRankShiftSumByBasicId[basicId] ?? 0) +
         finalPlacementIndex -
-        qualifierPlacementIndex;
+        preliminaryPlacementIndex;
       aggregate.tournamentRankShiftCountByBasicId[basicId] =
         (aggregate.tournamentRankShiftCountByBasicId[basicId] ?? 0) + 1;
-      if (qualifierPlacementIndex <= 1) {
+      if (preliminaryPlacementIndex <= 1) {
         aggregate.tournamentChokeOpportunityCountByBasicId[basicId] =
           (aggregate.tournamentChokeOpportunityCountByBasicId[basicId] ?? 0) + 1;
         if (finalPlacementIndex >= bottomTwoStart) {
@@ -1165,7 +1165,7 @@ export function absorbHeadlessOutcomeIntoAggregate(
             (aggregate.tournamentChokeCountByBasicId[basicId] ?? 0) + 1;
         }
       }
-      if (qualifierPlacementIndex >= bottomTwoStart) {
+      if (preliminaryPlacementIndex >= bottomTwoStart) {
         aggregate.tournamentClutchOpportunityCountByBasicId[basicId] =
           (aggregate.tournamentClutchOpportunityCountByBasicId[basicId] ?? 0) + 1;
         if (finalPlacementIndex <= 2) {
@@ -1174,20 +1174,20 @@ export function absorbHeadlessOutcomeIntoAggregate(
         }
       }
     }
-    const qualifierWinnerId =
+    const preliminaryWinnerId =
       outcome.preliminaryWinnerBasicId ?? outcome.preliminaryPlacements?.[0] ?? null;
-    const qualifierWinnerFinalPlacement =
-      qualifierWinnerId === null
+    const preliminaryWinnerFinalPlacement =
+      preliminaryWinnerId === null
         ? undefined
-        : finalPlacementIndexByBasicId[qualifierWinnerId];
+        : finalPlacementIndexByBasicId[preliminaryWinnerId];
     if (
-      qualifierWinnerFinalPlacement !== undefined &&
-      qualifierWinnerFinalPlacement >= 0 &&
-      qualifierWinnerFinalPlacement <
-        aggregate.qualifierWinnerFinalPlacementCounts.length
+      preliminaryWinnerFinalPlacement !== undefined &&
+      preliminaryWinnerFinalPlacement >= 0 &&
+      preliminaryWinnerFinalPlacement <
+        aggregate.preliminaryWinnerFinalPlacementCounts.length
     ) {
-      aggregate.qualifierWinnerFinalPlacementCounts[
-        qualifierWinnerFinalPlacement
+      aggregate.preliminaryWinnerFinalPlacementCounts[
+        preliminaryWinnerFinalPlacement
       ] += 1;
     }
   }

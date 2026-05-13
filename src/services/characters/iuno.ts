@@ -78,28 +78,47 @@ function resolveIunoAnchoredDestiny(
   if (context.rollerId !== context.actingEntityId) {
     return { state };
   }
-  const entity = state.entities[context.rollerId];
-  if (
-    !entity ||
-    entity.skillState.hasUsedAnchoredDestiny ||
-    !hasCrossedMidpoint(context)
-  ) {
+  const initialEntity = state.entities[context.rollerId];
+  if (!initialEntity || initialEntity.skillState.hasUsedAnchoredDestiny) {
     return { state };
   }
+  const crossedNow = hasCrossedMidpoint(context);
+  const wasArmed = Boolean(initialEntity.skillState.anchoredDestinyMidpointArmed);
+  if (!wasArmed && !crossedNow) {
+    return { state };
+  }
+  let workingState = state;
+  let actorEntity = initialEntity;
+  if (crossedNow && !wasArmed) {
+    actorEntity = {
+      ...initialEntity,
+      skillState: {
+        ...initialEntity.skillState,
+        anchoredDestinyMidpointArmed: true,
+      },
+    };
+    workingState = {
+      ...state,
+      entities: {
+        ...state.entities,
+        [context.rollerId]: actorEntity,
+      },
+    };
+  }
   const scope = resolveAnchoredDestinyTeleportScope(
-    orderedBasicRacerIdsForLeaderboard(state),
+    orderedBasicRacerIdsForLeaderboard(workingState),
     context.rollerId
   );
   if (!scope) {
-    return { state };
+    return { state: workingState };
   }
   const teleportIds = [...scope.aheadIds, ...scope.behindIds];
-  const moves = buildAnchoredDestinyMoves(state, teleportIds);
+  const moves = buildAnchoredDestinyMoves(workingState, teleportIds);
   if (!moves || moves.length === 0) {
-    return { state };
+    return { state: workingState };
   }
-  const destinationCellIndex = entity.cellIndex;
-  const destinationStack = state.cells.get(destinationCellIndex) ?? [];
+  const destinationCellIndex = actorEntity.cellIndex;
+  const destinationStack = workingState.cells.get(destinationCellIndex) ?? [];
   const nextDestinationStack = buildAnchoredDestinyDestinationStack(
     destinationStack,
     context.rollerId,
@@ -107,10 +126,10 @@ function resolveIunoAnchoredDestiny(
     scope.behindIds
   );
   if (!nextDestinationStack) {
-    return { state };
+    return { state: workingState };
   }
   const nextCells = applyStackTeleportCellsOnly(
-    state.cells,
+    workingState.cells,
     moves.map((move) => ({
       entityId: move.entityId,
       fromCellIndex: move.fromCell,
@@ -118,11 +137,12 @@ function resolveIunoAnchoredDestiny(
     destinationCellIndex,
     nextDestinationStack
   );
-  const nextEntities = { ...state.entities };
+  const anchorDisplacement = actorEntity.raceDisplacement;
+  const nextEntities = { ...workingState.entities };
   nextEntities[context.rollerId] = {
-    ...entity,
+    ...actorEntity,
     skillState: {
-      ...entity.skillState,
+      ...actorEntity.skillState,
       hasUsedAnchoredDestiny: true,
     },
   };
@@ -134,11 +154,12 @@ function resolveIunoAnchoredDestiny(
     nextEntities[move.entityId] = {
       ...moved,
       cellIndex: destinationCellIndex,
+      raceDisplacement: anchorDisplacement,
     };
   }
   return {
     state: {
-      ...state,
+      ...workingState,
       cells: nextCells,
       entities: nextEntities,
     },

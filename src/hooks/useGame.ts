@@ -94,6 +94,7 @@ export function useGame() {
   const playbackSpeedRef = useRef(speedMultiplier);
   const initialState = useMemo(() => createInitialGameState(), []);
   const [state, dispatch] = useReducer(gameReducer, initialState);
+  const lastRaceSetupRef = useRef<RaceSetup | null>(null);
   const [playbackCells, setPlaybackCells] = useState<
     Map<number, DangoId[]> | null
   >(null);
@@ -133,6 +134,7 @@ export function useGame() {
     if (!isValidBasicSelection(setup.selectedBasicIds)) {
       return;
     }
+    lastRaceSetupRef.current = setup;
     dispatch({ type: "START", setup });
   }, []);
 
@@ -146,7 +148,21 @@ export function useGame() {
     setPlayTurnEnabled(false);
     setBroadcastPayload(null);
     setAutoPlayEnabled(false);
+    lastRaceSetupRef.current = null;
     dispatch({ type: "RESET" });
+  }, []);
+
+  const hydrateEngineState = useCallback((snapshot: GameState) => {
+    animationGenerationRef.current += 1;
+    isAnimatingRef.current = false;
+    setPlaybackCells(null);
+    setPlaybackEntities(null);
+    setHoppingEntityIds(new Set());
+    setIsAnimating(false);
+    setPlayTurnEnabled(false);
+    setBroadcastPayload(null);
+    setAutoPlayEnabled(false);
+    dispatch({ type: "HYDRATE_ENGINE_STATE", snapshot });
   }, []);
 
   const executeNextStep = useCallback(() => {
@@ -181,35 +197,19 @@ export function useGame() {
     setAutoPlayEnabled(nextValue);
   }, []);
 
-  const instantFullTurn = useCallback(() => {
-    if (isAnimatingRef.current) {
-      return;
-    }
-    if (state.phase !== "running" || state.winnerId) {
-      return;
-    }
-    animationGenerationRef.current += 1;
-    dispatch({ type: "INSTANT_FULL_TURN" });
-  }, [state.phase, state.winnerId]);
-
-  const instantSimulateGame = useCallback(() => {
-    if (isAnimatingRef.current) {
-      return;
-    }
-    if (state.phase !== "running" || state.winnerId) {
-      return;
-    }
-    animationGenerationRef.current += 1;
-    dispatch({ type: "INSTANT_SIMULATE_GAME" });
-  }, [state.phase, state.winnerId]);
-
   useLayoutEffect(() => {
     let cancelled = false;
     const playback = state.lastTurnPlayback;
     if (!playback) {
+      setPlaybackCells(null);
+      setPlaybackEntities(null);
+      setHoppingEntityIds(new Set());
       return;
     }
     if (playback.playbackStamp !== state.playbackStamp) {
+      setPlaybackCells(null);
+      setPlaybackEntities(null);
+      setHoppingEntityIds(new Set());
       return;
     }
     const segmentChunks = expandPlaybackToSegmentAtomicChunks(
@@ -619,15 +619,19 @@ export function useGame() {
     return state;
   }, [state, playbackCells, playbackEntities]);
 
+  const getLastRaceSetup = useCallback((): RaceSetup | null => {
+    return lastRaceSetupRef.current;
+  }, []);
+
   return {
     state,
     rankingState,
     start,
     playTurn,
     stepAction: executeNextStep,
-    instantFullTurn,
-    instantSimulateGame,
     reset,
+    hydrateEngineState,
+    getLastRaceSetup,
     boardEffects: BOARD_CELL_EFFECT_LOOKUP,
     boardCells: playbackCells ?? state.cells,
     hoppingEntityIds,

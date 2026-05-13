@@ -18,6 +18,7 @@ export type EntitySkillState = {
   sequentialDiceOrdinal?: number;
   hasUsedMidpointLeap?: boolean;
   hasUsedAnchoredDestiny?: boolean;
+  anchoredDestinyMidpointArmed?: boolean;
   previousRoll?: number;
   hasMetAbby?: boolean;
   comebackActive?: boolean;
@@ -463,4 +464,5 @@ export type GameAction =
   | { type: "STEP_ACTION" }
   | { type: "INSTANT_FULL_TURN" }
   | { type: "INSTANT_SIMULATE_GAME" }
-  | { type: "RESET" };
+  | { type: "RESET" }
+  | { type: "HYDRATE_ENGINE_STATE"; snapshot: GameState };

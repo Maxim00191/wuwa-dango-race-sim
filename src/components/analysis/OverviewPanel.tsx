@@ -20,7 +20,7 @@ type OverviewPanelProps = {
 
 const RACE_CONTEXT_OPTIONS: MonteCarloRaceContext[] = [
   "sprint",
-  "qualifier",
+  "preliminary",
   "final",
 ];
 

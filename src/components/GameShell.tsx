@@ -28,6 +28,26 @@ function suppressMouseDownFocus(e: MouseEvent<HTMLButtonElement>) {
   e.preventDefault();
 }
 
+export type GameShellSpectate = {
+  replayFileActive: boolean;
+  timelineVisible: boolean;
+  timelineStep: number;
+  timelineMax: number;
+  onScrub: (step: number) => void;
+  scrubAria: string;
+  turnSummaryText: string;
+  replayToolbar: ReactNode;
+  onStep: () => void;
+  onPlayTurn: () => void;
+  onToggleAuto: () => void;
+  autoActive: boolean;
+  playTurnBusy?: boolean;
+  stepDisabled: boolean;
+  playTurnDisabled: boolean;
+  autoRunDisabled: boolean;
+  onHistoryStepBack?: () => void;
+};
+
 type GameShellProps = {
   state: GameState;
   rankingState: GameState;
@@ -55,6 +75,7 @@ type GameShellProps = {
   playTurnEnabled: boolean;
   autoPlayEnabled: boolean;
   onAutoPlayEnabledChange: (nextValue: boolean) => void;
+  spectate?: GameShellSpectate;
 };
 
 export function GameShell({
@@ -84,6 +105,7 @@ export function GameShell({
   playTurnEnabled,
   autoPlayEnabled,
   onAutoPlayEnabledChange,
+  spectate,
 }: GameShellProps) {
   const { getCharacterName, t, tText } = useTranslation();
   const getSafeDangoColors = useSafeDangoColors();
@@ -100,30 +122,34 @@ export function GameShell({
     state,
     isAnimating
   );
-  const nextTurnDisabled =
-    state.phase !== "running" ||
-    Boolean(state.winnerId) ||
-    isAnimating ||
-    playTurnEnabled ||
-    autoPlayEnabled;
-  const playTurnDisabled =
-    state.phase !== "running" ||
-    Boolean(state.winnerId) ||
-    isAnimating ||
-    playTurnEnabled ||
-    autoPlayEnabled;
+  const nextTurnDisabled = spectate
+    ? spectate.stepDisabled
+    : state.phase !== "running" ||
+      Boolean(state.winnerId) ||
+      isAnimating ||
+      playTurnEnabled ||
+      autoPlayEnabled;
+  const playTurnDisabled = spectate
+    ? spectate.playTurnDisabled
+    : state.phase !== "running" ||
+      Boolean(state.winnerId) ||
+      isAnimating ||
+      playTurnEnabled ||
+      autoPlayEnabled;
   const instantDisabled =
     state.phase !== "running" ||
     Boolean(state.winnerId) ||
     isAnimating ||
     playTurnEnabled ||
-    autoPlayEnabled;
+    autoPlayEnabled ||
+    Boolean(spectate?.replayFileActive);
   const startSprintDisabled =
     !onStartSprint ||
     startShortcutDisabled ||
     state.phase === "running";
-  const autoRunDisabled =
-    state.phase !== "running" || Boolean(state.winnerId);
+  const autoRunDisabled = spectate
+    ? spectate.autoRunDisabled
+    : state.phase !== "running" || Boolean(state.winnerId);
   const showWinnerBadge =
     state.phase === "finished" && Boolean(state.winnerId) && !isAnimating;
 
@@ -132,23 +158,62 @@ export function GameShell({
       if (shouldIgnoreKeyboardShortcuts(e.target)) return;
 
       if (e.code === "Space") {
-        if (autoRunDisabled) return;
+        if (spectate) {
+          if (spectate.autoRunDisabled) {
+            return;
+          }
+          e.preventDefault();
+          spectate.onToggleAuto();
+          return;
+        }
+        if (autoRunDisabled) {
+          return;
+        }
         e.preventDefault();
         onAutoPlayEnabledChange(!autoPlayEnabled);
         return;
       }
 
-      if (e.code === "ArrowRight") {
-        if (e.ctrlKey) {
-          if (playTurnDisabled) return;
-          e.preventDefault();
-          onPlayTurn();
+      if (e.code === "ArrowLeft") {
+        if (e.altKey || e.shiftKey || e.metaKey || e.ctrlKey) {
           return;
         }
-        if (e.altKey || e.shiftKey || e.metaKey) return;
-        if (nextTurnDisabled) return;
+        if (!spectate?.onHistoryStepBack) {
+          return;
+        }
+        if (!spectate.timelineVisible || spectate.timelineStep <= 0) {
+          return;
+        }
         e.preventDefault();
-        onStepAction();
+        spectate.onHistoryStepBack();
+        return;
+      }
+
+      if (e.code === "ArrowRight") {
+        if (e.ctrlKey) {
+          if (playTurnDisabled) {
+            return;
+          }
+          e.preventDefault();
+          if (spectate) {
+            spectate.onPlayTurn();
+          } else {
+            onPlayTurn();
+          }
+          return;
+        }
+        if (e.altKey || e.shiftKey || e.metaKey) {
+          return;
+        }
+        if (nextTurnDisabled) {
+          return;
+        }
+        e.preventDefault();
+        if (spectate) {
+          spectate.onStep();
+        } else {
+          onStepAction();
+        }
         return;
       }
 
@@ -178,6 +243,7 @@ export function GameShell({
     onStartSprint,
     onStepAction,
     playTurnDisabled,
+    spectate,
     startSprintDisabled,
   ]);
 
@@ -199,71 +265,113 @@ export function GameShell({
 
       {showSetupPanel ? setupPanel : null}
 
-      <div className="grid w-full grid-cols-1 items-stretch gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-[minmax(0,1.35fr)_auto_minmax(0,0.9fr)]">
+      <div className="flex w-full flex-col gap-3 sm:gap-4">
+        {spectate?.replayToolbar ? (
+          <ControlCluster label={t("game.replay.toolbarCaption")}>
+            <div className="flex flex-col gap-3">
+              {spectate.timelineVisible ? (
+                <div className="flex flex-wrap items-center gap-3">
+                  <input
+                    type="range"
+                    min={0}
+                    max={spectate.timelineMax}
+                    step={1}
+                    value={Math.min(
+                      spectate.timelineStep,
+                      spectate.timelineMax
+                    )}
+                    aria-label={spectate.scrubAria}
+                    onChange={(event) =>
+                      spectate.onScrub(
+                        Number.parseInt(event.target.value, 10)
+                      )
+                    }
+                    className="h-2 w-full min-w-[12rem] flex-1 cursor-pointer accent-indigo-600"
+                  />
+                  <span className="min-w-[10rem] text-right text-xs font-semibold tabular-nums text-slate-600 dark:text-slate-300 sm:text-sm">
+                    {spectate.turnSummaryText}
+                  </span>
+                </div>
+              ) : null}
+              {spectate.replayToolbar}
+            </div>
+          </ControlCluster>
+        ) : null}
+        <div className="grid w-full grid-cols-1 items-stretch gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-[minmax(0,1.35fr)_auto_minmax(0,0.9fr)]">
         <ControlCluster label={t("game.controls.watch")}>
-          <div className="grid grid-cols-5 gap-2 sm:flex sm:flex-wrap sm:gap-2">
-            {startControls}
-            <button
-              type="button"
-              onMouseDown={suppressMouseDownFocus}
-              onClick={onStepAction}
-              disabled={nextTurnDisabled}
-              className="inline-flex min-h-9 items-center justify-center rounded-full bg-violet-500 px-3 py-1.5 text-xs font-semibold text-violet-950 shadow-lg shadow-violet-900/40 transition hover:bg-violet-400 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none sm:min-h-11 sm:px-5 sm:py-2 sm:text-sm dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
-            >
-              {t("game.controls.step")}
-            </button>
-            <button
-              type="button"
-              onMouseDown={suppressMouseDownFocus}
-              onClick={onPlayTurn}
-              disabled={playTurnDisabled}
-              className="inline-flex min-h-9 items-center justify-center rounded-full bg-sky-500 px-3 py-1.5 text-xs font-semibold text-slate-950 shadow-lg shadow-sky-900/40 transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none sm:min-h-11 sm:px-5 sm:py-2 sm:text-sm dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
-            >
-              {playTurnEnabled
-                ? t("game.controls.playingTurn")
-                : t("game.controls.playTurn")}
-            </button>
-            {autoPlayEnabled ? (
-              <span
-                className={`relative inline-flex overflow-hidden rounded-full p-[2px] shadow-lg shadow-violet-900/25 dark:shadow-violet-950/40 ${autoRunDisabled ? "opacity-55" : ""}`}
+          <div className="flex flex-col gap-3">
+            <div className="grid grid-cols-5 gap-2 sm:flex sm:flex-wrap sm:gap-2">
+              {startControls}
+              <button
+                type="button"
+                onMouseDown={suppressMouseDownFocus}
+                onClick={spectate ? spectate.onStep : onStepAction}
+                disabled={nextTurnDisabled}
+                className="inline-flex min-h-9 items-center justify-center rounded-full bg-violet-500 px-3 py-1.5 text-xs font-semibold text-violet-950 shadow-lg shadow-violet-900/40 transition hover:bg-violet-400 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none sm:min-h-11 sm:px-5 sm:py-2 sm:text-sm dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
               >
-                <span className="pause-auto-run-rainbow__wrap">
-                  <span aria-hidden className="pause-auto-run-rainbow__spin" />
+                {t("game.controls.step")}
+              </button>
+              <button
+                type="button"
+                onMouseDown={suppressMouseDownFocus}
+                onClick={spectate ? spectate.onPlayTurn : onPlayTurn}
+                disabled={playTurnDisabled}
+                className="inline-flex min-h-9 items-center justify-center rounded-full bg-sky-500 px-3 py-1.5 text-xs font-semibold text-slate-950 shadow-lg shadow-sky-900/40 transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none sm:min-h-11 sm:px-5 sm:py-2 sm:text-sm dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
+              >
+                {playTurnEnabled || Boolean(spectate?.playTurnBusy)
+                  ? t("game.controls.playingTurn")
+                  : t("game.controls.playTurn")}
+              </button>
+              {(spectate ? spectate.autoActive : autoPlayEnabled) ? (
+                <span
+                  className={`relative inline-flex overflow-hidden rounded-full p-[2px] shadow-lg shadow-violet-900/25 dark:shadow-violet-950/40 ${autoRunDisabled ? "opacity-55" : ""}`}
+                >
+                  <span className="pause-auto-run-rainbow__wrap">
+                    <span aria-hidden className="pause-auto-run-rainbow__spin" />
+                  </span>
+                  <button
+                    type="button"
+                    onMouseDown={suppressMouseDownFocus}
+                    onClick={() =>
+                      spectate
+                        ? spectate.onToggleAuto()
+                        : onAutoPlayEnabledChange(false)
+                    }
+                    disabled={autoRunDisabled}
+                    className="relative z-10 inline-flex min-h-9 items-center justify-center rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 sm:min-h-11 sm:px-5 sm:py-2 sm:text-sm dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900 dark:disabled:bg-slate-800 dark:disabled:text-slate-500"
+                  >
+                    {t("game.controls.pauseAuto")}
+                  </button>
                 </span>
-                <button
-                  type="button"
-                  onMouseDown={suppressMouseDownFocus}
-                  onClick={() => onAutoPlayEnabledChange(false)}
-                  disabled={autoRunDisabled}
-                  className="relative z-10 inline-flex min-h-9 items-center justify-center rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 sm:min-h-11 sm:px-5 sm:py-2 sm:text-sm dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900 dark:disabled:bg-slate-800 dark:disabled:text-slate-500"
+              ) : (
+                <span
+                  className={`inline-flex rounded-full bg-[linear-gradient(90deg,#f43f5e,#fb923c,#fbbf24,#4ade80,#38bdf8,#818cf8,#e879f9,#f43f5e)] p-[2px] shadow-lg shadow-violet-900/25 dark:shadow-violet-950/40 ${autoRunDisabled ? "opacity-55" : ""}`}
                 >
-                  {t("game.controls.pauseAuto")}
-                </button>
-              </span>
-            ) : (
-              <span
-                className={`inline-flex rounded-full bg-[linear-gradient(90deg,#f43f5e,#fb923c,#fbbf24,#4ade80,#38bdf8,#818cf8,#e879f9,#f43f5e)] p-[2px] shadow-lg shadow-violet-900/25 dark:shadow-violet-950/40 ${autoRunDisabled ? "opacity-55" : ""}`}
+                  <button
+                    type="button"
+                    onMouseDown={suppressMouseDownFocus}
+                    onClick={() =>
+                      spectate
+                        ? spectate.onToggleAuto()
+                        : onAutoPlayEnabledChange(true)
+                    }
+                    disabled={autoRunDisabled}
+                    className="inline-flex min-h-9 items-center justify-center rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 sm:min-h-11 sm:px-5 sm:py-2 sm:text-sm dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900 dark:disabled:bg-slate-800 dark:disabled:text-slate-500"
+                  >
+                    {t("game.controls.autoRun")}
+                  </button>
+                </span>
+              )}
+              {resetAdjacentControls}
+              <button
+                type="button"
+                onMouseDown={suppressMouseDownFocus}
+                onClick={onReset}
+                className="inline-flex min-h-9 items-center justify-center rounded-full bg-rose-600 px-3 py-1.5 text-xs font-semibold text-rose-50 shadow-lg shadow-rose-950/35 transition hover:bg-rose-500 sm:min-h-11 sm:px-5 sm:py-2 sm:text-sm"
               >
-                <button
-                  type="button"
-                  onMouseDown={suppressMouseDownFocus}
-                  onClick={() => onAutoPlayEnabledChange(true)}
-                  disabled={autoRunDisabled}
-                  className="inline-flex min-h-9 items-center justify-center rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 sm:min-h-11 sm:px-5 sm:py-2 sm:text-sm dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900 dark:disabled:bg-slate-800 dark:disabled:text-slate-500"
-                >
-                  {t("game.controls.autoRun")}
-                </button>
-              </span>
-            )}
-            {resetAdjacentControls}
-            <button
-              type="button"
-              onMouseDown={suppressMouseDownFocus}
-              onClick={onReset}
-              className="inline-flex min-h-9 items-center justify-center rounded-full bg-rose-600 px-3 py-1.5 text-xs font-semibold text-rose-50 shadow-lg shadow-rose-950/35 transition hover:bg-rose-500 sm:min-h-11 sm:px-5 sm:py-2 sm:text-sm"
-            >
-              {t("game.controls.reset")}
-            </button>
+                {t("game.controls.reset")}
+              </button>
+            </div>
           </div>
         </ControlCluster>
         <ControlCluster label={t("nav.playback.label")}>
@@ -309,6 +417,7 @@ export function GameShell({
             </button>
           </div>
         </ControlCluster>
+        </div>
       </div>
 
       <div className="grid min-h-0 w-full flex-1 items-start gap-5 lg:grid-cols-[minmax(0,2.3fr)_minmax(18rem,1fr)] lg:gap-8 xl:grid-cols-[minmax(0,2.85fr)_minmax(19rem,1fr)] xl:gap-10 2xl:grid-cols-[minmax(0,3.1fr)_minmax(20rem,1fr)]">

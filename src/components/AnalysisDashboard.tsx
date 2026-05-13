@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ConditionalAnalysisPanel } from "@/components/analysis/ConditionalAnalysisPanel";
+import { ObserverRecordsPanel } from "@/components/analysis/ObserverRecordsPanel";
 import { OverviewPanel } from "@/components/analysis/OverviewPanel";
 import { TournamentInsights } from "@/components/analysis/TournamentInsights";
 import { useTranslation } from "@/i18n/useTranslation";
@@ -13,9 +14,10 @@ import type { DangoId } from "@/types/game";
 type AnalysisDashboardProps = {
   snapshot: MonteCarloAggregateSnapshot | null;
   onNavigateSimulation: () => void;
+  onObserverWatchReplayJson: (json: string) => void;
 };
 
-type DashboardTabId = "overview" | "conditional" | "tournament";
+type DashboardTabId = "overview" | "conditional" | "tournament" | "observer";
 
 function pickDominantBasicId(tallies: Record<string, number>): DangoId | null {
   return Object.entries(tallies).reduce<DangoId | null>((bestId, [basicId, value]) => {
@@ -44,15 +46,20 @@ function sumUnderdogChampionships(snapshot: MonteCarloAggregateSnapshot): number
 export function AnalysisDashboard({
   snapshot,
   onNavigateSimulation,
+  onObserverWatchReplayJson,
 }: AnalysisDashboardProps) {
   const { getCharacterName, t, tText } = useTranslation();
-  const availableTabs = useMemo<DashboardTabId[]>(
-    () =>
-      snapshot?.scenarioKind === "tournament" || snapshot?.scenarioKind === "final"
-        ? ["overview", "conditional", "tournament"]
-        : ["overview", "conditional"],
-    [snapshot?.scenarioKind]
-  );
+  const availableTabs = useMemo<DashboardTabId[]>(() => {
+    const tabs: DashboardTabId[] = ["overview", "conditional"];
+    if (
+      snapshot?.scenarioKind === "tournament" ||
+      snapshot?.scenarioKind === "final"
+    ) {
+      tabs.push("tournament");
+    }
+    tabs.push("observer");
+    return tabs;
+  }, [snapshot?.scenarioKind]);
   const [activeTab, setActiveTab] = useState<DashboardTabId>("overview");
   const [selectedWinnerId, setSelectedWinnerId] = useState<DangoId>(
     snapshot?.selectedBasicIds[0] ?? ""
@@ -231,7 +238,9 @@ export function AnalysisDashboard({
               ? t("analysis.tabs.overview")
               : tabId === "conditional"
                 ? t("analysis.tabs.conditional")
-                : t("analysis.tabs.tournament");
+                : tabId === "tournament"
+                  ? t("analysis.tabs.tournament")
+                  : t("analysis.tabs.observer");
           return (
             <button
               key={tabId}
@@ -257,8 +266,13 @@ export function AnalysisDashboard({
           selectedWinnerId={selectedWinnerId}
           onSelectedWinnerIdChange={setSelectedWinnerId}
         />
-      ) : (
+      ) : activeTab === "tournament" ? (
         <TournamentInsights snapshot={snapshot} />
+      ) : (
+        <ObserverRecordsPanel
+          snapshot={snapshot}
+          onWatchReplayJson={onObserverWatchReplayJson}
+        />
       )}
     </div>
   );

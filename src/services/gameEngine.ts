@@ -14,6 +14,7 @@ import {
   addCounterClockwise,
   buildStepLandingCells,
   clockwiseProgressFromFinishLine,
+  isClockwiseTrackCellIndex,
 } from "@/services/circular";
 import {
   CELL_EFFECT_IDS,
@@ -30,6 +31,10 @@ import {
   createTournamentPreliminaryRaceSetup,
   deriveBasicPlacementsFromRace,
 } from "@/services/raceSetup";
+import {
+  serializeBoardEffectAssignments,
+  serializeEngineFrame,
+} from "@/services/replaySerialization";
 import {
   applyCellIndexForMembers,
   applyMovementDeltaForMembers,
@@ -63,6 +68,7 @@ import type {
   OneTimeSkillKey,
   StackRoleKey,
 } from "@/types/monteCarlo";
+import type { MatchGameFrameJson, MatchRecord } from "@/types/replay";
 
 function shuffleOrderStableCopy(ids: string[]): string[] {
   const copy = [...ids];
@@ -349,11 +355,17 @@ function evaluateAbbyResetScheduling(state: GameState): GameState {
     if (basicCellIndex === null) {
       return state;
     }
+    if (!isClockwiseTrackCellIndex(basicCellIndex)) {
+      continue;
+    }
     const basicClockwiseProgress =
       clockwiseProgressFromFinishLine(basicCellIndex);
     if (basicClockwiseProgress < minimumBasicClockwiseProgress) {
       minimumBasicClockwiseProgress = basicClockwiseProgress;
     }
+  }
+  if (minimumBasicClockwiseProgress === Infinity) {
+    return state;
   }
   const abbyIsCompletelyBehindClockwisePack =
     abbyClockwiseProgress < minimumBasicClockwiseProgress;
@@ -2338,7 +2350,7 @@ function applyInstantSimulateGame(
   }
   let working = state;
   while (working.phase === "running" && !working.winnerId) {
-    working = applyStepAction(working, boardEffectByCellIndex);
+    working = applyInstantFullTurn(working, boardEffectByCellIndex);
   }
   if (!working.lastTurnPlayback) {
     return working;
@@ -2367,6 +2379,7 @@ export type HeadlessSimulationScenario =
 type HeadlessRaceResult = {
   state: GameState;
   metrics: HeadlessRaceDeepMetrics;
+  record: MatchRecord;
 };
 
 function buildHeadlessRaceMetrics(
@@ -2403,12 +2416,36 @@ function simulateHeadlessRace(
 ): HeadlessRaceResult {
   let working = createRunningSessionFromSetup(setup);
   const telemetry = createHeadlessRaceTelemetryCollector(setup);
+  const board = serializeBoardEffectAssignments(boardEffectByCellIndex);
+  const frames: MatchGameFrameJson[] = [serializeEngineFrame(working)];
+  const safetyCap = 250_000;
+  let iterations = 0;
   while (working.phase === "running" && !working.winnerId) {
-    working = applyInstantFullTurn(working, boardEffectByCellIndex, telemetry);
+    if (iterations >= safetyCap) {
+      break;
+    }
+    iterations += 1;
+    const previousStamp = working.playbackStamp;
+    working = applyStepAction(working, boardEffectByCellIndex, telemetry);
+    if (
+      working.playbackStamp === previousStamp &&
+      working.phase === "running" &&
+      !working.winnerId
+    ) {
+      break;
+    }
+    frames.push(serializeEngineFrame(working));
   }
+  const record: MatchRecord = {
+    schemaVersion: 1,
+    setup,
+    board,
+    frames,
+  };
   return {
     state: working,
     metrics: buildHeadlessRaceMetrics(setup, working, telemetry),
+    record,
   };
 }
 
@@ -2435,6 +2472,10 @@ export function simulateHeadlessScenario(
       modeMetrics: {
         kind: "singleRace",
         finalStartingPlacementByBasicId: race.metrics.startingPlacementByBasicId,
+      },
+      capturedReplay: {
+        scenarioKind: "singleRace",
+        record: race.record,
       },
     };
   }
@@ -2473,9 +2514,14 @@ export function simulateHeadlessScenario(
         preliminaryPlacements
       ),
       finalStartingPlacementByBasicId: finalRace.metrics.startingPlacementByBasicId,
-      qualifierWinnerRetainedTitle:
+      preliminaryWinnerRetainedTitle:
         preliminaryWinnerBasicId !== null &&
         preliminaryWinnerBasicId === finalWinnerBasicId,
+    },
+    capturedReplay: {
+      scenarioKind: "tournament",
+      preliminary: preliminaryRace.record,
+      final: finalRace.record,
     },
   };
 }
@@ -2498,6 +2544,20 @@ export function reduceGameState(
   action: GameAction,
   boardEffectByCellIndex: Map<number, string | null>
 ): GameState {
+  if (action.type === "HYDRATE_ENGINE_STATE") {
+    const snapshot = action.snapshot;
+    return {
+      ...snapshot,
+      cells: cloneCellMap(snapshot.cells),
+      entities: cloneEntityMap(snapshot.entities),
+      pendingTurn: snapshot.pendingTurn
+        ? structuredClone(snapshot.pendingTurn)
+        : null,
+      log: [],
+      lastTurnPlayback: null,
+      playbackStamp: 0,
+    };
+  }
   if (action.type === "INITIALIZE") {
     return createInitialGameState();
   }

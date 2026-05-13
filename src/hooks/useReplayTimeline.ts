@@ -1,0 +1,546 @@
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { reduceGameState } from "@/services/gameEngine";
+import {
+  encodeMatchRecordJson,
+  engineFramesDeepEqual,
+  findFrameIndexForTurnIndex,
+  liveEngineMatchesFrame,
+  materializeGameStateFromFrame,
+  parseMatchRecordJson,
+  serializeBoardEffectAssignments,
+  serializeEngineFrame,
+} from "@/services/matchReplay";
+import type { GameState, RaceSetup } from "@/types/game";
+import type { MatchGameFrameJson, MatchRecord } from "@/types/replay";
+
+const QUICK_RESOLVE_SAFETY_CAP = 250_000;
+
+type QuickResolveScope = "turn" | "race";
+
+type ReplayGameBridge = {
+  state: GameState;
+  reset: () => void;
+  hydrateEngineState: (snapshot: GameState) => void;
+  stepAction: () => void;
+  playTurn: () => void;
+  setAutoPlayEnabled: (value: boolean) => void;
+  isAnimating: boolean;
+  boardEffects: Map<number, string | null>;
+  autoPlayEnabled: boolean;
+  getLastRaceSetup?: () => RaceSetup | null;
+};
+
+export type UseReplayTimelineOptions = {
+  game: ReplayGameBridge;
+};
+
+function lastIndexSameTurn(
+  frames: readonly MatchGameFrameJson[],
+  startIdx: number
+): number {
+  const t = frames[startIdx]!.turnIndex;
+  let j = startIdx;
+  while (j + 1 < frames.length && frames[j + 1]!.turnIndex === t) {
+    j++;
+  }
+  return j;
+}
+
+function computeReplayPlayTurnTarget(
+  frames: readonly MatchGameFrameJson[],
+  step: number,
+  max: number
+): number | null {
+  if (step >= max) {
+    return null;
+  }
+  const endSame = lastIndexSameTurn(frames, step);
+  if (step < endSame) {
+    return endSame;
+  }
+  if (endSame < max) {
+    return lastIndexSameTurn(frames, endSame + 1);
+  }
+  return null;
+}
+
+export function useReplayTimeline(options: UseReplayTimelineOptions) {
+  const { game } = options;
+  const gameRef = useRef(game);
+  gameRef.current = game;
+
+  const liveCommittedFramesRef = useRef<MatchGameFrameJson[]>([]);
+  const [liveCommittedLength, setLiveCommittedLength] = useState(0);
+  const [record, setRecord] = useState<MatchRecord | null>(null);
+  const [cursorStep, setCursorStep] = useState(0);
+  const [playbackAuto, setPlaybackAuto] = useState(false);
+  const [seekTurnDraft, setSeekTurnDraft] = useState("");
+  const [replayPlayTurnTarget, setReplayPlayTurnTarget] = useState<number | null>(
+    null
+  );
+  const expectingReplayAdvanceRef = useRef(false);
+  const prevPhaseRef = useRef(game.state.phase);
+
+  const isReplayLoaded = record !== null;
+  const timelineMax = useMemo(() => {
+    const len = record ? record.frames.length : liveCommittedLength;
+    return Math.max(0, len - 1);
+  }, [record, liveCommittedLength]);
+
+  const atLiveCommittedTail = useMemo(() => {
+    if (record !== null) {
+      return false;
+    }
+    if (liveCommittedLength === 0) {
+      return false;
+    }
+    return cursorStep === liveCommittedLength - 1;
+  }, [record, liveCommittedLength, cursorStep]);
+
+  const resetLiveCommitted = useCallback(() => {
+    liveCommittedFramesRef.current = [];
+    setLiveCommittedLength(0);
+  }, []);
+
+  const loadReplayRecord = useCallback((nextRecord: MatchRecord) => {
+    gameRef.current.reset();
+    gameRef.current.setAutoPlayEnabled(false);
+    resetLiveCommitted();
+    setRecord(nextRecord);
+    setPlaybackAuto(false);
+    setReplayPlayTurnTarget(null);
+    setCursorStep(0);
+    const snapshot = materializeGameStateFromFrame(nextRecord.frames[0]!);
+    gameRef.current.hydrateEngineState(snapshot);
+  }, [resetLiveCommitted]);
+
+  const clearReplay = useCallback(() => {
+    expectingReplayAdvanceRef.current = false;
+    setPlaybackAuto(false);
+    setReplayPlayTurnTarget(null);
+    setRecord(null);
+    resetLiveCommitted();
+    setCursorStep(0);
+    gameRef.current.setAutoPlayEnabled(false);
+    gameRef.current.reset();
+  }, [resetLiveCommitted]);
+
+  const flushPlaybackForNewSession = useCallback(() => {
+    expectingReplayAdvanceRef.current = false;
+    setPlaybackAuto(false);
+    setReplayPlayTurnTarget(null);
+    setRecord(null);
+    resetLiveCommitted();
+    setCursorStep(0);
+    setSeekTurnDraft("");
+    gameRef.current.setAutoPlayEnabled(false);
+  }, [resetLiveCommitted]);
+
+  const scrubToStep = useCallback(
+    (
+      stepIndex: number,
+      opts?: { preservePlaybackAuto?: boolean }
+    ) => {
+      expectingReplayAdvanceRef.current = false;
+      setReplayPlayTurnTarget(null);
+      if (!opts?.preservePlaybackAuto) {
+        setPlaybackAuto(false);
+      }
+      gameRef.current.setAutoPlayEnabled(false);
+      if (record) {
+        const bounded = Math.max(0, Math.min(stepIndex, record.frames.length - 1));
+        const snapshot = materializeGameStateFromFrame(record.frames[bounded]!);
+        gameRef.current.hydrateEngineState(snapshot);
+        setCursorStep(bounded);
+        return;
+      }
+      const frames = liveCommittedFramesRef.current;
+      if (frames.length === 0) {
+        return;
+      }
+      const bounded = Math.max(0, Math.min(stepIndex, frames.length - 1));
+      const snapshot = materializeGameStateFromFrame(frames[bounded]!);
+      gameRef.current.hydrateEngineState(snapshot);
+      setCursorStep(bounded);
+    },
+    [record]
+  );
+
+  const stepReplayBackward = useCallback(() => {
+    if (cursorStep <= 0) {
+      return;
+    }
+    scrubToStep(cursorStep - 1);
+  }, [scrubToStep, cursorStep]);
+
+  const stepReplayForwardAnimated = useCallback(() => {
+    const live = gameRef.current;
+    if (live.isAnimating) {
+      return;
+    }
+    if (record) {
+      if (cursorStep >= record.frames.length - 1) {
+        return;
+      }
+      expectingReplayAdvanceRef.current = true;
+      live.stepAction();
+      return;
+    }
+    const frames = liveCommittedFramesRef.current;
+    if (cursorStep < frames.length - 1) {
+      scrubToStep(cursorStep + 1);
+      return;
+    }
+    if (live.state.phase !== "running" || live.state.winnerId) {
+      return;
+    }
+    live.stepAction();
+  }, [record, cursorStep, scrubToStep]);
+
+  const exportRecordJson = useCallback(() => {
+    if (record) {
+      return encodeMatchRecordJson(record);
+    }
+    const frames = liveCommittedFramesRef.current;
+    const setup = gameRef.current.getLastRaceSetup?.() ?? null;
+    if (!setup || frames.length === 0) {
+      return null;
+    }
+    return encodeMatchRecordJson({
+      schemaVersion: 1,
+      setup,
+      board: serializeBoardEffectAssignments(gameRef.current.boardEffects),
+      frames: [...frames],
+    });
+  }, [record]);
+
+  const readReplayFromJsonText = useCallback(
+    (payload: string) => {
+      const nextRecord = parseMatchRecordJson(payload);
+      loadReplayRecord(nextRecord);
+    },
+    [loadReplayRecord]
+  );
+
+  const seekToEngineTurn = useCallback(() => {
+    if (!record) {
+      return;
+    }
+    const parsed = Number.parseInt(seekTurnDraft, 10);
+    if (!Number.isFinite(parsed)) {
+      return;
+    }
+    const index = findFrameIndexForTurnIndex(record.frames, parsed);
+    scrubToStep(index);
+  }, [record, scrubToStep, seekTurnDraft]);
+
+  const spectatePlayTurn = useCallback(() => {
+    if (record) {
+      const target = computeReplayPlayTurnTarget(
+        record.frames,
+        cursorStep,
+        timelineMax
+      );
+      if (target === null || target === cursorStep) {
+        return;
+      }
+      setReplayPlayTurnTarget(target);
+      return;
+    }
+    setPlaybackAuto(false);
+    gameRef.current.playTurn();
+  }, [record, cursorStep, timelineMax]);
+
+  const spectateToggleAuto = useCallback(() => {
+    setPlaybackAuto((v) => !v);
+  }, []);
+
+  const jumpToPresent = useCallback(() => {
+    if (record && record.frames.length > 0) {
+      scrubToStep(record.frames.length - 1);
+      return;
+    }
+    const n = liveCommittedFramesRef.current.length;
+    if (n > 0) {
+      scrubToStep(n - 1);
+    }
+  }, [record, scrubToStep]);
+
+  const quickResolveBatchToBoundary = useCallback(
+    (scope: QuickResolveScope) => {
+      if (record !== null) {
+        return;
+      }
+      const live = gameRef.current;
+      if (live.isAnimating) {
+        return;
+      }
+      if (live.state.phase !== "running" || live.state.winnerId) {
+        return;
+      }
+      const buffer = liveCommittedFramesRef.current;
+      if (buffer.length === 0) {
+        return;
+      }
+      if (cursorStep !== buffer.length - 1) {
+        return;
+      }
+
+      const collected: MatchGameFrameJson[] = [];
+      let working: GameState = live.state;
+      for (let iteration = 0; iteration < QUICK_RESOLVE_SAFETY_CAP; iteration++) {
+        const previousStamp = working.playbackStamp;
+        const next = reduceGameState(
+          working,
+          { type: "STEP_ACTION" },
+          live.boardEffects
+        );
+        if (
+          next.playbackStamp === previousStamp &&
+          next.phase === "running" &&
+          !next.winnerId
+        ) {
+          break;
+        }
+        working = next;
+        collected.push(serializeEngineFrame(working));
+        const raceEnded =
+          working.phase !== "running" || Boolean(working.winnerId);
+        if (raceEnded) {
+          break;
+        }
+        if (scope === "turn" && working.pendingTurn === null) {
+          break;
+        }
+      }
+
+      if (collected.length === 0) {
+        return;
+      }
+
+      expectingReplayAdvanceRef.current = false;
+      setPlaybackAuto(false);
+      setReplayPlayTurnTarget(null);
+
+      const merged = buffer.concat(collected);
+      liveCommittedFramesRef.current = merged;
+      setLiveCommittedLength(merged.length);
+      setCursorStep(merged.length - 1);
+
+      const finalSnapshot = materializeGameStateFromFrame(
+        merged[merged.length - 1]!
+      );
+      live.hydrateEngineState(finalSnapshot);
+    },
+    [record, cursorStep]
+  );
+
+  const quickResolveTurn = useCallback(() => {
+    quickResolveBatchToBoundary("turn");
+  }, [quickResolveBatchToBoundary]);
+
+  const quickResolveRace = useCallback(() => {
+    quickResolveBatchToBoundary("race");
+  }, [quickResolveBatchToBoundary]);
+
+  const historyStepBack = useCallback(() => {
+    stepReplayBackward();
+  }, [stepReplayBackward]);
+
+  useEffect(() => {
+    if (record !== null) {
+      return;
+    }
+    const g = gameRef.current;
+    if (!atLiveCommittedTail) {
+      if (g.autoPlayEnabled) {
+        g.setAutoPlayEnabled(false);
+      }
+      return;
+    }
+    if (g.autoPlayEnabled !== playbackAuto) {
+      g.setAutoPlayEnabled(playbackAuto);
+    }
+  }, [record, atLiveCommittedTail, playbackAuto]);
+
+  useEffect(() => {
+    if (game.state.phase !== "idle" || record !== null) {
+      return;
+    }
+    resetLiveCommitted();
+    setCursorStep(0);
+  }, [game.state.phase, record, resetLiveCommitted]);
+
+  useLayoutEffect(() => {
+    const prev = prevPhaseRef.current;
+    prevPhaseRef.current = game.state.phase;
+    if (record !== null) {
+      return;
+    }
+    if (game.state.phase === "running" && prev !== "running") {
+      if (liveCommittedFramesRef.current.length > 0) {
+        return;
+      }
+      const first = serializeEngineFrame(gameRef.current.state);
+      liveCommittedFramesRef.current = [first];
+      setLiveCommittedLength(1);
+      setCursorStep(0);
+    }
+  }, [game.state.phase, record]);
+
+  useEffect(() => {
+    if (record !== null) {
+      return;
+    }
+    if (game.state.phase !== "running" && game.state.phase !== "finished") {
+      return;
+    }
+    if (game.isAnimating) {
+      return;
+    }
+    if (liveCommittedLength === 0) {
+      return;
+    }
+    if (cursorStep !== liveCommittedLength - 1) {
+      return;
+    }
+    const serialized = serializeEngineFrame(game.state);
+    const frames = liveCommittedFramesRef.current;
+    const last = frames[frames.length - 1];
+    if (last && engineFramesDeepEqual(last, serialized)) {
+      return;
+    }
+    const next = [...frames, serialized];
+    liveCommittedFramesRef.current = next;
+    setLiveCommittedLength(next.length);
+    setCursorStep(next.length - 1);
+  }, [
+    record,
+    game.state,
+    game.isAnimating,
+    game.state.phase,
+    liveCommittedLength,
+    cursorStep,
+  ]);
+
+  useEffect(() => {
+    if (!record || !expectingReplayAdvanceRef.current) {
+      return;
+    }
+    if (gameRef.current.isAnimating) {
+      return;
+    }
+    expectingReplayAdvanceRef.current = false;
+    const nextStep = cursorStep + 1;
+    if (nextStep >= record.frames.length) {
+      return;
+    }
+    if (liveEngineMatchesFrame(gameRef.current.state, record.frames[nextStep]!)) {
+      setCursorStep(nextStep);
+    }
+  }, [game.isAnimating, game.state, record, cursorStep]);
+
+  useEffect(() => {
+    if (!playbackAuto || !record) {
+      return;
+    }
+    if (gameRef.current.isAnimating) {
+      return;
+    }
+    if (cursorStep >= record.frames.length - 1) {
+      setPlaybackAuto(false);
+      return;
+    }
+    expectingReplayAdvanceRef.current = true;
+    gameRef.current.stepAction();
+  }, [playbackAuto, record, cursorStep, game.isAnimating]);
+
+  useEffect(() => {
+    if (!playbackAuto || record) {
+      return;
+    }
+    if (atLiveCommittedTail) {
+      return;
+    }
+    if (liveCommittedLength === 0) {
+      return;
+    }
+    if (gameRef.current.isAnimating) {
+      return;
+    }
+    if (cursorStep >= liveCommittedLength - 1) {
+      setPlaybackAuto(false);
+      return;
+    }
+    const id = window.setTimeout(() => {
+      scrubToStep(cursorStep + 1, { preservePlaybackAuto: true });
+    }, 0);
+    return () => window.clearTimeout(id);
+  }, [
+    playbackAuto,
+    record,
+    atLiveCommittedTail,
+    liveCommittedLength,
+    cursorStep,
+    game.isAnimating,
+    scrubToStep,
+  ]);
+
+  useEffect(() => {
+    if (replayPlayTurnTarget === null || !record) {
+      return;
+    }
+    if (gameRef.current.isAnimating) {
+      return;
+    }
+    if (cursorStep >= replayPlayTurnTarget) {
+      setReplayPlayTurnTarget(null);
+      return;
+    }
+    expectingReplayAdvanceRef.current = true;
+    gameRef.current.stepAction();
+  }, [replayPlayTurnTarget, record, cursorStep, game.isAnimating]);
+
+  useEffect(() => {
+    setCursorStep((s) => Math.min(s, timelineMax));
+  }, [timelineMax]);
+
+  const canExportReplayJson = useMemo(() => {
+    if (record) {
+      return true;
+    }
+    if (liveCommittedLength === 0) {
+      return false;
+    }
+    return Boolean(gameRef.current.getLastRaceSetup?.());
+  }, [record, liveCommittedLength]);
+
+  return {
+    isReplayLoaded,
+    flushPlaybackForNewSession,
+    canExportReplayJson,
+    timelineStep: cursorStep,
+    timelineMax,
+    currentEngineTurn: game.state.turnIndex,
+    seekTurnDraft,
+    setSeekTurnDraft,
+    loadReplayRecord,
+    clearReplay,
+    scrubToStep,
+    stepReplayBackward,
+    stepReplayForwardAnimated,
+    jumpToPresent,
+    historyStepBack,
+    exportRecordJson,
+    readReplayFromJsonText,
+    seekToEngineTurn,
+    spectateAdvanceStep: stepReplayForwardAnimated,
+    spectatePlayTurn,
+    spectateToggleAuto,
+    spectateAutoActive: playbackAuto,
+    spectatePlayTurnChaining: replayPlayTurnTarget !== null,
+    jumpToPresentVisible: cursorStep < timelineMax,
+    quickResolveTurn,
+    quickResolveRace,
+  };
+}

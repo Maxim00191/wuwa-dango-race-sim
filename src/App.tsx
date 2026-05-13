@@ -6,13 +6,15 @@ import {
 } from "@/components/AppNavigation";
 import { DangoPicker } from "@/components/DangoPicker";
 import { FooterSocialLinks } from "@/components/FooterSocialLinks";
-import { GameShell } from "@/components/GameShell";
+import { GameShell, type GameShellSpectate } from "@/components/GameShell";
 import { MonteCarloPanel } from "@/components/MonteCarloPanel";
+import { ReplayTimelineCluster } from "@/components/ReplayTimelineCluster";
 import { TournamentSetupPanel } from "@/components/TournamentSetupPanel";
 import { ABBY_ID } from "@/constants/ids";
 import { text, type LocalizedText } from "@/i18n";
 import { useTranslation } from "@/i18n/useTranslation";
 import { useGame } from "@/hooks/useGame";
+import { useReplayTimeline } from "@/hooks/useReplayTimeline";
 import { useLineupSelection } from "@/hooks/useLineupSelection";
 import { useTheme } from "@/hooks/useTheme";
 import { useTournament } from "@/hooks/useTournament";
@@ -24,6 +26,11 @@ import {
   finalizeMonteCarloAggregate,
 } from "@/services/monteCarloAggregate";
 import { runMonteCarloBatch } from "@/services/monteCarloRunner";
+import {
+  createObserverSession,
+  finalizeObserverRecords,
+  observeCompletedMatch,
+} from "@/services/observerSession";
 import { BASIC_CHARACTER_LIST } from "@/services/characters";
 import {
   createCustomFinalRaceSetup,
@@ -47,7 +54,35 @@ export default function App() {
   const { t, tText } = useTranslation();
   const lineup = useLineupSelection();
   const normalGame = useGame();
+  const normalReplay = useReplayTimeline({
+    game: {
+      state: normalGame.state,
+      reset: normalGame.reset,
+      hydrateEngineState: normalGame.hydrateEngineState,
+      stepAction: normalGame.stepAction,
+      playTurn: normalGame.playTurn,
+      setAutoPlayEnabled: normalGame.setAutoPlayEnabled,
+      isAnimating: normalGame.isAnimating,
+      boardEffects: normalGame.boardEffects,
+      autoPlayEnabled: normalGame.autoPlayEnabled,
+      getLastRaceSetup: normalGame.getLastRaceSetup,
+    },
+  });
   const tournament = useTournament(lineup.selectedBasicIds);
+  const tournamentReplay = useReplayTimeline({
+    game: {
+      state: tournament.race.state,
+      reset: tournament.clearRace,
+      hydrateEngineState: tournament.race.hydrateEngineState,
+      stepAction: tournament.race.stepAction,
+      playTurn: tournament.race.playTurn,
+      setAutoPlayEnabled: tournament.race.setAutoPlayEnabled,
+      isAnimating: tournament.race.isAnimating,
+      boardEffects: tournament.race.boardEffects,
+      autoPlayEnabled: tournament.race.autoPlayEnabled,
+      getLastRaceSetup: tournament.race.getLastRaceSetup,
+    },
+  });
   const { isDark, toggle: toggleTheme } = useTheme();
   const formattedBuildTimestamp = useMemo(() => {
     const buildDate = new Date(__BUILD_TIMESTAMP__);
@@ -69,12 +104,43 @@ export default function App() {
     useState<MonteCarloAggregateSnapshot | null>(null);
   const monteCarloRunIdRef = useRef(0);
   const monteCarloAbortControllerRef = useRef<AbortController | null>(null);
+  const monteCarloLastProgressAtRef = useRef(0);
 
   const rosterBasics = useMemo(() => BASIC_CHARACTER_LIST, []);
   const idleParticipantIds = useMemo(
     () => [...lineup.selectedBasicIds, ABBY_ID],
     [lineup.selectedBasicIds]
   );
+
+  const flushNormalPlaybackAndReset = useCallback(() => {
+    normalReplay.flushPlaybackForNewSession();
+    normalGame.reset();
+  }, [normalGame, normalReplay]);
+
+  const beginNormalSprint = useCallback(() => {
+    normalReplay.flushPlaybackForNewSession();
+    normalGame.start(createNormalRaceSetup(lineup.selectedBasicIds));
+  }, [lineup.selectedBasicIds, normalGame, normalReplay]);
+
+  const flushTournamentPlaybackAndClearRace = useCallback(() => {
+    tournamentReplay.flushPlaybackForNewSession();
+    tournament.clearRace();
+  }, [tournament, tournamentReplay]);
+
+  const flushTournamentPlaybackAndResetTournament = useCallback(() => {
+    tournamentReplay.flushPlaybackForNewSession();
+    tournament.resetTournament();
+  }, [tournament, tournamentReplay]);
+
+  const beginTournamentPreliminary = useCallback(() => {
+    tournamentReplay.flushPlaybackForNewSession();
+    tournament.startPreliminary();
+  }, [tournament, tournamentReplay]);
+
+  const beginTournamentFinal = useCallback(() => {
+    tournamentReplay.flushPlaybackForNewSession();
+    tournament.startFinal();
+  }, [tournament, tournamentReplay]);
 
   const resolvedNormalLineupBasicIds = useMemo(() => {
     if (normalGame.state.phase === "idle") {
@@ -128,11 +194,13 @@ export default function App() {
       monteCarloAbortControllerRef.current = abortController;
       setMonteCarloIsStopping(false);
       setMonteCarloProgress({ completedGames: 0, totalGames });
+      monteCarloLastProgressAtRef.current = 0;
       const aggregate = createEmptyMonteCarloAggregate(
         selectedBasicIds,
         scenarioKind,
         scenarioLabel
       );
+      const observerSession = createObserverSession();
       try {
         await runMonteCarloBatch({
           totalRuns: totalGames,
@@ -140,14 +208,22 @@ export default function App() {
           boardEffectByCellIndex: normalGame.boardEffects,
           onProgress: (completedGames, totalGamesBatch) => {
             if (monteCarloRunIdRef.current === runId) {
-              setMonteCarloProgress({
-                completedGames,
-                totalGames: totalGamesBatch,
-              });
+              const now = performance.now();
+              if (
+                completedGames === totalGamesBatch ||
+                now - monteCarloLastProgressAtRef.current > 60
+              ) {
+                setMonteCarloProgress({
+                  completedGames,
+                  totalGames: totalGamesBatch,
+                });
+                monteCarloLastProgressAtRef.current = now;
+              }
             }
           },
           onOutcome: (outcome) => {
             absorbHeadlessOutcomeIntoAggregate(aggregate, outcome);
+            observeCompletedMatch(observerSession, outcome);
           },
           signal: abortController.signal,
           shouldAbort: () => monteCarloRunIdRef.current !== runId,
@@ -165,7 +241,10 @@ export default function App() {
       if (aggregate.totalRuns === 0) {
         return;
       }
-      setMonteCarloSnapshot(finalizeMonteCarloAggregate(aggregate));
+      setMonteCarloSnapshot({
+        ...finalizeMonteCarloAggregate(aggregate),
+        observerRecords: finalizeObserverRecords(observerSession),
+      });
       setAnalysisReturnView(returnView);
       setWorkspaceView("analysis");
     },
@@ -244,14 +323,18 @@ export default function App() {
   );
 
   const normalMonteCarloRunDisabled =
-    !isValidBasicSelection(resolvedNormalLineupBasicIds) || normalGame.isAnimating;
+    !isValidBasicSelection(resolvedNormalLineupBasicIds) ||
+    normalGame.isAnimating ||
+    normalReplay.isReplayLoaded;
   const tournamentMonteCarloRunDisabled =
     !isValidBasicSelection(resolvedTournamentLineupBasicIds) ||
-    tournament.race.isAnimating;
+    tournament.race.isAnimating ||
+    tournamentReplay.isReplayLoaded;
   const normalStartDisabled =
     normalGame.state.phase === "running" ||
     normalGame.isAnimating ||
-    !isValidBasicSelection(lineup.selectedBasicIds);
+    !isValidBasicSelection(lineup.selectedBasicIds) ||
+    normalReplay.isReplayLoaded;
   const tournamentControlsLocked =
     tournament.race.state.phase === "running" || tournament.race.isAnimating;
   const tournamentRestartStartsFinal =
@@ -263,12 +346,14 @@ export default function App() {
     tournament.race.state.phase === "running" ||
     tournament.race.isAnimating ||
     !isValidBasicSelection(resolvedTournamentLineupBasicIds) ||
-    tournament.race.state.mode === null;
+    tournament.race.state.mode === null ||
+    tournamentReplay.isReplayLoaded;
   const tournamentLaunchFinalDisabled =
     !tournamentCanLaunchFinalFromPreliminary ||
     tournament.race.state.phase === "running" ||
     tournament.race.isAnimating ||
-    !isValidBasicSelection(resolvedTournamentLineupBasicIds);
+    !isValidBasicSelection(resolvedTournamentLineupBasicIds) ||
+    tournamentReplay.isReplayLoaded;
   const normalSessionLabel =
     normalGame.state.phase === "idle"
       ? t("normal.session.idle")
@@ -287,6 +372,234 @@ export default function App() {
             ? tText(tournament.race.state.label)
             : t("tournament.session.finalComplete")
         : tText(tournament.sessionLabel);
+
+  const normalReplayLabels = useMemo(
+    () => ({
+      toolbarCaption: t("game.replay.toolbarCaption"),
+      idleHint: t("game.replay.idleHint"),
+      seekTurnLabel: t("game.replay.seekEngineTurn"),
+      seekTurnButton: t("game.replay.seekTurnButton"),
+      exportCopy: t("game.replay.exportCopy"),
+      import: t("game.replay.import"),
+      jumpToPresent: t("game.replay.jumpToPresent"),
+    }),
+    [t]
+  );
+
+  const tournamentReplayLabels = useMemo(
+    () => ({
+      toolbarCaption: t("game.replay.toolbarCaption"),
+      idleHint: t("game.replay.idleHint"),
+      seekTurnLabel: t("game.replay.seekEngineTurn"),
+      seekTurnButton: t("game.replay.seekTurnButton"),
+      exportCopy: t("game.replay.exportCopy"),
+      import: t("game.replay.import"),
+      jumpToPresent: t("game.replay.jumpToPresent"),
+    }),
+    [t]
+  );
+
+  const handleNormalReplayImport = useCallback(
+    (payload: string) => {
+      try {
+        normalReplay.readReplayFromJsonText(payload);
+      } catch {
+        window.alert(t("game.replay.importInvalid"));
+      }
+    },
+    [normalReplay, t]
+  );
+
+  const handleNormalReplayExportCopy = useCallback(() => {
+    const raw = normalReplay.exportRecordJson();
+    if (!raw) {
+      return;
+    }
+    void navigator.clipboard.writeText(raw);
+  }, [normalReplay]);
+
+  const handleTournamentReplayImport = useCallback(
+    (payload: string) => {
+      try {
+        tournamentReplay.readReplayFromJsonText(payload);
+      } catch {
+        window.alert(t("game.replay.importInvalid"));
+      }
+    },
+    [tournamentReplay, t]
+  );
+
+  const handleTournamentReplayExportCopy = useCallback(() => {
+    const raw = tournamentReplay.exportRecordJson();
+    if (!raw) {
+      return;
+    }
+    void navigator.clipboard.writeText(raw);
+  }, [tournamentReplay]);
+
+  const handleObserverWatchReplayJson = useCallback(
+    (json: string) => {
+      try {
+        if (analysisReturnView === "normal") {
+          normalReplay.flushPlaybackForNewSession();
+          normalReplay.readReplayFromJsonText(json);
+          setWorkspaceView("normal");
+          return;
+        }
+        tournamentReplay.flushPlaybackForNewSession();
+        tournamentReplay.readReplayFromJsonText(json);
+        setWorkspaceView("tournament");
+      } catch {
+        window.alert(t("game.replay.importInvalid"));
+      }
+    },
+    [
+      analysisReturnView,
+      normalReplay,
+      tournamentReplay,
+      t,
+    ]
+  );
+
+  const normalSpectate = useMemo((): GameShellSpectate => {
+    const file = normalReplay.isReplayLoaded;
+    const stepDisabled = file
+      ? normalGame.isAnimating ||
+        normalGame.state.phase !== "running" ||
+        Boolean(normalGame.state.winnerId) ||
+        normalReplay.timelineStep >= normalReplay.timelineMax
+      : normalGame.state.phase !== "running" ||
+        Boolean(normalGame.state.winnerId) ||
+        normalGame.isAnimating ||
+        normalGame.playTurnEnabled ||
+        normalReplay.spectateAutoActive;
+    const playTurnDisabled = file
+      ? normalGame.isAnimating ||
+        normalReplay.spectatePlayTurnChaining ||
+        normalReplay.timelineStep >= normalReplay.timelineMax
+      : normalGame.state.phase !== "running" ||
+        Boolean(normalGame.state.winnerId) ||
+        normalGame.isAnimating ||
+        normalGame.playTurnEnabled ||
+        normalReplay.spectateAutoActive;
+    const autoRunDisabled = file
+      ? normalGame.isAnimating ||
+        normalReplay.timelineStep >= normalReplay.timelineMax
+      : normalGame.state.phase !== "running" ||
+        Boolean(normalGame.state.winnerId);
+    return {
+      replayFileActive: file,
+      timelineVisible: file || normalGame.state.phase !== "idle",
+      timelineStep: normalReplay.timelineStep,
+      timelineMax: normalReplay.timelineMax,
+      onScrub: normalReplay.scrubToStep,
+      scrubAria: t("game.replay.scrubAria"),
+      turnSummaryText: `${normalReplay.timelineStep + 1} / ${normalReplay.timelineMax + 1} · ${t("game.replay.seekEngineTurn")}: ${normalReplay.currentEngineTurn}`,
+      replayToolbar: (
+        <ReplayTimelineCluster
+          seekControlsVisible={normalReplay.isReplayLoaded}
+          canCopyJson={normalReplay.canExportReplayJson}
+          seekTurnDraft={normalReplay.seekTurnDraft}
+          onSeekTurnDraftChange={normalReplay.setSeekTurnDraft}
+          onSeekTurnSubmit={normalReplay.seekToEngineTurn}
+          onExportCopy={handleNormalReplayExportCopy}
+          onImportFile={handleNormalReplayImport}
+          jumpToPresentVisible={normalReplay.jumpToPresentVisible}
+          onJumpToPresent={normalReplay.jumpToPresent}
+          labels={normalReplayLabels}
+        />
+      ),
+      onStep: normalReplay.spectateAdvanceStep,
+      onPlayTurn: normalReplay.spectatePlayTurn,
+      onToggleAuto: normalReplay.spectateToggleAuto,
+      autoActive: normalReplay.spectateAutoActive,
+      playTurnBusy: normalReplay.spectatePlayTurnChaining,
+      stepDisabled,
+      playTurnDisabled,
+      autoRunDisabled,
+      onHistoryStepBack: normalReplay.historyStepBack,
+    };
+  }, [
+    handleNormalReplayExportCopy,
+    handleNormalReplayImport,
+    normalGame.isAnimating,
+    normalGame.playTurnEnabled,
+    normalGame.state.phase,
+    normalGame.state.winnerId,
+    normalReplay,
+    normalReplayLabels,
+    t,
+  ]);
+
+  const tournamentSpectate = useMemo((): GameShellSpectate => {
+    const file = tournamentReplay.isReplayLoaded;
+    const stepDisabled = file
+      ? tournament.race.isAnimating ||
+        tournament.race.state.phase !== "running" ||
+        Boolean(tournament.race.state.winnerId) ||
+        tournamentReplay.timelineStep >= tournamentReplay.timelineMax
+      : tournament.race.state.phase !== "running" ||
+        Boolean(tournament.race.state.winnerId) ||
+        tournament.race.isAnimating ||
+        tournament.race.playTurnEnabled ||
+        tournamentReplay.spectateAutoActive;
+    const playTurnDisabled = file
+      ? tournament.race.isAnimating ||
+        tournamentReplay.spectatePlayTurnChaining ||
+        tournamentReplay.timelineStep >= tournamentReplay.timelineMax
+      : tournament.race.state.phase !== "running" ||
+        Boolean(tournament.race.state.winnerId) ||
+        tournament.race.isAnimating ||
+        tournament.race.playTurnEnabled ||
+        tournamentReplay.spectateAutoActive;
+    const autoRunDisabled = file
+      ? tournament.race.isAnimating ||
+        tournamentReplay.timelineStep >= tournamentReplay.timelineMax
+      : tournament.race.state.phase !== "running" ||
+        Boolean(tournament.race.state.winnerId);
+    return {
+      replayFileActive: file,
+      timelineVisible: file || tournament.race.state.phase !== "idle",
+      timelineStep: tournamentReplay.timelineStep,
+      timelineMax: tournamentReplay.timelineMax,
+      onScrub: tournamentReplay.scrubToStep,
+      scrubAria: t("game.replay.scrubAria"),
+      turnSummaryText: `${tournamentReplay.timelineStep + 1} / ${tournamentReplay.timelineMax + 1} · ${t("game.replay.seekEngineTurn")}: ${tournamentReplay.currentEngineTurn}`,
+      replayToolbar: (
+        <ReplayTimelineCluster
+          seekControlsVisible={tournamentReplay.isReplayLoaded}
+          canCopyJson={tournamentReplay.canExportReplayJson}
+          seekTurnDraft={tournamentReplay.seekTurnDraft}
+          onSeekTurnDraftChange={tournamentReplay.setSeekTurnDraft}
+          onSeekTurnSubmit={tournamentReplay.seekToEngineTurn}
+          onExportCopy={handleTournamentReplayExportCopy}
+          onImportFile={handleTournamentReplayImport}
+          jumpToPresentVisible={tournamentReplay.jumpToPresentVisible}
+          onJumpToPresent={tournamentReplay.jumpToPresent}
+          labels={tournamentReplayLabels}
+        />
+      ),
+      onStep: tournamentReplay.spectateAdvanceStep,
+      onPlayTurn: tournamentReplay.spectatePlayTurn,
+      onToggleAuto: tournamentReplay.spectateToggleAuto,
+      autoActive: tournamentReplay.spectateAutoActive,
+      playTurnBusy: tournamentReplay.spectatePlayTurnChaining,
+      stepDisabled,
+      playTurnDisabled,
+      autoRunDisabled,
+      onHistoryStepBack: tournamentReplay.historyStepBack,
+    };
+  }, [
+    handleTournamentReplayExportCopy,
+    handleTournamentReplayImport,
+    t,
+    tournament.race.isAnimating,
+    tournament.race.playTurnEnabled,
+    tournament.race.state.phase,
+    tournament.race.state.winnerId,
+    tournamentReplay,
+    tournamentReplayLabels,
+  ]);
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
@@ -345,28 +658,25 @@ export default function App() {
                 <button
                   type="button"
                   onMouseDown={(e) => e.preventDefault()}
-                  onClick={() =>
-                    normalGame.start(createNormalRaceSetup(lineup.selectedBasicIds))
-                  }
+                  onClick={beginNormalSprint}
                   disabled={normalStartDisabled}
                   className="inline-flex min-h-9 items-center justify-center rounded-full bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-emerald-950 shadow-lg shadow-emerald-900/40 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none sm:min-h-11 sm:px-5 sm:py-2 sm:text-sm dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
                 >
                   {t("normal.shell.start")}
                 </button>
               }
-              onStartSprint={() =>
-                normalGame.start(createNormalRaceSetup(lineup.selectedBasicIds))
-              }
+              onStartSprint={beginNormalSprint}
               startShortcutDisabled={normalStartDisabled}
               onPlayTurn={normalGame.playTurn}
               onStepAction={normalGame.stepAction}
-              onInstantTurn={normalGame.instantFullTurn}
-              onInstantGame={normalGame.instantSimulateGame}
-              onReset={normalGame.reset}
+              onInstantTurn={normalReplay.quickResolveTurn}
+              onInstantGame={normalReplay.quickResolveRace}
+              onReset={flushNormalPlaybackAndReset}
               isAnimating={normalGame.isAnimating}
               playTurnEnabled={normalGame.playTurnEnabled}
               autoPlayEnabled={normalGame.autoPlayEnabled}
               onAutoPlayEnabledChange={normalGame.setAutoPlayEnabled}
+              spectate={normalSpectate}
             />
           </>
         ) : workspaceView === "tournament" ? (
@@ -418,8 +728,8 @@ export default function App() {
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={
                     tournamentRestartStartsFinal
-                      ? tournament.startFinal
-                      : tournament.startPreliminary
+                      ? beginTournamentFinal
+                      : beginTournamentPreliminary
                   }
                   disabled={tournamentRestartDisabled}
                   className="inline-flex min-h-9 items-center justify-center rounded-full bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-emerald-950 shadow-lg shadow-emerald-900/40 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none sm:min-h-11 sm:px-5 sm:py-2 sm:text-sm dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
@@ -438,12 +748,12 @@ export default function App() {
                   preliminaryPlacements={tournament.preliminaryPlacements}
                   onSetFinalPlacements={tournament.setFinalPlacements}
                   onMovePlacement={tournament.moveFinalPlacement}
-                  onStartPreliminary={tournament.startPreliminary}
-                  onStartFinal={tournament.startFinal}
+                  onStartPreliminary={beginTournamentPreliminary}
+                  onStartFinal={beginTournamentFinal}
                   onRestorePreliminaryPlacements={
                     tournament.restorePreliminaryPlacements
                   }
-                  onReset={tournament.resetTournament}
+                  onReset={flushTournamentPlaybackAndResetTournament}
                   controlsLocked={tournamentControlsLocked}
                 />
               }
@@ -453,7 +763,7 @@ export default function App() {
                   <button
                     type="button"
                     onMouseDown={(e) => e.preventDefault()}
-                    onClick={tournament.startFinal}
+                    onClick={beginTournamentFinal}
                     disabled={tournamentLaunchFinalDisabled}
                     className="inline-flex min-h-9 items-center justify-center rounded-full bg-violet-500 px-3 py-1.5 text-xs font-semibold text-violet-950 shadow-lg shadow-violet-900/40 transition hover:bg-violet-400 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none sm:min-h-11 sm:px-5 sm:py-2 sm:text-sm dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
                   >
@@ -463,25 +773,27 @@ export default function App() {
               }
               onStartSprint={
                 tournamentRestartStartsFinal
-                  ? tournament.startFinal
-                  : tournament.startPreliminary
+                  ? beginTournamentFinal
+                  : beginTournamentPreliminary
               }
               startShortcutDisabled={tournamentRestartDisabled}
               onPlayTurn={tournament.race.playTurn}
               onStepAction={tournament.race.stepAction}
-              onInstantTurn={tournament.race.instantFullTurn}
-              onInstantGame={tournament.race.instantSimulateGame}
-              onReset={tournament.clearRace}
+              onInstantTurn={tournamentReplay.quickResolveTurn}
+              onInstantGame={tournamentReplay.quickResolveRace}
+              onReset={flushTournamentPlaybackAndClearRace}
               isAnimating={tournament.race.isAnimating}
               playTurnEnabled={tournament.race.playTurnEnabled}
               autoPlayEnabled={tournament.race.autoPlayEnabled}
               onAutoPlayEnabledChange={tournament.race.setAutoPlayEnabled}
+              spectate={tournamentSpectate}
             />
           </>
         ) : (
           <AnalysisDashboard
             snapshot={monteCarloSnapshot}
             onNavigateSimulation={() => setWorkspaceView(analysisReturnView)}
+            onObserverWatchReplayJson={handleObserverWatchReplayJson}
           />
         )}
       </main>

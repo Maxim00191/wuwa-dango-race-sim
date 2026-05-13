@@ -294,9 +294,11 @@ export function MonteCarloPanel({
                 </div>
                 <div className="relative mt-4 h-2.5 overflow-hidden rounded-full bg-white ring-1 ring-slate-200/90 dark:bg-slate-950/70 dark:ring-slate-800/90">
                   <div
-                    className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 shadow-[0_0_24px_rgba(52,211,153,0.35)] transition-[width] duration-150 ease-out"
+                    className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 transition-[width] duration-500 ease-out"
                     style={{ width: `${progressRatio * 100}%` }}
-                  />
+                  >
+                    <div className="absolute inset-0 bg-[length:200%_100%] bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
+                  </div>
                 </div>
               </div>
             </div>

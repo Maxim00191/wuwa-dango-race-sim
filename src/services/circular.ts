@@ -1,6 +1,27 @@
 import { CELL_COUNT, FINISH_LINE_CELL_INDEX } from "@/constants/board";
 import type { TravelDirection } from "@/types/game";
 
+export function isClockwiseTrackCellIndex(cellIndex: number): boolean {
+  return (
+    Number.isInteger(cellIndex) &&
+    cellIndex >= 1 &&
+    cellIndex <= CELL_COUNT
+  );
+}
+
+/**
+ * Monotonic “aheadness” along the clockwise course from the finish marker.
+ * Off-track staging indices (e.g. negative sideline cells) stay numeric and
+ * sort strictly below any on-track progress so leaderboard hooks never
+ * reinterpret them via {@link normalizeCellIndex}.
+ */
+export function leaderboardClockwiseCourseProgress(cellIndex: number): number {
+  if (!isClockwiseTrackCellIndex(cellIndex)) {
+    return cellIndex;
+  }
+  return clockwiseProgressFromFinishLine(cellIndex);
+}
+
 export function normalizeCellIndex(raw: number): number {
   const zeroBased = (raw - 1 + CELL_COUNT * 1000) % CELL_COUNT;
   return zeroBased + 1;

@@ -1,5 +1,5 @@
 import { ABBY_ID } from "@/constants/ids";
-import { clockwiseProgressFromFinishLine } from "@/services/circular";
+import { leaderboardClockwiseCourseProgress } from "@/services/circular";
 import { findCellIndexForEntity } from "@/services/stateCells";
 import type { DangoId, GameState } from "@/types/game";
 
@@ -19,8 +19,10 @@ export function compareRacersByRank(a: DangoId, b: DangoId, state: GameState): n
     const stack = state.cells.get(cellA)!;
     return stack.indexOf(b) - stack.indexOf(a);
   }
-  const progressA = cellA !== null ? clockwiseProgressFromFinishLine(cellA) : -1;
-  const progressB = cellB !== null ? clockwiseProgressFromFinishLine(cellB) : -1;
+  const progressA =
+    cellA !== null ? leaderboardClockwiseCourseProgress(cellA) : -1;
+  const progressB =
+    cellB !== null ? leaderboardClockwiseCourseProgress(cellB) : -1;
   return progressB - progressA;
 }
 

@@ -38,7 +38,7 @@ type TournamentShiftRow = {
   basicId: DangoId;
   label: string;
   accentHex: string;
-  qualifierAverageRank: number;
+  preliminaryAverageRank: number;
   finalAverageRank: number;
   rankDelta: number;
   finalWinRate: number;
@@ -115,9 +115,9 @@ function createShiftRows(
     accentInkHex: string;
   }
 ): TournamentShiftRow[] {
-  const qualifierRows = derivePlacementRows(
+  const preliminaryRows = derivePlacementRows(
     snapshot.selectedBasicIds,
-    snapshot.basicAnalyticsByContext.qualifier?.placementCountsByBasicId ??
+    snapshot.basicAnalyticsByContext.preliminary?.placementCountsByBasicId ??
       snapshot.preliminaryPlacementCountsByBasicId,
     getCharacterName,
     resolveRowColors
@@ -129,28 +129,28 @@ function createShiftRows(
     getCharacterName,
     resolveRowColors
   );
-  const qualifierRowById = Object.fromEntries(
-    qualifierRows.map((row) => [row.basicId, row])
-  ) as Record<string, (typeof qualifierRows)[number]>;
+  const preliminaryRowById = Object.fromEntries(
+    preliminaryRows.map((row) => [row.basicId, row])
+  ) as Record<string, (typeof preliminaryRows)[number]>;
   const finalRowById = Object.fromEntries(
     finalRows.map((row) => [row.basicId, row])
   ) as Record<string, (typeof finalRows)[number]>;
   const shift =
     snapshot.modeAnalytics.kind === "tournament"
-      ? snapshot.modeAnalytics.qualifierToFinalRankShift
+      ? snapshot.modeAnalytics.preliminaryToFinalRankShift
       : null;
   return snapshot.selectedBasicIds.map((basicId) => {
-    const qualifierRow = qualifierRowById[basicId];
+    const preliminaryRow = preliminaryRowById[basicId];
     const finalRow = finalRowById[basicId];
     return {
       basicId,
       label: getCharacterName(basicId),
       accentHex: finalRow?.accentHex ?? "#8b5cf6",
-      qualifierAverageRank: qualifierRow?.meanPlacement ?? 0,
+      preliminaryAverageRank: preliminaryRow?.meanPlacement ?? 0,
       finalAverageRank: finalRow?.meanPlacement ?? 0,
       rankDelta:
-        shift?.averageFinalMinusQualifierRankByBasicId[basicId] ??
-        ((finalRow?.meanPlacement ?? 0) - (qualifierRow?.meanPlacement ?? 0)),
+        shift?.averageFinalMinusPreliminaryRankByBasicId[basicId] ??
+        ((finalRow?.meanPlacement ?? 0) - (preliminaryRow?.meanPlacement ?? 0)),
       finalWinRate: finalRow?.winRate ?? 0,
       chokeRate: shift?.chokeRateByBasicId[basicId] ?? 0,
       clutchRate: shift?.clutchRateByBasicId[basicId] ?? 0,
@@ -205,7 +205,7 @@ function HighlightCard({
   );
 }
 
-function QualifierWinnerPlacementStrip({
+function PreliminaryWinnerPlacementStrip({
   rates,
 }: {
   rates: number[];
@@ -214,18 +214,18 @@ function QualifierWinnerPlacementStrip({
   return (
     <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-md shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-900/60 dark:shadow-2xl dark:shadow-slate-950/60">
       <p className="text-base font-bold tracking-tight text-slate-800 dark:text-slate-100">
-        {t("analysis.tournament.qualifierWinnerPlacementEyebrow")}
+        {t("analysis.tournament.preliminaryWinnerPlacementEyebrow")}
       </p>
       <h3 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
-        {t("analysis.tournament.qualifierWinnerPlacementTitle")}
+        {t("analysis.tournament.preliminaryWinnerPlacementTitle")}
       </h3>
       <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
-        {t("analysis.tournament.qualifierWinnerPlacementDescription")}
+        {t("analysis.tournament.preliminaryWinnerPlacementDescription")}
       </p>
       <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-6">
         {rates.map((rate, placementIndex) => (
           <div
-            key={`qualifier-winner-placement-${placementIndex}`}
+            key={`preliminary-winner-placement-${placementIndex}`}
             className="min-h-0 rounded-xl bg-slate-50 px-2 py-2 ring-1 ring-slate-200 dark:bg-slate-950/60 dark:ring-slate-700"
           >
             <p className="truncate text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-500 dark:text-slate-400">
@@ -616,7 +616,7 @@ function DeprivationDeltaTable({ rows }: { rows: TournamentShiftRow[] }) {
                 {t("analysis.conditional.tableDango")}
               </th>
               <th className="border-b border-slate-200 px-3 py-3 text-right dark:border-slate-700">
-                {t("analysis.contexts.qualifier")}
+                {t("analysis.contexts.preliminary")}
               </th>
               <th className="border-b border-slate-200 px-3 py-3 text-right dark:border-slate-700">
                 {t("analysis.contexts.final")}
@@ -644,7 +644,7 @@ function DeprivationDeltaTable({ rows }: { rows: TournamentShiftRow[] }) {
                   </div>
                 </td>
                 <td className="border-b border-slate-200 px-3 py-3 text-right font-semibold text-slate-700 dark:border-slate-800 dark:text-slate-200">
-                  {row.qualifierAverageRank.toFixed(2)}
+                  {row.preliminaryAverageRank.toFixed(2)}
                 </td>
                 <td className="border-b border-slate-200 px-3 py-3 text-right font-semibold text-slate-700 dark:border-slate-800 dark:text-slate-200">
                   {row.finalAverageRank.toFixed(2)}
@@ -946,13 +946,13 @@ export function TournamentInsights({ snapshot }: TournamentInsightsProps) {
     snapshot.modeAnalytics.kind === "tournament"
       ? snapshot.modeAnalytics.maxDebtComebackRate
       : 0;
-  const qualifierWinnerFinalPlacementRates =
+  const preliminaryWinnerFinalPlacementRates =
     snapshot.modeAnalytics.kind === "tournament"
-      ? snapshot.modeAnalytics.qualifierWinnerFinalPlacementRates
+      ? snapshot.modeAnalytics.preliminaryWinnerFinalPlacementRates
       : [];
   const rankShift =
     snapshot.modeAnalytics.kind === "tournament"
-      ? snapshot.modeAnalytics.qualifierToFinalRankShift
+      ? snapshot.modeAnalytics.preliminaryToFinalRankShift
       : null;
   const [focusedBasicId, setFocusedBasicId] = useState<DangoId>(
     snapshot.selectedBasicIds[0] ?? ""
@@ -1026,9 +1026,9 @@ export function TournamentInsights({ snapshot }: TournamentInsightsProps) {
               <HighlightCard
                 label={t("analysis.tournament.averageShift")}
                 value={
-                  rankShift.overallAverageFinalMinusQualifierRank === null
+                  rankShift.overallAverageFinalMinusPreliminaryRank === null
                     ? "—"
-                    : `${rankShift.overallAverageFinalMinusQualifierRank >= 0 ? "+" : ""}${rankShift.overallAverageFinalMinusQualifierRank.toFixed(2)}`
+                    : `${rankShift.overallAverageFinalMinusPreliminaryRank >= 0 ? "+" : ""}${rankShift.overallAverageFinalMinusPreliminaryRank.toFixed(2)}`
                 }
                 hint={t("analysis.tournament.averageShiftHint")}
               />
@@ -1076,7 +1076,7 @@ export function TournamentInsights({ snapshot }: TournamentInsightsProps) {
             <VolatilityTable rows={shiftRows} />
             <DeprivationDeltaTable rows={shiftRows} />
           </div>
-          <QualifierWinnerPlacementStrip rates={qualifierWinnerFinalPlacementRates} />
+          <PreliminaryWinnerPlacementStrip rates={preliminaryWinnerFinalPlacementRates} />
         </>
       ) : null}
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">

@@ -1,12 +1,14 @@
 import type { LocalizedText } from "@/i18n";
+import type { MonteCarloObserverRecords } from "@/types/observer";
 import type { DangoId, RaceMode } from "@/types/game";
+import type { MatchRecord } from "@/types/replay";
 
 export type MonteCarloScenarioKind =
   | "normalRace"
   | "tournament"
   | "final";
 
-export type MonteCarloRaceContext = "sprint" | "qualifier" | "final";
+export type MonteCarloRaceContext = "sprint" | "preliminary" | "final";
 
 export type PlacementCountVector = number[];
 
@@ -62,7 +64,15 @@ export type HeadlessScenarioModeMetrics =
       kind: "tournament";
       preliminaryPlacementByBasicId: Record<string, number>;
       finalStartingPlacementByBasicId: Record<string, number>;
-      qualifierWinnerRetainedTitle: boolean;
+      preliminaryWinnerRetainedTitle: boolean;
+    };
+
+export type HeadlessCapturedMatchReplay =
+  | { scenarioKind: "singleRace"; record: MatchRecord }
+  | {
+      scenarioKind: "tournament";
+      preliminary: MatchRecord;
+      final: MatchRecord;
     };
 
 export type HeadlessSimulationOutcome = {
@@ -79,6 +89,7 @@ export type HeadlessSimulationOutcome = {
     final: HeadlessRaceDeepMetrics;
   };
   modeMetrics: HeadlessScenarioModeMetrics;
+  capturedReplay: HeadlessCapturedMatchReplay;
 };
 
 export type ConditionalPlacementSnapshot = {
@@ -193,12 +204,12 @@ export type MonteCarloSeedDynamics = {
 };
 
 export type MonteCarloRankShiftDynamics = {
-  averageFinalMinusQualifierRankByBasicId: Record<string, number | null>;
+  averageFinalMinusPreliminaryRankByBasicId: Record<string, number | null>;
   chokeRateByBasicId: Record<string, number>;
   clutchRateByBasicId: Record<string, number>;
   chokeOpportunityCountByBasicId: Record<string, number>;
   clutchOpportunityCountByBasicId: Record<string, number>;
-  overallAverageFinalMinusQualifierRank: number | null;
+  overallAverageFinalMinusPreliminaryRank: number | null;
   overallChokeRate: number;
   overallClutchRate: number;
 };
@@ -217,12 +228,12 @@ export type MonteCarloModeAnalytics =
     }
   | {
       kind: "tournament";
-      qualifierPlacementDynamics: MonteCarloSeedDynamics;
+      preliminaryPlacementDynamics: MonteCarloSeedDynamics;
       finalStartingPlacementDynamics: MonteCarloSeedDynamics;
-      qualifierToFinalRankShift: MonteCarloRankShiftDynamics;
-      qualifierWinnerRetainedTitleRate: number;
-      qualifierWinnerRetainedTitleRateByBasicId: Record<string, number>;
-      qualifierWinnerFinalPlacementRates: number[];
+      preliminaryToFinalRankShift: MonteCarloRankShiftDynamics;
+      preliminaryWinnerRetainedTitleRate: number;
+      preliminaryWinnerRetainedTitleRateByBasicId: Record<string, number>;
+      preliminaryWinnerFinalPlacementRates: number[];
       maxDebtComebackRate: number;
       maxDebtComebackRateByBasicId: Record<string, number>;
       startedWithMaxDebtRateByBasicId: Record<string, number>;
@@ -250,7 +261,7 @@ export type MonteCarloAggregateSnapshot = {
   sumFinalTurns: number;
   minTurns: number;
   maxTurns: number;
-  qualifierWinnerFinalPlacementCounts: PlacementCountVector;
+  preliminaryWinnerFinalPlacementCounts: PlacementCountVector;
   basicMetricTotalsByBasicId: Record<string, MonteCarloBasicMetricTotals>;
   startedFinalWithMaxDebtCountByBasicId: Record<string, number>;
   wonFinalFromMaxDebtCountByBasicId: Record<string, number>;
@@ -276,4 +287,5 @@ export type MonteCarloAggregateSnapshot = {
   tournamentClutchOpportunityCountByBasicId: Record<string, number>;
   tournamentClutchCountByBasicId: Record<string, number>;
   modeAnalytics: MonteCarloModeAnalytics;
+  observerRecords?: MonteCarloObserverRecords;
 };
