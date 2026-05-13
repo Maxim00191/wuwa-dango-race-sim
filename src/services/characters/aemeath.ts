@@ -52,6 +52,9 @@ function resolveAemeathMidpointLeap(
   state: GameState,
   context: PostMovementHookContext
 ): SkillHookResolution {
+  if (context.rollerId !== context.actingEntityId) {
+    return { state };
+  }
   const entity = state.entities[context.rollerId];
   if (!entity || entity.skillState.hasUsedMidpointLeap) {
     return { state };

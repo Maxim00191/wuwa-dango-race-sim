@@ -497,11 +497,7 @@ export const zhCnDictionary: TranslationDictionary = {
       augustaGovernorAuthority:
         "{actor} 发动总督权柄，暂缓本回合行动，并将在下回合压轴出手。",
       iunoAnchoredDestiny:
-        "{actor} 锚定命途，将前方的 {aheadTarget} 与后方的 {behindTarget} 一并牵引至自己所在的格子。",
-      iunoAnchoredDestinyAhead:
-        "{actor} 锚定命途，将前方相邻名次的 {target} 牵引至自己所在的格子。",
-      iunoAnchoredDestinyBehind:
-        "{actor} 锚定命途，将后方相邻名次的 {target} 牵引至自己所在的格子。",
+        "{actor} 锚定命途，将排名中位于自己前方与后方的其他团子全部牵引至自己所在的格子，叠放顺序与传送前的名次顺序一致。",
       phrolovaBottomBoost:
         "{actor} 施展优雅阴谋，于叠层底部完成布局，本回合额外获得 3 格移动。",
     },

@@ -1,4 +1,4 @@
-import { characterParam, text, type LocalizedText } from "@/i18n";
+import { characterParam, text } from "@/i18n";
 import { rollStandardBasicDice } from "@/services/characters/basic";
 import { hasCrossedMidpoint } from "@/services/midpoint";
 import { orderedBasicRacerIdsForLeaderboard } from "@/services/racerRanking";
@@ -14,111 +14,60 @@ import type {
   SkillHookResolution,
 } from "@/types/game";
 
-type AnchoredDestinyTargets = {
-  aheadId?: DangoId;
-  behindId?: DangoId;
-};
-
-function resolveTeleportOrder(
-  rankedRacerIds: DangoId[],
-  actorId: DangoId
-): AnchoredDestinyTargets | null {
-  const actorRankIndex = rankedRacerIds.indexOf(actorId);
-  if (actorRankIndex === -1) {
-    return null;
-  }
-  const aheadId =
-    actorRankIndex > 0 ? rankedRacerIds[actorRankIndex - 1] : undefined;
-  const behindId =
-    actorRankIndex < rankedRacerIds.length - 1
-      ? rankedRacerIds[actorRankIndex + 1]
-      : undefined;
-  if (!aheadId && !behindId) {
-    return null;
-  }
-  return { aheadId, behindId };
-}
-
-function resolveAnchoredDestinyNarrative(
-  targets: AnchoredDestinyTargets
-): LocalizedText | undefined {
-  if (targets.aheadId && targets.behindId) {
-    return text("simulation.skills.iunoAnchoredDestiny", {
-      actor: characterParam("iuno"),
-      aheadTarget: characterParam(targets.aheadId),
-      behindTarget: characterParam(targets.behindId),
-    });
-  }
-  if (targets.aheadId) {
-    return text("simulation.skills.iunoAnchoredDestinyAhead", {
-      actor: characterParam("iuno"),
-      target: characterParam(targets.aheadId),
-    });
-  }
-  if (targets.behindId) {
-    return text("simulation.skills.iunoAnchoredDestinyBehind", {
-      actor: characterParam("iuno"),
-      target: characterParam(targets.behindId),
-    });
-  }
-  return undefined;
-}
-
 type AnchoredDestinyMove = {
   entityId: DangoId;
   fromCell: number;
 };
 
-function resolveAnchoredDestinyMoves(
+function resolveAnchoredDestinyTeleportScope(
+  rankedBasicIds: DangoId[],
+  actorId: DangoId
+): { aheadIds: DangoId[]; behindIds: DangoId[] } | null {
+  const actorRankIndex = rankedBasicIds.indexOf(actorId);
+  if (actorRankIndex === -1) {
+    return null;
+  }
+  const aheadIds = rankedBasicIds.slice(0, actorRankIndex);
+  const behindIds = rankedBasicIds.slice(actorRankIndex + 1);
+  if (aheadIds.length === 0 || behindIds.length === 0) {
+    return null;
+  }
+  return { aheadIds, behindIds };
+}
+
+function buildAnchoredDestinyMoves(
   state: GameState,
-  targets: AnchoredDestinyTargets
-): {
-  moves: AnchoredDestinyMove[];
-  resolvedTargets: AnchoredDestinyTargets;
-} {
+  teleportIds: DangoId[]
+): AnchoredDestinyMove[] | null {
   const moves: AnchoredDestinyMove[] = [];
-  const resolvedTargets: AnchoredDestinyTargets = {};
-  if (targets.behindId) {
-    const fromCell = findCellIndexForEntity(state.cells, targets.behindId);
-    if (fromCell !== null) {
-      moves.push({ entityId: targets.behindId, fromCell });
-      resolvedTargets.behindId = targets.behindId;
+  for (const entityId of teleportIds) {
+    const fromCell = findCellIndexForEntity(state.cells, entityId);
+    if (fromCell === null) {
+      return null;
     }
+    moves.push({ entityId, fromCell });
   }
-  if (targets.aheadId) {
-    const fromCell = findCellIndexForEntity(state.cells, targets.aheadId);
-    if (fromCell !== null) {
-      moves.push({ entityId: targets.aheadId, fromCell });
-      resolvedTargets.aheadId = targets.aheadId;
-    }
-  }
-  return { moves, resolvedTargets };
+  return moves;
 }
 
 function buildAnchoredDestinyDestinationStack(
   destinationStack: DangoId[],
   actorId: DangoId,
-  targets: AnchoredDestinyTargets
+  aheadIds: DangoId[],
+  behindIds: DangoId[]
 ): DangoId[] | null {
-  const stackWithoutTargets = destinationStack.filter(
-    (id) => id !== targets.behindId && id !== targets.aheadId
-  );
-  const actorIndex = stackWithoutTargets.indexOf(actorId);
+  const teleported = new Set<DangoId>([...aheadIds, ...behindIds]);
+  const stackWithoutTeleported = destinationStack.filter((id) => !teleported.has(id));
+  const actorIndex = stackWithoutTeleported.indexOf(actorId);
   if (actorIndex === -1) {
     return null;
   }
-  const microStack: DangoId[] = [];
-  if (targets.behindId) {
-    microStack.push(targets.behindId);
-  }
-  microStack.push(actorId);
-  if (targets.aheadId) {
-    microStack.push(targets.aheadId);
-  }
+  const rankBestToWorst = [...aheadIds, actorId, ...behindIds];
+  const microStackBottomToTop = [...rankBestToWorst].reverse();
   return [
-    ...stackWithoutTargets.slice(0, actorIndex),
-    ...microStack,
-    ...stackWithoutTargets.slice(actorIndex + 1),
+    ...stackWithoutTeleported.slice(0, actorIndex),
+    ...microStackBottomToTop,
+    ...stackWithoutTeleported.slice(actorIndex + 1),
   ];
 }
 
@@ -126,6 +75,9 @@ function resolveIunoAnchoredDestiny(
   state: GameState,
   context: PostMovementHookContext
 ): SkillHookResolution {
+  if (context.rollerId !== context.actingEntityId) {
+    return { state };
+  }
   const entity = state.entities[context.rollerId];
   if (
     !entity ||
@@ -134,42 +86,31 @@ function resolveIunoAnchoredDestiny(
   ) {
     return { state };
   }
-  const destinationCellIndex = entity.cellIndex;
-  const spentState: GameState = {
-    ...state,
-    entities: {
-      ...state.entities,
-      [context.rollerId]: {
-        ...entity,
-        skillState: {
-          ...entity.skillState,
-          hasUsedAnchoredDestiny: true,
-        },
-      },
-    },
-  };
-  const targets = resolveTeleportOrder(
+  const scope = resolveAnchoredDestinyTeleportScope(
     orderedBasicRacerIdsForLeaderboard(state),
     context.rollerId
   );
-  if (!targets) {
-    return { state: spentState };
+  if (!scope) {
+    return { state };
   }
-  const { moves, resolvedTargets } = resolveAnchoredDestinyMoves(spentState, targets);
-  if (moves.length === 0) {
-    return { state: spentState };
+  const teleportIds = [...scope.aheadIds, ...scope.behindIds];
+  const moves = buildAnchoredDestinyMoves(state, teleportIds);
+  if (!moves || moves.length === 0) {
+    return { state };
   }
-  const destinationStack = spentState.cells.get(destinationCellIndex) ?? [];
+  const destinationCellIndex = entity.cellIndex;
+  const destinationStack = state.cells.get(destinationCellIndex) ?? [];
   const nextDestinationStack = buildAnchoredDestinyDestinationStack(
     destinationStack,
     context.rollerId,
-    resolvedTargets
+    scope.aheadIds,
+    scope.behindIds
   );
   if (!nextDestinationStack) {
-    return { state: spentState };
+    return { state };
   }
   const nextCells = applyStackTeleportCellsOnly(
-    spentState.cells,
+    state.cells,
     moves.map((move) => ({
       entityId: move.entityId,
       fromCellIndex: move.fromCell,
@@ -177,18 +118,27 @@ function resolveIunoAnchoredDestiny(
     destinationCellIndex,
     nextDestinationStack
   );
-  const nextEntities = { ...spentState.entities };
-  const destinationRaceDisplacement = entity.raceDisplacement;
+  const nextEntities = { ...state.entities };
+  nextEntities[context.rollerId] = {
+    ...entity,
+    skillState: {
+      ...entity.skillState,
+      hasUsedAnchoredDestiny: true,
+    },
+  };
   for (const move of moves) {
+    const moved = nextEntities[move.entityId];
+    if (!moved) {
+      continue;
+    }
     nextEntities[move.entityId] = {
-      ...nextEntities[move.entityId]!,
+      ...moved,
       cellIndex: destinationCellIndex,
-      raceDisplacement: destinationRaceDisplacement,
     };
   }
   return {
     state: {
-      ...spentState,
+      ...state,
       cells: nextCells,
       entities: nextEntities,
     },
@@ -198,11 +148,12 @@ function resolveIunoAnchoredDestiny(
         actorId: context.rollerId,
         moves,
         toCell: destinationCellIndex,
-        toRaceDisplacement: destinationRaceDisplacement,
         stackBottomToTop: nextDestinationStack,
       },
     ],
-    skillNarrative: resolveAnchoredDestinyNarrative(resolvedTargets),
+    skillNarrative: text("simulation.skills.iunoAnchoredDestiny", {
+      actor: characterParam("iuno"),
+    }),
   };
 }
 

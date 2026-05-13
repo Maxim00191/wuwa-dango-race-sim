@@ -667,17 +667,7 @@ function applySkillHookAfterTurnRolls(
 
 function applySkillHookAfterMovement(
   state: GameState,
-  context: {
-    turnIndex: number;
-    rollerId: DangoId;
-    diceValue: number;
-    startCellIndex: number;
-    endCellIndex: number;
-    travelDirection: TravelDirection;
-    landingCells: number[];
-    startRaceDisplacement: number;
-    endRaceDisplacement: number;
-  }
+  context: PostMovementHookContext
 ): {
   state: GameState;
   segments: PlaybackSegment[];
@@ -701,17 +691,7 @@ function applySkillHookAfterMovement(
 
 function applySkillHookAfterMovementResolution(
   state: GameState,
-  context: {
-    turnIndex: number;
-    rollerId: DangoId;
-    diceValue: number;
-    startCellIndex: number;
-    endCellIndex: number;
-    travelDirection: TravelDirection;
-    landingCells: number[];
-    startRaceDisplacement: number;
-    endRaceDisplacement: number;
-  }
+  context: PostMovementHookContext
 ): {
   state: GameState;
   segments: PlaybackSegment[];
@@ -1174,6 +1154,7 @@ function buildPostMovementHookContext(
     diceValue: number;
     travelDirection: TravelDirection;
     landingCells: number[];
+    actingEntityId: DangoId;
   },
   requireMovement = true
 ): PostMovementHookContext | null {
@@ -1191,6 +1172,7 @@ function buildPostMovementHookContext(
   return {
     turnIndex: baseContext.turnIndex,
     rollerId: subjectId,
+    actingEntityId: baseContext.actingEntityId,
     diceValue: baseContext.diceValue,
     startCellIndex: originEntity.cellIndex,
     endCellIndex: currentEntity.cellIndex,
@@ -1235,6 +1217,7 @@ function applySkillHooksAfterAffectedMovement(
     diceValue: number;
     travelDirection: TravelDirection;
     landingCells: number[];
+    actingEntityId: DangoId;
   }
 ): { state: GameState; segments: PlaybackSegment[] } {
   let nextState = state;
@@ -1637,6 +1620,7 @@ function resolvePostMovementPhase(
       diceValue,
       travelDirection,
       landingCells,
+      actingEntityId,
     }
   );
   nextState = affectedMovementOutcome.state;
@@ -1650,6 +1634,7 @@ function resolvePostMovementPhase(
       diceValue,
       travelDirection,
       landingCells,
+      actingEntityId,
     },
     false
   );

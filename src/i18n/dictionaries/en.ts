@@ -531,11 +531,7 @@ export const enDictionary: TranslationDictionary = {
       augustaGovernorAuthority:
         "{actor} exercises Governor's Authority, yielding this round to deliver the grand finale next round.",
       iunoAnchoredDestiny:
-        "{actor} invokes Anchored Destiny and pulls the ahead {aheadTarget} and behind {behindTarget} onto the same tile.",
-      iunoAnchoredDestinyAhead:
-        "{actor} invokes Anchored Destiny and pulls {target} onto the same tile from one rank ahead.",
-      iunoAnchoredDestinyBehind:
-        "{actor} invokes Anchored Destiny and pulls {target} onto the same tile from one rank behind.",
+        "{actor} invokes Anchored Destiny, gathering every other racer ranked ahead and behind onto the same tile while preserving their standings order in the stack.",
       phrolovaBottomBoost:
         "{actor} unveils Elegant Conspiracy from the base of the stack and gains 3 extra steps.",
     },

@@ -62,6 +62,7 @@ export type SkillHookHandler = (
 export type PostMovementHookContext = {
   turnIndex: number;
   rollerId: DangoId;
+  actingEntityId: DangoId;
   diceValue: number;
   startCellIndex: CellIndex;
   endCellIndex: CellIndex;
@@ -328,7 +329,6 @@ export type PlaybackStackTeleportSegment = {
   actorId: DangoId;
   moves: PlaybackStackTeleportMove[];
   toCell: CellIndex;
-  toRaceDisplacement: number;
   stackBottomToTop: DangoId[];
 };
 
