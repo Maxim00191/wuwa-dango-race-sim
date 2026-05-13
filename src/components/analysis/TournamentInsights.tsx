@@ -192,13 +192,13 @@ function HighlightCard({
 }) {
   return (
     <div className="min-h-0 rounded-2xl border border-slate-200 bg-white/90 p-2.5 shadow-md shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-900/60 sm:rounded-3xl sm:p-3">
-      <p className="truncate text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-400 dark:text-slate-500">
+      <p className="truncate text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-500 dark:text-slate-400">
         {label}
       </p>
-      <p className="mt-1.5 truncate text-sm font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50 sm:text-base">
+      <p className="mt-1.5 truncate text-lg font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50 sm:text-xl">
         {value}
       </p>
-      <p className="mt-1 line-clamp-2 text-[10px] leading-tight text-slate-400 dark:text-slate-500">
+      <p className="mt-1 line-clamp-2 text-xs leading-tight text-slate-500 dark:text-slate-400">
         {hint}
       </p>
     </div>
@@ -219,19 +219,19 @@ function QualifierWinnerPlacementStrip({
       <h3 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
         {t("analysis.tournament.qualifierWinnerPlacementTitle")}
       </h3>
-      <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
+      <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
         {t("analysis.tournament.qualifierWinnerPlacementDescription")}
       </p>
-      <div className="mt-5 grid grid-cols-3 gap-2 md:grid-cols-4 lg:grid-cols-6">
+      <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-6">
         {rates.map((rate, placementIndex) => (
           <div
             key={`qualifier-winner-placement-${placementIndex}`}
             className="min-h-0 rounded-xl bg-slate-50 px-2 py-2 ring-1 ring-slate-200 dark:bg-slate-950/60 dark:ring-slate-700"
           >
-            <p className="truncate text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-400 dark:text-slate-500">
+            <p className="truncate text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-500 dark:text-slate-400">
               {t(`common.placements.${placementIndex}`)}
             </p>
-            <p className="mt-1 truncate text-sm font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50">
+            <p className="mt-1.5 truncate text-lg font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50 sm:text-xl">
               {formatPercent(rate)}
             </p>
           </div>
@@ -353,11 +353,11 @@ function FinalSeedDecayPanel({ snapshot }: { snapshot: MonteCarloAggregateSnapsh
       <h3 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
         {t("analysis.tournament.seedDecayTitle")}
       </h3>
-      <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
+      <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
         {t("analysis.tournament.seedDecayDescription")}
       </p>
       <div className="mt-6 grid gap-5 xl:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)]">
-        <div className="grid grid-cols-3 gap-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-1">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-6 xl:grid-cols-1">
           {seedEntries.map((entry) => {
             const selected = entry.seedIndex === activeSeedEntry?.seedIndex;
             const isBest = entry.seedIndex === bestSeedEntry?.seedIndex;
@@ -379,12 +379,12 @@ function FinalSeedDecayPanel({ snapshot }: { snapshot: MonteCarloAggregateSnapsh
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-600 dark:text-slate-300">
                       {t("analysis.tournament.seedLabel", {
                         value: entry.seedIndex + 1,
                       })}
                     </p>
-                    <p className="mt-1 truncate text-sm font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50 sm:text-base">
+                    <p className="mt-1.5 truncate text-lg font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50 sm:text-xl">
                       {formatPercent(entry.rate)}
                     </p>
                   </div>
@@ -447,13 +447,13 @@ function FinalSeedDecayPanel({ snapshot }: { snapshot: MonteCarloAggregateSnapsh
                 </p>
               </div>
               <div className="min-w-[11rem] rounded-3xl border border-white/80 bg-white/85 px-4 py-4 shadow-md shadow-slate-900/5 dark:border-slate-700 dark:bg-slate-900/85">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-600 dark:text-slate-300">
                   {t("analysis.overview.winRate")}
                 </p>
                 <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
                   {formatPercent(activeSeedEntry.rate)}
                 </p>
-                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">
                   {t("analysis.conditional.runs", {
                     count: activeSeedEntry.count.toLocaleString(),
                   })}
@@ -490,7 +490,7 @@ function FinalSeedDecayPanel({ snapshot }: { snapshot: MonteCarloAggregateSnapsh
                               {row.label}
                             </span>
                           </div>
-                          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                          <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
                             {t("analysis.conditional.runs", {
                               count: row.sample.toLocaleString(),
                             })}
@@ -543,7 +543,7 @@ function VolatilityTable({ rows }: { rows: TournamentShiftRow[] }) {
       <div className="mt-5 overflow-x-auto">
         <table className="min-w-full border-separate border-spacing-0">
           <thead>
-            <tr className="text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+            <tr className="text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600 dark:text-slate-300">
               <th className="border-b border-slate-200 px-3 py-3 dark:border-slate-700">
                 {t("analysis.conditional.tableDango")}
               </th>
@@ -578,13 +578,13 @@ function VolatilityTable({ rows }: { rows: TournamentShiftRow[] }) {
                 </td>
                 <td className="border-b border-slate-200 px-3 py-3 text-right font-semibold text-slate-700 dark:border-slate-800 dark:text-slate-200">
                   {formatPercent(row.chokeRate)}
-                  <span className="ml-2 text-xs font-normal text-slate-500">
+                  <span className="ml-2 text-xs font-normal text-slate-600 dark:text-slate-400">
                     {row.chokeSample.toLocaleString()}
                   </span>
                 </td>
                 <td className="border-b border-slate-200 px-3 py-3 text-right font-semibold text-slate-700 dark:border-slate-800 dark:text-slate-200">
                   {formatPercent(row.clutchRate)}
-                  <span className="ml-2 text-xs font-normal text-slate-500">
+                  <span className="ml-2 text-xs font-normal text-slate-600 dark:text-slate-400">
                     {row.clutchSample.toLocaleString()}
                   </span>
                 </td>
@@ -611,7 +611,7 @@ function DeprivationDeltaTable({ rows }: { rows: TournamentShiftRow[] }) {
       <div className="mt-5 overflow-x-auto">
         <table className="min-w-full border-separate border-spacing-0">
           <thead>
-            <tr className="text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+            <tr className="text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600 dark:text-slate-300">
               <th className="border-b border-slate-200 px-3 py-3 dark:border-slate-700">
                 {t("analysis.conditional.tableDango")}
               </th>
@@ -714,47 +714,47 @@ function ConversionTable({
                     {row.label}
                   </p>
                 </div>
-                <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-600 dark:text-slate-300">
                   {t("analysis.tournament.titles", {
                     count: row.totalChampionships.toLocaleString(),
                   })}
                 </span>
               </div>
-              <div className="mt-3 grid grid-cols-3 gap-2 md:grid-cols-4 lg:grid-cols-6">
+              <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
                 <div className="min-h-0 rounded-xl bg-white px-2 py-2 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700">
-                  <p className="line-clamp-2 text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-400 dark:text-slate-500">
+                  <p className="line-clamp-2 text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-500 dark:text-slate-400">
                     {t("analysis.tournament.ifFirstInPrelims")}
                   </p>
-                  <p className="mt-1 truncate text-sm font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50">
+                  <p className="mt-1.5 truncate text-lg font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50 sm:text-xl">
                     {formatPercent(row.topSeedTitleRate)}
                   </p>
-                  <p className="mt-0.5 truncate text-[10px] leading-tight text-slate-400 dark:text-slate-500">
+                  <p className="mt-1 truncate text-xs leading-tight text-slate-500 dark:text-slate-400">
                     {t("analysis.tournament.matchingPrelimRuns", {
                       count: row.topSeedSample.toLocaleString(),
                     })}
                   </p>
                 </div>
                 <div className="min-h-0 rounded-xl bg-white px-2 py-2 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700">
-                  <p className="line-clamp-2 text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-400 dark:text-slate-500">
+                  <p className="line-clamp-2 text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-500 dark:text-slate-400">
                     {t("analysis.tournament.ifFourthToSixthInPrelims")}
                   </p>
-                  <p className="mt-1 truncate text-sm font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50">
+                  <p className="mt-1.5 truncate text-lg font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50 sm:text-xl">
                     {formatPercent(row.underdogTitleRate)}
                   </p>
-                  <p className="mt-0.5 truncate text-[10px] leading-tight text-slate-400 dark:text-slate-500">
+                  <p className="mt-1 truncate text-xs leading-tight text-slate-500 dark:text-slate-400">
                     {t("analysis.tournament.underdogEntries", {
                       count: row.underdogSample.toLocaleString(),
                     })}
                   </p>
                 </div>
                 <div className="min-h-0 rounded-xl bg-white px-2 py-2 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700">
-                  <p className="line-clamp-2 text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-400 dark:text-slate-500">
+                  <p className="line-clamp-2 text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-500 dark:text-slate-400">
                     {t("analysis.tournament.ifStartAtMaxDebt")}
                   </p>
-                  <p className="mt-1 truncate text-sm font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50">
+                  <p className="mt-1.5 truncate text-lg font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50 sm:text-xl">
                     {formatPercent(row.maxDebtTitleRate)}
                   </p>
-                  <p className="mt-0.5 truncate text-[10px] leading-tight text-slate-400 dark:text-slate-500">
+                  <p className="mt-1 truncate text-xs leading-tight text-slate-500 dark:text-slate-400">
                     {t("analysis.tournament.maxDebtEntries", {
                       count: row.maxDebtSample.toLocaleString(),
                     })}
@@ -804,13 +804,13 @@ function TransitionHeatmap({
           })}
         </span>
       </div>
-      <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
+      <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
         {t("analysis.tournament.transitionDescription")}
       </p>
       <div className="mt-6 overflow-x-auto rounded-3xl border border-slate-200 bg-white shadow-sm shadow-slate-900/5 dark:border-slate-700 dark:bg-slate-950/70">
         <div className="min-w-[36rem]">
           <div
-            className="grid border-b border-slate-200 bg-slate-50 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-400"
+            className="grid border-b border-slate-200 bg-slate-50 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-300"
             style={heatmapGridStyle}
           >
             <div className="px-4 py-3">{t("analysis.tournament.prelimHeader")}</div>
@@ -984,10 +984,10 @@ export function TournamentInsights({ snapshot }: TournamentInsightsProps) {
         <h3 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
           {t("analysis.tournament.title")}
         </h3>
-        <p className="mt-3 max-w-3xl text-sm text-slate-500 dark:text-slate-400">
+        <p className="mt-3 max-w-3xl text-sm text-slate-600 dark:text-slate-300">
           {t("analysis.tournament.description")}
         </p>
-        <div className="mt-6 grid grid-cols-3 gap-2 md:grid-cols-4 lg:grid-cols-6">
+        <div className="mt-6 grid grid-cols-3 gap-2 md:grid-cols-4 lg:grid-cols-5">
           <HighlightCard
             label={t("analysis.tournament.topSeedConverts")}
             value={formatPercent(

@@ -66,7 +66,7 @@ function ConditionalHeatmap({
   return (
     <div className="overflow-x-auto rounded-3xl border border-slate-200 bg-white shadow-sm shadow-slate-900/5 dark:border-slate-700 dark:bg-slate-950/70">
       <div className="min-w-[44rem]">
-        <div className="grid grid-cols-[minmax(10rem,1.2fr)_repeat(6,minmax(4.5rem,1fr))] border-b border-slate-200 bg-slate-50 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-400">
+        <div className="grid grid-cols-[minmax(10rem,1.2fr)_repeat(6,minmax(4.5rem,1fr))] border-b border-slate-200 bg-slate-50 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-300">
           <div className="px-4 py-3">{t("analysis.conditional.tableDango")}</div>
           {rows[0]?.rates.map((_, placementIndex) => (
             <div key={`conditional-header-${placementIndex}`} className="px-2 py-3 text-center">
@@ -88,7 +88,7 @@ function ConditionalHeatmap({
                 <p className="truncate text-sm font-semibold tracking-tight text-slate-900 dark:text-slate-50">
                   {row.label}
                 </p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-slate-600 dark:text-slate-300">
                   {t("analysis.conditional.averageFinish", {
                     value: row.meanPlacement.toFixed(2),
                   })}
@@ -147,30 +147,30 @@ function ConditionalSummary({
   const likelyRunnerUp = pickRunnerUp(otherRows);
   const mostLikelyLast = pickMostLikelyLast(otherRows);
   return (
-    <div className="grid grid-cols-3 gap-2 md:grid-cols-4 lg:grid-cols-6">
+    <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-2 xl:grid-cols-1 xl:gap-3">
       <div className="min-h-0 rounded-2xl border border-slate-200 bg-slate-900 p-2.5 text-slate-50 shadow-md shadow-slate-900/20 dark:border-slate-700 sm:rounded-3xl sm:p-3">
-        <p className="truncate text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-400">
+        <p className="text-[10px] font-semibold uppercase leading-snug tracking-wide text-slate-300 line-clamp-2">
           {t("analysis.conditional.scenarioSlice")}
         </p>
-        <h3 className="mt-1 truncate text-sm font-bold leading-tight tracking-tight text-white sm:text-base">
+        <h3 className="mt-1.5 truncate text-lg font-bold leading-tight tracking-tight text-white sm:text-xl">
           {t("analysis.conditional.matchingRuns", {
             count: sampleSize.toLocaleString(),
           })}
         </h3>
-        <p className="mt-1 line-clamp-2 text-[10px] leading-tight text-slate-400">
+        <p className="mt-1 line-clamp-2 text-xs leading-tight text-slate-300">
           {t("analysis.conditional.matchingRunsHint", {
             rate: formatPercent(totalRuns > 0 ? (sampleSize / totalRuns) * 100 : 0),
           })}
         </p>
       </div>
       <div className="min-h-0 rounded-2xl border border-slate-200 bg-white/90 p-2.5 shadow-md shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-900/60 sm:rounded-3xl sm:p-3">
-        <p className="truncate text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-400 dark:text-slate-500">
+        <p className="text-[10px] font-semibold uppercase leading-snug tracking-wide text-slate-500 dark:text-slate-400 line-clamp-2">
           {t("analysis.conditional.likelyRunnerUp")}
         </p>
-        <p className="mt-1 truncate text-sm font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50">
+        <p className="mt-1.5 truncate text-lg font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50 sm:text-xl">
           {likelyRunnerUp?.label ?? "—"}
         </p>
-        <p className="mt-1 line-clamp-2 text-[10px] leading-tight text-slate-400 dark:text-slate-500">
+        <p className="mt-1 line-clamp-2 text-xs leading-tight text-slate-500 dark:text-slate-400">
           {(likelyRunnerUp?.rates[1] ?? 0) > 0
             ? t("analysis.conditional.secondPlaceChance", {
                 rate: formatPercent(likelyRunnerUp?.rates[1] ?? 0),
@@ -179,13 +179,13 @@ function ConditionalSummary({
         </p>
       </div>
       <div className="min-h-0 rounded-2xl border border-slate-200 bg-white/90 p-2.5 shadow-md shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-900/60 sm:rounded-3xl sm:p-3">
-        <p className="truncate text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-400 dark:text-slate-500">
+        <p className="text-[10px] font-semibold uppercase leading-snug tracking-wide text-slate-500 dark:text-slate-400 line-clamp-2">
           {t("analysis.conditional.likelyLast")}
         </p>
-        <p className="mt-1 truncate text-sm font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50">
+        <p className="mt-1.5 truncate text-lg font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50 sm:text-xl">
           {mostLikelyLast?.label ?? "—"}
         </p>
-        <p className="mt-1 line-clamp-2 text-[10px] leading-tight text-slate-400 dark:text-slate-500">
+        <p className="mt-1 line-clamp-2 text-xs leading-tight text-slate-500 dark:text-slate-400">
           {(mostLikelyLast?.rates[mostLikelyLast.rates.length - 1] ?? 0) > 0
             ? t("analysis.conditional.sixthPlaceChance", {
                 rate: formatPercent(
@@ -246,7 +246,7 @@ export function ConditionalAnalysisPanel({
         <h3 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
           {t("analysis.conditional.title")}
         </h3>
-        <p className="mt-3 max-w-3xl text-sm text-slate-500 dark:text-slate-400">
+        <p className="mt-3 max-w-3xl text-sm text-slate-600 dark:text-slate-300">
           {t("analysis.conditional.description")}
         </p>
         <div className="mt-5 flex flex-wrap gap-2">
@@ -274,12 +274,14 @@ export function ConditionalAnalysisPanel({
           })}
         </div>
       </section>
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,0.8fr)]">
-        <ConditionalHeatmap
-          sampleSize={sampleSize}
-          rows={rows}
-          selectedWinnerId={selectedWinnerId}
-        />
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(19rem,26rem)] xl:items-start">
+        <div className="min-w-0">
+          <ConditionalHeatmap
+            sampleSize={sampleSize}
+            rows={rows}
+            selectedWinnerId={selectedWinnerId}
+          />
+        </div>
         <ConditionalSummary
           sampleSize={sampleSize}
           totalRuns={snapshot.totalRuns}

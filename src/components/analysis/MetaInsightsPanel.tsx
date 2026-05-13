@@ -163,13 +163,13 @@ function InsightCard({
 }) {
   return (
     <div className="min-h-0 rounded-2xl border border-slate-200 bg-white/90 p-2.5 shadow-md shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-900/60 sm:rounded-3xl sm:p-3">
-      <p className="truncate text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-400 dark:text-slate-500">
+      <p className="truncate text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-500 dark:text-slate-400">
         {label}
       </p>
-      <p className="mt-1.5 truncate text-sm font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50 sm:text-base">
+      <p className="mt-1.5 truncate text-lg font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50 sm:text-xl">
         {value}
       </p>
-      <p className="mt-1 line-clamp-2 text-[10px] leading-tight text-slate-400 dark:text-slate-500">
+      <p className="mt-1 line-clamp-2 text-xs leading-tight text-slate-500 dark:text-slate-400">
         {hint}
       </p>
     </div>
@@ -306,10 +306,10 @@ export function MetaInsightsPanel({
         <h3 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
           {t("analysis.overview.metaTitle")}
         </h3>
-        <p className="mt-3 max-w-3xl text-sm text-slate-500 dark:text-slate-400">
+        <p className="mt-3 max-w-3xl text-sm text-slate-600 dark:text-slate-300">
           {t("analysis.overview.metaDescription")}
         </p>
-        <div className="mt-6 grid grid-cols-3 gap-2 md:grid-cols-4 lg:grid-cols-6">
+        <div className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-3">
           <InsightCard
             label={t("analysis.overview.passengerLeader")}
             value={passengerLeader?.label ?? "—"}
@@ -353,7 +353,7 @@ export function MetaInsightsPanel({
       <TableShell title={t("analysis.overview.passengerEfficiencyTitle")}>
         <table className="min-w-full border-separate border-spacing-0">
           <thead>
-            <tr className="text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+            <tr className="text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600 dark:text-slate-300">
               <th className="border-b border-slate-200 px-3 py-3 dark:border-slate-700">
                 {t("analysis.conditional.tableDango")}
               </th>
@@ -399,7 +399,7 @@ export function MetaInsightsPanel({
         <TableShell title={t("analysis.overview.stackEcosystemTitle")}>
           <table className="min-w-full border-separate border-spacing-0">
             <thead>
-              <tr className="text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+              <tr className="text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600 dark:text-slate-300">
                 <th className="border-b border-slate-200 px-3 py-3 dark:border-slate-700">
                   {t("analysis.conditional.tableDango")}
                 </th>
@@ -444,7 +444,7 @@ export function MetaInsightsPanel({
         <TableShell title={t("analysis.overview.trapAffinityTitle")}>
           <table className="min-w-full border-separate border-spacing-0">
             <thead>
-              <tr className="text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+              <tr className="text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600 dark:text-slate-300">
                 <th className="border-b border-slate-200 px-3 py-3 dark:border-slate-700">
                   {t("analysis.conditional.tableDango")}
                 </th>

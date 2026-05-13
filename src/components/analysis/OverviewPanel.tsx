@@ -141,7 +141,7 @@ function WinRateOverview({
                   {row.label}
                 </span>
               </div>
-              <div className="flex flex-wrap items-center gap-3 text-xs font-semibold text-slate-500 dark:text-slate-400">
+              <div className="flex flex-wrap items-center gap-3 text-xs font-semibold text-slate-600 dark:text-slate-300">
                 <span>{formatPercent(row.winRate)}</span>
                 <span>
                   {t("analysis.overview.averageFinish", {
@@ -196,7 +196,7 @@ function StabilitySpotlight({ rows }: { rows: PlacementRowDatum[] }) {
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-600 dark:text-slate-300">
                   {isStableCard
                     ? t("analysis.overview.mostStable")
                     : t("analysis.overview.mostVolatile")}
@@ -215,28 +215,28 @@ function StabilitySpotlight({ rows }: { rows: PlacementRowDatum[] }) {
                 {Math.round(row.stabilityScore)}
               </span>
             </div>
-            <div className="mt-4 grid grid-cols-3 gap-2 md:grid-cols-4 lg:grid-cols-6">
+            <div className="mt-4 grid grid-cols-3 gap-2">
               <div className="min-h-0 rounded-xl bg-slate-50 px-2 py-2 dark:bg-slate-950/70">
-                <p className="truncate text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-400 dark:text-slate-500">
+                <p className="truncate text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-500 dark:text-slate-400">
                   {t("analysis.overview.averageFinishShort")}
                 </p>
-                <p className="mt-1 truncate text-sm font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50">
+                <p className="mt-1.5 truncate text-lg font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50 sm:text-xl">
                   {row.meanPlacement.toFixed(2)}
                 </p>
               </div>
               <div className="min-h-0 rounded-xl bg-slate-50 px-2 py-2 dark:bg-slate-950/70">
-                <p className="truncate text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-400 dark:text-slate-500">
+                <p className="truncate text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-500 dark:text-slate-400">
                   {t("analysis.overview.standardDeviation")}
                 </p>
-                <p className="mt-1 truncate text-sm font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50">
+                <p className="mt-1.5 truncate text-lg font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50 sm:text-xl">
                   {row.standardDeviation.toFixed(2)}
                 </p>
               </div>
               <div className="min-h-0 rounded-xl bg-slate-50 px-2 py-2 dark:bg-slate-950/70">
-                <p className="truncate text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-400 dark:text-slate-500">
+                <p className="truncate text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-500 dark:text-slate-400">
                   {t("analysis.overview.boomOrBust")}
                 </p>
-                <p className="mt-1 truncate text-sm font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50">
+                <p className="mt-1.5 truncate text-lg font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50 sm:text-xl">
                   {formatPercent(row.boomBustRate)}
                 </p>
               </div>
@@ -273,7 +273,7 @@ function DistributionRow({ row }: { row: PlacementRowDatum }) {
                 value: row.meanPlacement.toFixed(2),
               })}
             </span>
-            <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+            <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">
               {t("analysis.overview.stabilityScore", {
                 value: Math.round(row.stabilityScore),
               })}
@@ -281,7 +281,7 @@ function DistributionRow({ row }: { row: PlacementRowDatum }) {
           </div>
           <div className="mt-4 overflow-hidden rounded-2xl bg-white shadow-sm shadow-slate-900/10 ring-1 ring-slate-200 dark:bg-slate-900 dark:shadow-slate-950/25 dark:ring-slate-700">
             <div
-              className="grid border-b border-slate-200 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:border-slate-700 dark:text-slate-400"
+              className="grid border-b border-slate-200 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600 dark:border-slate-700 dark:text-slate-300"
               style={placementGridStyle}
             >
               {row.rates.map((_, placementIndex) => (
@@ -312,28 +312,28 @@ function DistributionRow({ row }: { row: PlacementRowDatum }) {
             </div>
           </div>
         </div>
-        <div className="grid shrink-0 grid-cols-3 gap-2 md:grid-cols-4 lg:grid-cols-6 xl:w-[21rem] xl:grid-cols-1">
+        <div className="grid shrink-0 grid-cols-3 gap-2 xl:w-[21rem] xl:grid-cols-1">
           <div className="min-h-0 rounded-xl bg-white px-2 py-2 shadow-md shadow-slate-900/8 ring-1 ring-slate-200 dark:bg-slate-900 dark:shadow-slate-950/25 dark:ring-slate-700">
-            <p className="truncate text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-400 dark:text-slate-500">
+            <p className="truncate text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-500 dark:text-slate-400">
               {t("analysis.overview.winRate")}
             </p>
-            <p className="mt-1 truncate text-sm font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50">
+            <p className="mt-1.5 truncate text-lg font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50 sm:text-xl">
               {formatPercent(row.winRate)}
             </p>
           </div>
           <div className="min-h-0 rounded-xl bg-white px-2 py-2 shadow-md shadow-slate-900/8 ring-1 ring-slate-200 dark:bg-slate-900 dark:shadow-slate-950/25 dark:ring-slate-700">
-            <p className="truncate text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-400 dark:text-slate-500">
+            <p className="truncate text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-500 dark:text-slate-400">
               {t("analysis.overview.podiumRate")}
             </p>
-            <p className="mt-1 truncate text-sm font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50">
+            <p className="mt-1.5 truncate text-lg font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50 sm:text-xl">
               {formatPercent(row.podiumRate)}
             </p>
           </div>
           <div className="min-h-0 rounded-xl bg-white px-2 py-2 shadow-md shadow-slate-900/8 ring-1 ring-slate-200 dark:bg-slate-900 dark:shadow-slate-950/25 dark:ring-slate-700">
-            <p className="truncate text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-400 dark:text-slate-500">
+            <p className="truncate text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-500 dark:text-slate-400">
               {t("analysis.overview.bottomTwoRate")}
             </p>
-            <p className="mt-1 truncate text-sm font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50">
+            <p className="mt-1.5 truncate text-lg font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50 sm:text-xl">
               {formatPercent(row.bottomTwoRate)}
             </p>
           </div>
@@ -356,7 +356,7 @@ function PlacementDistributionPanel({ rows }: { rows: PlacementRowDatum[] }) {
             {t("analysis.overview.distributionTitle")}
           </h3>
         </div>
-        <span className="text-sm text-slate-500 dark:text-slate-400">
+        <span className="text-sm text-slate-600 dark:text-slate-300">
           {t("analysis.overview.distributionHint")}
         </span>
       </div>

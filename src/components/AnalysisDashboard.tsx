@@ -102,7 +102,7 @@ export function AnalysisDashboard({
           <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50 md:text-3xl">
             {t("analysis.empty.title")}
           </h2>
-          <p className="text-sm font-normal text-slate-500 dark:text-slate-400 md:text-base">
+          <p className="text-sm font-normal text-slate-600 dark:text-slate-300 md:text-base">
             {t("analysis.empty.description")}
           </p>
         </div>
@@ -149,7 +149,7 @@ export function AnalysisDashboard({
           <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50 sm:text-3xl md:text-4xl">
             {tText(snapshot.scenarioLabel)}
           </h2>
-          <p className="max-w-2xl text-sm font-normal text-slate-500 dark:text-slate-400 md:text-base">
+          <p className="max-w-2xl text-sm font-normal text-slate-600 dark:text-slate-300 md:text-base">
             {t("analysis.header.description", {
               runs: snapshot.totalRuns.toLocaleString(),
             })}
@@ -164,7 +164,7 @@ export function AnalysisDashboard({
         </button>
       </header>
 
-      <section className="grid grid-cols-3 gap-2 md:grid-cols-4 lg:grid-cols-6">
+      <section className="grid grid-cols-2 gap-2 sm:grid-cols-2 md:grid-cols-4">
         <MetricHighlightCard
           label={
             snapshot.scenarioKind === "tournament"
@@ -277,13 +277,13 @@ function MetricHighlightCard({
 }: MetricHighlightCardProps) {
   return (
     <div className="min-h-0 rounded-2xl border border-slate-200 bg-white/90 p-2.5 shadow-inner shadow-slate-900/5 dark:border-slate-800 dark:bg-slate-950/70 dark:shadow-slate-950/40 sm:p-3">
-      <p className="truncate text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-400 dark:text-slate-500">
+      <p className="truncate text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-500 dark:text-slate-400">
         {label}
       </p>
-      <p className="mt-1.5 truncate font-mono text-sm font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50 sm:text-base">
+      <p className="mt-1.5 truncate font-mono text-lg font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-50 sm:text-xl">
         {value}
       </p>
-      <p className="mt-1 line-clamp-2 text-[10px] font-normal leading-tight text-slate-400 dark:text-slate-500">
+      <p className="mt-1 line-clamp-2 text-xs font-normal leading-tight text-slate-500 dark:text-slate-400">
         {hint}
       </p>
     </div>
