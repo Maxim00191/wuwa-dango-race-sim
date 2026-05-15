@@ -23,6 +23,7 @@ export type BroadcastBannerPayload = {
   headline: TranslatableContent;
   detail?: TranslatableContent;
   accentDangoId?: DangoId;
+  markedDangoIds?: readonly DangoId[];
 };
 
 type BroadcastBannerProps = {
@@ -64,7 +65,7 @@ const headlineClass: Record<BroadcastBannerPayload["variant"], string> = {
 };
 
 export function BroadcastBanner({ payload }: BroadcastBannerProps) {
-  const { tText } = useTranslation();
+  const { getCharacterName, tText } = useTranslation();
   const { mode } = useTheme();
   const getSafeDangoColors = useSafeDangoColors();
   if (!payload) {
@@ -125,6 +126,30 @@ export function BroadcastBanner({ payload }: BroadcastBannerProps) {
         >
           {tText(payload.detail)}
         </p>
+      ) : null}
+      {payload.markedDangoIds && payload.markedDangoIds.length > 0 ? (
+        <div
+          className="mt-2 flex flex-wrap items-center justify-center gap-1.5"
+          aria-hidden
+        >
+          {payload.markedDangoIds.map((dangoId) => {
+            const { baseHex, baseInkHex, uiOutlineHex, uiOutlineSoftHex } =
+              getSafeDangoColors(dangoId);
+            return (
+              <span
+                key={dangoId}
+                className="inline-flex max-w-full truncate rounded-full px-2 py-0.5 text-[10px] font-semibold leading-tight sm:text-[11px] md:text-xs"
+                style={{
+                  backgroundColor: baseHex,
+                  color: baseInkHex,
+                  boxShadow: `0 0 0 1px ${uiOutlineHex}, 0 0 0 3px ${uiOutlineSoftHex}`,
+                }}
+              >
+                {getCharacterName(dangoId)}
+              </span>
+            );
+          })}
+        </div>
       ) : null}
     </div>
   );

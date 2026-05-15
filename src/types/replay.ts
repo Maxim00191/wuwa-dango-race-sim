@@ -30,6 +30,8 @@ export type MatchGameFrameJson = {
   shortLabel: LocalizedText | null;
   turnIndex: number;
   entityOrder: DangoId[];
+  preserveEntityOrderOnFirstTurn?: boolean;
+  raceWinDistanceInClockwiseSteps?: number;
   activeBasicIds: DangoId[];
   winnerId: DangoId | null;
   abbyPendingTeleportToStart: boolean;

@@ -2,9 +2,15 @@ import { FINISH_LINE_CELL_INDEX } from "@/constants/board";
 import { ABBY_ID } from "@/constants/ids";
 import { text, type LocalizedText } from "@/i18n";
 import {
+  addClockwise,
   addCounterClockwise,
   clockwiseDistanceAhead,
 } from "@/services/circular";
+import {
+  fullLapWinDistanceInClockwiseSteps,
+  winDistanceFromStartCellToFinish,
+} from "@/services/raceDistance";
+import { entityOrderFromStackTopToBottom } from "@/services/stackActorOrder";
 import { orderedRacerIdsForLeaderboard } from "@/services/racerRanking";
 import type {
   DangoId,
@@ -25,13 +31,19 @@ function shuffleOrderStableCopy(ids: DangoId[]): DangoId[] {
   return copy;
 }
 
+const SPRINT_START_CELL_INDEX = addClockwise(FINISH_LINE_CELL_INDEX, 1);
+
 function createRaceSetup(
   mode: RaceMode,
   label: LocalizedText,
   shortLabel: LocalizedText,
   selectedBasicIds: DangoId[],
   startingStacks: RaceStartingStack[],
-  startingDisplacementById: Partial<Record<DangoId, number>> = {}
+  options: {
+    raceWinDistanceInClockwiseSteps: number;
+    startingDisplacementById?: Partial<Record<DangoId, number>>;
+    seededFirstTurnActorOrder?: DangoId[];
+  }
 ): RaceSetup {
   return {
     mode,
@@ -39,38 +51,71 @@ function createRaceSetup(
     shortLabel,
     selectedBasicIds: [...selectedBasicIds],
     startingStacks,
-    startingDisplacementById: { ...startingDisplacementById },
+    startingDisplacementById: {
+      ...options.startingDisplacementById,
+    },
+    raceWinDistanceInClockwiseSteps: options.raceWinDistanceInClockwiseSteps,
+    seededFirstTurnActorOrder: options.seededFirstTurnActorOrder
+      ? [...options.seededFirstTurnActorOrder]
+      : undefined,
   };
 }
 
-function buildNormalStartingStacks(selectedBasicIds: DangoId[]): RaceStartingStack[] {
-  return [
-    {
-      cellIndex: FINISH_LINE_CELL_INDEX,
-      stackBottomToTop: [ABBY_ID, ...shuffleOrderStableCopy(selectedBasicIds)],
-    },
+function buildSprintStartingStacks(selectedBasicIds: DangoId[]): {
+  stacks: RaceStartingStack[];
+  seededFirstTurnActorOrder: DangoId[];
+  raceWinDistanceInClockwiseSteps: number;
+} {
+  const stackBottomToTop = [
+    ABBY_ID,
+    ...shuffleOrderStableCopy(selectedBasicIds),
   ];
+  return {
+    stacks: [
+      {
+        cellIndex: SPRINT_START_CELL_INDEX,
+        stackBottomToTop,
+      },
+    ],
+    seededFirstTurnActorOrder:
+      entityOrderFromStackTopToBottom(stackBottomToTop),
+    raceWinDistanceInClockwiseSteps: winDistanceFromStartCellToFinish(
+      SPRINT_START_CELL_INDEX
+    ),
+  };
 }
 
 export function createNormalRaceSetup(selectedBasicIds: DangoId[]): RaceSetup {
+  const sprintStart = buildSprintStartingStacks(selectedBasicIds);
   return createRaceSetup(
     "normal",
     text("simulation.labels.normalRace"),
     text("simulation.labels.normalRace"),
     selectedBasicIds,
-    buildNormalStartingStacks(selectedBasicIds)
+    sprintStart.stacks,
+    {
+      raceWinDistanceInClockwiseSteps:
+        sprintStart.raceWinDistanceInClockwiseSteps,
+      seededFirstTurnActorOrder: sprintStart.seededFirstTurnActorOrder,
+    }
   );
 }
 
 export function createTournamentPreliminaryRaceSetup(
   selectedBasicIds: DangoId[]
 ): RaceSetup {
+  const sprintStart = buildSprintStartingStacks(selectedBasicIds);
   return createRaceSetup(
     "tournamentPreliminary",
     text("simulation.labels.tournamentPreliminary"),
     text("simulation.labels.tournamentPreliminary"),
     selectedBasicIds,
-    buildNormalStartingStacks(selectedBasicIds)
+    sprintStart.stacks,
+    {
+      raceWinDistanceInClockwiseSteps:
+        sprintStart.raceWinDistanceInClockwiseSteps,
+      seededFirstTurnActorOrder: sprintStart.seededFirstTurnActorOrder,
+    }
   );
 }
 
@@ -193,7 +238,12 @@ function createFinalRaceSetup(
     shortLabel,
     selectedBasicIds,
     buildFinalStartingStacks(selectedBasicIds),
-    buildFinalStartingDisplacementById(selectedBasicIds)
+    {
+      raceWinDistanceInClockwiseSteps: fullLapWinDistanceInClockwiseSteps(),
+      startingDisplacementById: buildFinalStartingDisplacementById(
+        selectedBasicIds
+      ),
+    }
   );
 }
 

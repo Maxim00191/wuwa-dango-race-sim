@@ -6,7 +6,10 @@ export function buildRoundActorOrder(state: GameState): {
   orderedActors: DangoId[];
 } {
   let nextState = state;
-  const randomizedActors = shuffleOrderStableCopy(nextState.entityOrder);
+  const randomizedActors =
+    nextState.turnIndex === 1 && nextState.preserveEntityOrderOnFirstTurn
+      ? [...nextState.entityOrder]
+      : shuffleOrderStableCopy(nextState.entityOrder);
   const randomizedActorIndexById = new Map(
     randomizedActors.map((actorId, index) => [actorId, index])
   );

@@ -632,7 +632,7 @@ export const enDictionary: TranslationDictionary = {
     teleport: {
       abbyHeadline: "Boss Abby warps to the start",
       stackHeadline: "{actor} jumps to a better position",
-      abbyDetail: "Readjusting stance to terrorize the track once more",
+      abbyDetail: "Readjusting stance to dominate the track once more",
       stackDetail: "Smoothly hopping onto the fast track",
     },
     idle: {
@@ -650,7 +650,7 @@ export const enDictionary: TranslationDictionary = {
     },
     skill: {
       headline: "{actor}: {skill}!",
-      detail: "Signature skill online.",
+      detail: "Resonance unleashed!",
       details: {
         activate: "Passive skill shaping this exchange.",
         carlotta: {
@@ -661,15 +661,16 @@ export const enDictionary: TranslationDictionary = {
         },
         lynae: {
           double: "Dazzling Moment! doubles the roll.",
-          stuck: "Dazzling Moment! fizzles—no movement this turn.",
+          stuck: "Failed to activate! — no movement this turn.",
         },
         aemeath: {
           leap: "Digital Ghost warps to the nearest rival ahead.",
         },
         sigrika: {
-          markSingle: "Solar Spirit marks a rival—movement trimmed by one.",
+          markSingle:
+            "Solar Spirit marks {markedDango1} — movement trimmed by one step.",
           markDouble:
-            "Solar Spirit marks two rivals—movement trimmed by one each.",
+            "Solar Spirit marks {markedDango1} and {markedDango2} — movement trimmed by one step each.",
         },
         denia: {
           repeat: "Matching roll—two bonus steps locked in.",
@@ -684,14 +685,14 @@ export const enDictionary: TranslationDictionary = {
         },
         cartethyia: {
           awaken: "Comeback Scene arms after hitting last place.",
-          boost: "Comeback Scene fires for two bonus steps.",
+          boost: "Comeback Scene story unfolds! Extra two bonus steps.",
         },
         jinhsi: {
-          stackAscend: "The Name of the Lingyin surges to the stack top.",
+          stackAscend: "With the Name of the Lingyin, leaps to the stack top.",
         },
         changli: {
           actLastNextRound:
-            "Plan Before Acting—finale queued for next round.",
+            "Plan Before Acting — finale queued for next round.",
         },
         calcharo: {
           lastPlaceBoost:
@@ -699,7 +700,7 @@ export const enDictionary: TranslationDictionary = {
         },
         augusta: {
           governorAuthority:
-            "The Ephor's Authority—turn skipped, finale lined up next round.",
+            "The Ephor's Authority — skips this turn, finale queued next round.",
         },
         iuno: {
           anchoredDestiny:

@@ -1,3 +1,4 @@
+import { LAP_DISTANCE_IN_CLOCKWISE_STEPS } from "@/constants/board";
 import type { GameState } from "@/types/game";
 
 export function createInitialGameState(): GameState {
@@ -9,6 +10,8 @@ export function createInitialGameState(): GameState {
     turnIndex: 0,
     cells: new Map(),
     entityOrder: [],
+    preserveEntityOrderOnFirstTurn: false,
+    raceWinDistanceInClockwiseSteps: LAP_DISTANCE_IN_CLOCKWISE_STEPS,
     entities: {},
     activeBasicIds: [],
     winnerId: null,

@@ -1,16 +1,19 @@
-import { LAP_DISTANCE_IN_CLOCKWISE_STEPS } from "@/constants/board";
+import { fullLapMidpointDistanceInClockwiseSteps } from "@/services/raceDistance";
 import type { PostMovementHookContext } from "@/types/game";
 
-export const MIDPOINT_DISTANCE = LAP_DISTANCE_IN_CLOCKWISE_STEPS / 2;
+export function courseMidpointDistance(): number {
+  return fullLapMidpointDistanceInClockwiseSteps();
+}
 
 export function hasCrossedMidpoint(
   context: Pick<
     PostMovementHookContext,
     "startRaceDisplacement" | "endRaceDisplacement"
-  >
+  >,
+  midpointDistance: number
 ): boolean {
   return (
-    context.startRaceDisplacement < MIDPOINT_DISTANCE &&
-    context.endRaceDisplacement >= MIDPOINT_DISTANCE
+    context.startRaceDisplacement < midpointDistance &&
+    context.endRaceDisplacement >= midpointDistance
   );
 }

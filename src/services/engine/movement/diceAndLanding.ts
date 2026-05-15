@@ -1,4 +1,3 @@
-import { LAP_DISTANCE_IN_CLOCKWISE_STEPS } from "@/constants/board";
 import { CHARACTER_BY_ID } from "@/services/characters";
 import type { SkillBannerActionId } from "@/broadcast/skillBannerLexicon";
 import type { LocalizedText } from "@/i18n";
@@ -218,10 +217,10 @@ export function resolveExecutedMovementStepCount(
   if (!actor) {
     return plannedStepCount;
   }
-  if (hasReachedWinningDistance(actor)) {
+  if (hasReachedWinningDistance(actor, state.raceWinDistanceInClockwiseSteps)) {
     return 0;
   }
   const remainingStepsToFinish =
-    LAP_DISTANCE_IN_CLOCKWISE_STEPS - actor.raceDisplacement;
+    state.raceWinDistanceInClockwiseSteps - actor.raceDisplacement;
   return Math.min(plannedStepCount, remainingStepsToFinish);
 }

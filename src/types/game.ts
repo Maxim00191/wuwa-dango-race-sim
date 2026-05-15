@@ -270,6 +270,9 @@ export type RaceSetup = {
   selectedBasicIds: DangoId[];
   startingStacks: RaceStartingStack[];
   startingDisplacementById: Partial<Record<DangoId, number>>;
+  raceWinDistanceInClockwiseSteps: number;
+  /** Seeds entity order and preserves it on turn 1 (stack top → bottom). */
+  seededFirstTurnActorOrder?: DangoId[];
 };
 
 export type GameLogEntryKind =
@@ -437,6 +440,8 @@ export type GameState = {
   turnIndex: number;
   cells: Map<CellIndex, DangoId[]>;
   entityOrder: DangoId[];
+  preserveEntityOrderOnFirstTurn: boolean;
+  raceWinDistanceInClockwiseSteps: number;
   entities: Record<DangoId, EntityRuntimeState>;
   activeBasicIds: DangoId[];
   winnerId: DangoId | null;

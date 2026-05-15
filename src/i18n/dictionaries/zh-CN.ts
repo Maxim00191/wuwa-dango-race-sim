@@ -595,12 +595,12 @@ export const zhCnDictionary: TranslationDictionary = {
     teleport: {
       abbyHeadline: "布大王重返起跑线",
       stackHeadline: "{actor} 跃向了优势层叠",
-      abbyDetail: "首领调整姿态，准备重新接管比赛",
+      abbyDetail: "首领调整姿态，准备重新掌控比赛",
       stackDetail: "轻巧地改变站位，随大流继续前行",
     },
     idle: {
       standbyHeadline: "{actor} 仍在热身",
-      standbyDetail: "好戏还在后头，首领稍后入场",
+      standbyDetail: "怖怖怖，好戏还在后头，布大王稍后入场",
       blockedHeadline: "{actor} 本回合放弃行动",
       blockedDetailWithRoll: "虽然掷出了 {value} 点，但底下的团子才是车头",
       blockedDetail: "现在的移动全权交给底下的赛手负责",
@@ -612,7 +612,7 @@ export const zhCnDictionary: TranslationDictionary = {
     },
     skill: {
       headline: "{actor}：{skill}！",
-      detail: "招牌技能已上线。",
+      detail: "共鸣能力爆发！",
       details: {
         activate: "被动技能正在影响本段赛程。",
         carlotta: {
@@ -629,9 +629,9 @@ export const zhCnDictionary: TranslationDictionary = {
           leap: "电子幽灵登场，传送至前方最近团子。",
         },
         sigrika: {
-          markSingle: "日灵，帮帮忙！标记对手，本回合少前进 1 格。",
+          markSingle: "日灵，帮帮忙！标记 {markedDango1} ，本回合少走 1 格。",
           markDouble:
-            "日灵，帮帮忙！标记两名对手，本回合各少前进 1 格。",
+            "日灵，帮帮忙！标记 {markedDango1} 和 {markedDango2} ，本回合各少走 1 格。",
         },
         denia: {
           repeat: "好事成「双」，相同点数额外前进 2 格。",
@@ -645,10 +645,10 @@ export const zhCnDictionary: TranslationDictionary = {
         },
         cartethyia: {
           awaken: "翻盘桥段触发，进入翻盘状态。",
-          boost: "翻盘桥段爆发，额外前进 2 格。",
+          boost: "翻盘桥段故事上演！额外前进 2 格。",
         },
         jinhsi: {
-          stackAscend: "令尹之名发动，跃至叠层最上方。",
+          stackAscend: "以令尹之名，跃至叠层最上方。",
         },
         changli: {
           actLastNextRound: "谋而后定，下回合压轴行动。",

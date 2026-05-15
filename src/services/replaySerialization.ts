@@ -1,3 +1,4 @@
+import { LAP_DISTANCE_IN_CLOCKWISE_STEPS } from "@/constants/board";
 import type {
   DangoId,
   EntityRuntimeState,
@@ -196,6 +197,8 @@ export function serializeEngineFrame(state: GameState): MatchGameFrameJson {
     shortLabel: state.shortLabel,
     turnIndex: state.turnIndex,
     entityOrder: [...state.entityOrder],
+    preserveEntityOrderOnFirstTurn: state.preserveEntityOrderOnFirstTurn,
+    raceWinDistanceInClockwiseSteps: state.raceWinDistanceInClockwiseSteps,
     activeBasicIds: [...state.activeBasicIds],
     winnerId: state.winnerId,
     abbyPendingTeleportToStart: state.abbyPendingTeleportToStart,
@@ -230,6 +233,11 @@ export function materializeGameStateFromFrame(
     turnIndex: frame.turnIndex,
     cells,
     entityOrder: [...frame.entityOrder],
+    preserveEntityOrderOnFirstTurn:
+      frame.preserveEntityOrderOnFirstTurn ?? false,
+    raceWinDistanceInClockwiseSteps:
+      frame.raceWinDistanceInClockwiseSteps ??
+      LAP_DISTANCE_IN_CLOCKWISE_STEPS,
     entities,
     activeBasicIds: [...frame.activeBasicIds],
     winnerId: frame.winnerId,

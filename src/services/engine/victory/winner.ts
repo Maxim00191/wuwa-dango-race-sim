@@ -11,7 +11,9 @@ export function pickWinnerBasicDangoId(state: GameState): string | null {
       continue;
     }
     const entity = state.entities[topId];
-    if (!hasReachedWinningDistance(entity)) {
+    if (
+      !hasReachedWinningDistance(entity, state.raceWinDistanceInClockwiseSteps)
+    ) {
       continue;
     }
     const displacement = entity.raceDisplacement;
