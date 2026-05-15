@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { useReplayVisualBanners } from "@/hooks/useReplayVisualBanners";
 import { reduceGameState } from "@/services/gameEngine";
 import {
+  commitEngineFrameToBuffer,
   encodeMatchRecordJson,
   engineFramesDeepEqual,
   findFrameIndexForTurnIndex,
@@ -87,6 +88,7 @@ export function useReplayTimeline(options: UseReplayTimelineOptions) {
     null
   );
   const expectingReplayAdvanceRef = useRef(false);
+  const syncCursorToCommittedTailRef = useRef(false);
   const prevPhaseRef = useRef(game.state.phase);
 
   const isReplayLoaded = record !== null;
@@ -305,8 +307,9 @@ export function useReplayTimeline(options: UseReplayTimelineOptions) {
         return;
       }
 
-      const collected: MatchGameFrameJson[] = [];
+      let merged = buffer;
       let working: GameState = live.state;
+      let advanced = false;
       for (let iteration = 0; iteration < QUICK_RESOLVE_SAFETY_CAP; iteration++) {
         const previousStamp = working.playbackStamp;
         const next = reduceGameState(
@@ -322,7 +325,11 @@ export function useReplayTimeline(options: UseReplayTimelineOptions) {
           break;
         }
         working = next;
-        collected.push(serializeEngineFrame(working));
+        merged = commitEngineFrameToBuffer(
+          merged,
+          serializeEngineFrame(working)
+        );
+        advanced = true;
         const raceEnded =
           working.phase !== "running" || Boolean(working.winnerId);
         if (raceEnded) {
@@ -333,7 +340,7 @@ export function useReplayTimeline(options: UseReplayTimelineOptions) {
         }
       }
 
-      if (collected.length === 0) {
+      if (!advanced) {
         return;
       }
 
@@ -342,10 +349,9 @@ export function useReplayTimeline(options: UseReplayTimelineOptions) {
       setPlaybackAuto(false);
       setReplayPlayTurnTarget(null);
 
-      const merged = buffer.concat(collected);
       liveCommittedFramesRef.current = merged;
+      syncCursorToCommittedTailRef.current = true;
       setLiveCommittedLength(merged.length);
-      setCursorStep(merged.length - 1);
 
       const finalSnapshot = materializeGameStateFromFrame(
         merged[merged.length - 1]!
@@ -392,6 +398,17 @@ export function useReplayTimeline(options: UseReplayTimelineOptions) {
   }, [game.state.phase, record, resetLiveCommitted]);
 
   useLayoutEffect(() => {
+    if (!syncCursorToCommittedTailRef.current) {
+      return;
+    }
+    syncCursorToCommittedTailRef.current = false;
+    const tailIndex = liveCommittedFramesRef.current.length - 1;
+    if (tailIndex >= 0) {
+      setCursorStep(tailIndex);
+    }
+  }, [liveCommittedLength]);
+
+  useLayoutEffect(() => {
     const prev = prevPhaseRef.current;
     prevPhaseRef.current = game.state.phase;
     if (record !== null) {
@@ -430,7 +447,7 @@ export function useReplayTimeline(options: UseReplayTimelineOptions) {
     if (last && engineFramesDeepEqual(last, serialized)) {
       return;
     }
-    const next = [...frames, serialized];
+    const next = commitEngineFrameToBuffer(frames, serialized);
     liveCommittedFramesRef.current = next;
     setLiveCommittedLength(next.length);
     setCursorStep(next.length - 1);

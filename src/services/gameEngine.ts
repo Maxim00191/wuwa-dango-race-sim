@@ -35,6 +35,7 @@ import {
   deriveBasicPlacementsFromRace,
 } from "@/services/raceSetup";
 import {
+  commitEngineFrameToBuffer,
   serializeBoardEffectAssignments,
   serializeEngineFrame,
 } from "@/services/replaySerialization";
@@ -2239,6 +2240,20 @@ function applyStepAction(
     openingSegments.push(...opened.openingSegments);
     showTurnIntro = true;
     turnOrderForBanner = [...pending.orderedActorIds];
+    const playbackStamp = state.playbackStamp + 1;
+    return {
+      ...working,
+      pendingTurn: pending,
+      playbackStamp,
+      lastTurnPlayback: createTurnPlaybackPlan(state, {
+        turnIndex: working.turnIndex,
+        segments: openingSegments,
+        playbackStamp,
+        showTurnIntroBanner: true,
+        turnOrderActorIds: turnOrderForBanner,
+        turnQueue: buildTurnQueueAttachment(pending, 0),
+      }),
+    };
   }
 
   const actorId = pending.orderedActorIds[pending.nextActorIndex];
@@ -2492,7 +2507,7 @@ function simulateHeadlessRace(
   let iterations = 0;
   if (captureReplay) {
     const board = serializeBoardEffectAssignments(boardEffectByCellIndex);
-    const frames: MatchGameFrameJson[] = [serializeEngineFrame(working)];
+    let frames: MatchGameFrameJson[] = [serializeEngineFrame(working)];
     while (working.phase === "running" && !working.winnerId) {
       if (iterations >= safetyCap) {
         break;
@@ -2507,7 +2522,7 @@ function simulateHeadlessRace(
       ) {
         break;
       }
-      frames.push(serializeEngineFrame(working));
+      frames = commitEngineFrameToBuffer(frames, serializeEngineFrame(working));
     }
     return {
       state: working,

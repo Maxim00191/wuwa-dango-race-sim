@@ -3,6 +3,7 @@ import {
   reduceGameState,
 } from "@/services/gameEngine";
 import {
+  commitEngineFrameToBuffer,
   serializeBoardEffectAssignments,
   serializeEngineFrame,
 } from "@/services/replaySerialization";
@@ -14,6 +15,8 @@ import type {
 } from "@/types/replay";
 
 export {
+  commitEngineFrameToBuffer,
+  engineFramesPhysicallyEqual,
   materializeGameStateFromFrame,
   serializeBoardEffectAssignments,
   serializeEngineFrame,
@@ -50,7 +53,7 @@ export function compileSingleRaceMatchRecord(
     { type: "START", setup },
     boardEffectByCellIndex
   );
-  const frames: MatchGameFrameJson[] = [serializeEngineFrame(working)];
+  let frames: MatchGameFrameJson[] = [serializeEngineFrame(working)];
   const safetyCap = 250_000;
   let iterations = 0;
   while (working.phase === "running" && !working.winnerId) {
@@ -71,7 +74,7 @@ export function compileSingleRaceMatchRecord(
     ) {
       break;
     }
-    frames.push(serializeEngineFrame(working));
+    frames = commitEngineFrameToBuffer(frames, serializeEngineFrame(working));
   }
   return {
     schemaVersion: 1,

@@ -123,6 +123,57 @@ export function serializeBoardEffectAssignments(
     .map(([cellIndex, effectId]) => ({ cellIndex, effectId }));
 }
 
+function physicalFrameFingerprint(frame: MatchGameFrameJson): string {
+  const entityCells: Record<string, number> = {};
+  for (const [entityId, runtime] of Object.entries(frame.entities)) {
+    entityCells[entityId] = runtime.cellIndex;
+  }
+  return JSON.stringify({
+    phase: frame.phase,
+    winnerId: frame.winnerId,
+    abbyPendingTeleportToStart: frame.abbyPendingTeleportToStart,
+    cells: frame.cells,
+    entityCells,
+  });
+}
+
+export function engineFramesPhysicallyEqual(
+  left: MatchGameFrameJson,
+  right: MatchGameFrameJson
+): boolean {
+  return physicalFrameFingerprint(left) === physicalFrameFingerprint(right);
+}
+
+function pendingTurnKeyframeKey(
+  pending: PendingTurnResolution | null
+): string {
+  if (!pending) {
+    return "null";
+  }
+  return `${pending.nextActorIndex}:${pending.openingBannerConsumed}`;
+}
+
+export function commitEngineFrameToBuffer(
+  frames: readonly MatchGameFrameJson[],
+  frame: MatchGameFrameJson
+): MatchGameFrameJson[] {
+  if (frames.length === 0) {
+    return [frame];
+  }
+  const previous = frames[frames.length - 1]!;
+  if (
+    frame.turnIndex === previous.turnIndex &&
+    pendingTurnKeyframeKey(frame.pendingTurn) ===
+      pendingTurnKeyframeKey(previous.pendingTurn) &&
+    engineFramesPhysicallyEqual(previous, frame)
+  ) {
+    const merged = [...frames];
+    merged[merged.length - 1] = frame;
+    return merged;
+  }
+  return [...frames, frame];
+}
+
 export function serializeEngineFrame(state: GameState): MatchGameFrameJson {
   const cells: Record<string, DangoId[]> = {};
   const sortedEntries = [...state.cells.entries()].sort(
