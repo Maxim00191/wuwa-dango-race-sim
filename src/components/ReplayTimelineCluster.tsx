@@ -12,6 +12,12 @@ export type ReplayFileToolbarProps = {
   onImportFile: (payload: string) => void;
   jumpToPresentVisible: boolean;
   onJumpToPresent: () => void;
+  onStepBackward: () => void;
+  onStepForward: () => void;
+  stepBackwardDisabled: boolean;
+  stepForwardDisabled: boolean;
+  bannersEnabled?: boolean;
+  onToggleBanners?: () => void;
   labels: {
     toolbarCaption: string;
     seekTurnLabel: string;
@@ -20,6 +26,10 @@ export type ReplayFileToolbarProps = {
     import: string;
     idleHint: string;
     jumpToPresent: string;
+    stepBack: string;
+    stepForward: string;
+    bannersOn?: string;
+    bannersOff?: string;
   };
 };
 
@@ -40,6 +50,12 @@ export function ReplayFileToolbar(props: ReplayFileToolbarProps) {
     onImportFile,
     jumpToPresentVisible,
     onJumpToPresent,
+    onStepBackward,
+    onStepForward,
+    stepBackwardDisabled,
+    stepForwardDisabled,
+    bannersEnabled,
+    onToggleBanners,
     labels,
   } = props;
 
@@ -57,6 +73,27 @@ export function ReplayFileToolbar(props: ReplayFileToolbarProps) {
         </p>
       )}
       <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onMouseDown={suppressMouseDownFocus}
+            onClick={onStepBackward}
+            disabled={stepBackwardDisabled}
+            className="inline-flex min-h-9 items-center justify-center rounded-full bg-blue-600 px-3 py-1.5 text-xs font-semibold text-blue-50 shadow-md shadow-blue-950/30 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none sm:min-h-10 sm:px-4 sm:text-sm dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
+          >
+            {labels.stepBack}
+          </button>
+          <button
+            type="button"
+            onMouseDown={suppressMouseDownFocus}
+            onClick={onStepForward}
+            disabled={stepForwardDisabled}
+            className="inline-flex min-h-9 items-center justify-center rounded-full bg-sky-500 px-3 py-1.5 text-xs font-semibold text-sky-50 shadow-md shadow-sky-900/20 transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none sm:min-h-10 sm:px-4 sm:text-sm dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
+          >
+       
+            {labels.stepForward}
+          </button>
+        </div>
         {jumpToPresentVisible ? (
           <button
             type="button"
@@ -65,6 +102,21 @@ export function ReplayFileToolbar(props: ReplayFileToolbarProps) {
             className="inline-flex min-h-9 items-center justify-center rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-emerald-50 shadow-md shadow-emerald-950/30 transition hover:bg-emerald-500 sm:min-h-10 sm:px-4 sm:text-sm"
           >
             {labels.jumpToPresent}
+          </button>
+        ) : null}
+        {onToggleBanners && labels.bannersOn && labels.bannersOff ? (
+          <button
+            type="button"
+            onMouseDown={suppressMouseDownFocus}
+            onClick={onToggleBanners}
+            aria-pressed={bannersEnabled}
+            className={`inline-flex min-h-9 w-fit items-center justify-center rounded-full px-3 py-1.5 text-xs font-semibold shadow-md transition sm:min-h-10 sm:px-4 sm:text-sm ${
+              bannersEnabled
+                ? "bg-indigo-600 text-indigo-50 shadow-indigo-950/25 hover:bg-indigo-500"
+                : "bg-slate-200 text-slate-600 shadow-slate-900/10 hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+            }`}
+          >
+            {bannersEnabled ? labels.bannersOn : labels.bannersOff}
           </button>
         ) : null}
         <div className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-2">

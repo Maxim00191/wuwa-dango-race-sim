@@ -1,6 +1,6 @@
 import { characterParam, text } from "@/i18n";
 import { rollStandardBasicDice } from "@/services/characters/basic";
-import { hasCrossedMidpoint } from "@/services/midpoint";
+import { MIDPOINT_DISTANCE } from "@/services/midpoint";
 import { orderedBasicRacerIdsForLeaderboard } from "@/services/racerRanking";
 import {
   applyStackTeleportCellsOnly,
@@ -29,7 +29,7 @@ function resolveAnchoredDestinyTeleportScope(
   }
   const aheadIds = rankedBasicIds.slice(0, actorRankIndex);
   const behindIds = rankedBasicIds.slice(actorRankIndex + 1);
-  if (aheadIds.length === 0 || behindIds.length === 0) {
+  if (!(aheadIds.length > 0 && behindIds.length > 0)) {
     return null;
   }
   return { aheadIds, behindIds };
@@ -82,43 +82,25 @@ function resolveIunoAnchoredDestiny(
   if (!initialEntity || initialEntity.skillState.hasUsedAnchoredDestiny) {
     return { state };
   }
-  const crossedNow = hasCrossedMidpoint(context);
-  const wasArmed = Boolean(initialEntity.skillState.anchoredDestinyMidpointArmed);
-  if (!wasArmed && !crossedNow) {
+  const endDisplacement = context.endRaceDisplacement;
+  const passedCourseMidpoint = endDisplacement >= MIDPOINT_DISTANCE;
+  const scope = passedCourseMidpoint
+    ? resolveAnchoredDestinyTeleportScope(
+        orderedBasicRacerIdsForLeaderboard(state),
+        context.rollerId
+      )
+    : null;
+  if (!scope) {
     return { state };
   }
-  let workingState = state;
-  let actorEntity = initialEntity;
-  if (crossedNow && !wasArmed) {
-    actorEntity = {
-      ...initialEntity,
-      skillState: {
-        ...initialEntity.skillState,
-        anchoredDestinyMidpointArmed: true,
-      },
-    };
-    workingState = {
-      ...state,
-      entities: {
-        ...state.entities,
-        [context.rollerId]: actorEntity,
-      },
-    };
-  }
-  const scope = resolveAnchoredDestinyTeleportScope(
-    orderedBasicRacerIdsForLeaderboard(workingState),
-    context.rollerId
-  );
-  if (!scope) {
-    return { state: workingState };
-  }
+  const actorEntity = initialEntity;
   const teleportIds = [...scope.aheadIds, ...scope.behindIds];
-  const moves = buildAnchoredDestinyMoves(workingState, teleportIds);
+  const moves = buildAnchoredDestinyMoves(state, teleportIds);
   if (!moves || moves.length === 0) {
-    return { state: workingState };
+    return { state };
   }
   const destinationCellIndex = actorEntity.cellIndex;
-  const destinationStack = workingState.cells.get(destinationCellIndex) ?? [];
+  const destinationStack = state.cells.get(destinationCellIndex) ?? [];
   const nextDestinationStack = buildAnchoredDestinyDestinationStack(
     destinationStack,
     context.rollerId,
@@ -126,10 +108,10 @@ function resolveIunoAnchoredDestiny(
     scope.behindIds
   );
   if (!nextDestinationStack) {
-    return { state: workingState };
+    return { state };
   }
   const nextCells = applyStackTeleportCellsOnly(
-    workingState.cells,
+    state.cells,
     moves.map((move) => ({
       entityId: move.entityId,
       fromCellIndex: move.fromCell,
@@ -137,8 +119,8 @@ function resolveIunoAnchoredDestiny(
     destinationCellIndex,
     nextDestinationStack
   );
-  const anchorDisplacement = actorEntity.raceDisplacement;
-  const nextEntities = { ...workingState.entities };
+  const anchorDisplacement = endDisplacement;
+  const nextEntities = { ...state.entities };
   nextEntities[context.rollerId] = {
     ...actorEntity,
     skillState: {
@@ -159,7 +141,7 @@ function resolveIunoAnchoredDestiny(
   }
   return {
     state: {
-      ...workingState,
+      ...state,
       cells: nextCells,
       entities: nextEntities,
     },

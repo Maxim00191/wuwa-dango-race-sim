@@ -382,6 +382,10 @@ export default function App() {
       exportCopy: t("game.replay.exportCopy"),
       import: t("game.replay.import"),
       jumpToPresent: t("game.replay.jumpToPresent"),
+      stepBack: t("game.replay.stepBack"),
+      stepForward: t("game.replay.stepForward"),
+      bannersOn: t("game.replay.bannersOn"),
+      bannersOff: t("game.replay.bannersOff"),
     }),
     [t]
   );
@@ -395,6 +399,10 @@ export default function App() {
       exportCopy: t("game.replay.exportCopy"),
       import: t("game.replay.import"),
       jumpToPresent: t("game.replay.jumpToPresent"),
+      stepBack: t("game.replay.stepBack"),
+      stepForward: t("game.replay.stepForward"),
+      bannersOn: t("game.replay.bannersOn"),
+      bannersOff: t("game.replay.bannersOff"),
     }),
     [t]
   );
@@ -506,6 +514,12 @@ export default function App() {
           onImportFile={handleNormalReplayImport}
           jumpToPresentVisible={normalReplay.jumpToPresentVisible}
           onJumpToPresent={normalReplay.jumpToPresent}
+          onStepBackward={normalReplay.historyStepBack}
+          onStepForward={normalReplay.spectateAdvanceStep}
+          stepBackwardDisabled={normalReplay.timelineStep <= 0}
+          stepForwardDisabled={stepDisabled}
+          bannersEnabled={normalReplay.replayBannersEnabled}
+          onToggleBanners={normalReplay.toggleReplayBanners}
           labels={normalReplayLabels}
         />
       ),
@@ -513,6 +527,9 @@ export default function App() {
       onPlayTurn: normalReplay.spectatePlayTurn,
       onToggleAuto: normalReplay.spectateToggleAuto,
       autoActive: normalReplay.spectateAutoActive,
+      replayBannersEnabled: normalReplay.replayBannersEnabled,
+      replayBannerPayload: normalReplay.replayBannerPayload,
+      onToggleReplayBanners: normalReplay.toggleReplayBanners,
       playTurnBusy: normalReplay.spectatePlayTurnChaining,
       stepDisabled,
       playTurnDisabled,
@@ -576,6 +593,12 @@ export default function App() {
           onImportFile={handleTournamentReplayImport}
           jumpToPresentVisible={tournamentReplay.jumpToPresentVisible}
           onJumpToPresent={tournamentReplay.jumpToPresent}
+          onStepBackward={tournamentReplay.historyStepBack}
+          onStepForward={tournamentReplay.spectateAdvanceStep}
+          stepBackwardDisabled={tournamentReplay.timelineStep <= 0}
+          stepForwardDisabled={stepDisabled}
+          bannersEnabled={tournamentReplay.replayBannersEnabled}
+          onToggleBanners={tournamentReplay.toggleReplayBanners}
           labels={tournamentReplayLabels}
         />
       ),
@@ -583,6 +606,9 @@ export default function App() {
       onPlayTurn: tournamentReplay.spectatePlayTurn,
       onToggleAuto: tournamentReplay.spectateToggleAuto,
       autoActive: tournamentReplay.spectateAutoActive,
+      replayBannersEnabled: tournamentReplay.replayBannersEnabled,
+      replayBannerPayload: tournamentReplay.replayBannerPayload,
+      onToggleReplayBanners: tournamentReplay.toggleReplayBanners,
       playTurnBusy: tournamentReplay.spectatePlayTurnChaining,
       stepDisabled,
       playTurnDisabled,

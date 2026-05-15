@@ -251,17 +251,17 @@ export const enDictionary: TranslationDictionary = {
       autoRun: "Enable Auto-play",
       reset: "Reset Track",
       quickRuns: "Quick Resolve",
-      instantTurn: "Instantly resolve turn",
-      instantGame: "Instantly finish race",
+      instantTurn: "Resolve turn",
+      instantGame: "Resolve game",
     },
     replay: {
       clusterTitle: "Match replay & timeline",
-      toolbarCaption: "Replay data",
+      toolbarCaption: "Replay Timeline",
       idleHint:
-        "Keyframes record automatically while playing; export anytime or import a json file.",
+        "Record automatically while playing; export anytime or import a json file.",
       jumpToPresent: "Jump to present",
-      stepBack: "Step back",
-      stepForward: "Step forward (animated)",
+      stepBack: "<- Back",
+      stepForward: "Next ->",
       seekEngineTurn: "Total turns",
       seekTurnButton: "Seek to turn",
       replayAutoplay: "Replay auto-play",
@@ -270,6 +270,8 @@ export const enDictionary: TranslationDictionary = {
       import: "Import JSON",
       scrubAria: "Seek along recorded timeline",
       importInvalid: "Could not read replay file.",
+      bannersOn: "Banners on",
+      bannersOff: "Banners off",
     },
     board: {
       panelTitle: "Live Track Broadcast",
@@ -279,7 +281,7 @@ export const enDictionary: TranslationDictionary = {
         finishLine: {
           label: "Finish Line",
           description:
-            "Victory requires completing the entire board, regardless of how close to the line you started.",
+            "Victory requires completing the entire board, regardless of what happens here.",
         },
         propulsion: {
           label: "Propulsion Device",

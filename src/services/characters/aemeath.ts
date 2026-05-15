@@ -1,10 +1,11 @@
 import { ABBY_ID } from "@/constants/ids";
 import { characterParam, text } from "@/i18n";
 import { rollInclusive } from "@/services/characters/dice";
-import { hasCrossedMidpoint } from "@/services/midpoint";
+import { MIDPOINT_DISTANCE } from "@/services/midpoint";
 import {
+  applyStackTeleportCellsOnly,
   findCellIndexForEntity,
-  teleportEntitySliceCellsOnly,
+  mergeWithAbbyBottomRule,
 } from "@/services/stateCells";
 import type {
   CharacterDefinition,
@@ -24,28 +25,40 @@ function rollAemeathDice(
   return { diceValue: rollInclusive(1, 3) };
 }
 
-function findNearestValidTargetCell(
+function findNearestAheadTeleportTarget(
   state: GameState,
-  rollerId: string
-): { cellIndex: number; distance: number } | null {
-  const actor = state.entities[rollerId];
-  if (!actor) {
+  rollerId: string,
+  forwardFromRaceDisplacement: number
+): { destinationCellIndex: number; anchorRaceDisplacement: number } | null {
+  if (!state.entities[rollerId]) {
     return null;
   }
-  let nearestTarget: { cellIndex: number; distance: number } | null = null;
+  let nearest:
+    | { destinationCellIndex: number; anchorRaceDisplacement: number; distance: number }
+    | null = null;
   for (const [targetId, target] of Object.entries(state.entities)) {
     if (targetId === rollerId || targetId === ABBY_ID) {
       continue;
     }
-    const distance = target.raceDisplacement - actor.raceDisplacement;
+    const distance = target.raceDisplacement - forwardFromRaceDisplacement;
     if (distance <= 0) {
       continue;
     }
-    if (!nearestTarget || distance < nearestTarget.distance) {
-      nearestTarget = { cellIndex: target.cellIndex, distance };
+    if (!nearest || distance < nearest.distance) {
+      nearest = {
+        destinationCellIndex: target.cellIndex,
+        anchorRaceDisplacement: target.raceDisplacement,
+        distance,
+      };
     }
   }
-  return nearestTarget;
+  if (!nearest) {
+    return null;
+  }
+  return {
+    destinationCellIndex: nearest.destinationCellIndex,
+    anchorRaceDisplacement: nearest.anchorRaceDisplacement,
+  };
 }
 
 function resolveAemeathMidpointLeap(
@@ -59,23 +72,28 @@ function resolveAemeathMidpointLeap(
   if (!entity || entity.skillState.hasUsedMidpointLeap) {
     return { state };
   }
-  if (!hasCrossedMidpoint(context)) {
+  const endDisplacement = context.endRaceDisplacement;
+  const passedCourseMidpoint = endDisplacement >= MIDPOINT_DISTANCE;
+  const teleportTarget = passedCourseMidpoint
+    ? findNearestAheadTeleportTarget(state, context.rollerId, endDisplacement)
+    : null;
+  if (!teleportTarget) {
     return { state };
   }
   const originCellIndex = findCellIndexForEntity(state.cells, context.rollerId);
   if (originCellIndex === null) {
     return { state };
   }
-  const nearestTarget = findNearestValidTargetCell(state, context.rollerId);
-  if (!nearestTarget) {
-    return { state };
-  }
-  const destinationCellIndex = nearestTarget.cellIndex;
-  const nextCells = teleportEntitySliceCellsOnly(
+  const destinationCellIndex = teleportTarget.destinationCellIndex;
+  const destinationStack = state.cells.get(destinationCellIndex) ?? [];
+  const nextDestinationStack = mergeWithAbbyBottomRule(destinationStack, [
+    context.rollerId,
+  ]);
+  const nextCells = applyStackTeleportCellsOnly(
     state.cells,
-    originCellIndex,
+    [{ entityId: context.rollerId, fromCellIndex: originCellIndex }],
     destinationCellIndex,
-    [context.rollerId]
+    nextDestinationStack
   );
   const stateWithLeapSpent: GameState = {
     ...state,
@@ -85,7 +103,7 @@ function resolveAemeathMidpointLeap(
       [context.rollerId]: {
         ...entity,
         cellIndex: destinationCellIndex,
-        raceDisplacement: entity.raceDisplacement + nearestTarget.distance,
+        raceDisplacement: teleportTarget.anchorRaceDisplacement,
         skillState: {
           ...entity.skillState,
           hasUsedMidpointLeap: true,
@@ -97,10 +115,11 @@ function resolveAemeathMidpointLeap(
     state: stateWithLeapSpent,
     segments: [
       {
-        kind: "teleport",
-        entityIds: [context.rollerId],
-        fromCell: originCellIndex,
+        kind: "stackTeleport",
+        actorId: context.rollerId,
+        moves: [{ entityId: context.rollerId, fromCell: originCellIndex }],
         toCell: destinationCellIndex,
+        stackBottomToTop: nextDestinationStack,
       },
     ],
     skillNarrative: text("simulation.skills.aemeathLeap", {

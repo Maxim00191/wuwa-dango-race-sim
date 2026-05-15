@@ -31,6 +31,11 @@ export type AtomicPlaybackStep =
       toCell: CellIndex;
     }
   | {
+      kind: "stackPromote";
+      entityIds: DangoId[];
+      cellIndex: CellIndex;
+    }
+  | {
       kind: "stackTeleport";
       actorId: DangoId;
       movedIds: DangoId[];
@@ -99,6 +104,20 @@ export function expandPlaybackToAtomicSteps(
         cells,
         segment.fromCell,
         segment.toCell,
+        segment.entityIds
+      );
+      continue;
+    }
+    if (segment.kind === "stackPromote") {
+      atomic.push({
+        kind: "stackPromote",
+        entityIds: segment.entityIds,
+        cellIndex: segment.cellIndex,
+      });
+      cells = teleportEntitySliceCellsOnly(
+        cells,
+        segment.cellIndex,
+        segment.cellIndex,
         segment.entityIds
       );
       continue;
@@ -204,6 +223,21 @@ export function expandPlaybackToSegmentAtomicChunks(
       chunks.push(chunk);
       continue;
     }
+    if (segment.kind === "stackPromote") {
+      chunk.push({
+        kind: "stackPromote",
+        entityIds: segment.entityIds,
+        cellIndex: segment.cellIndex,
+      });
+      cells = teleportEntitySliceCellsOnly(
+        cells,
+        segment.cellIndex,
+        segment.cellIndex,
+        segment.entityIds
+      );
+      chunks.push(chunk);
+      continue;
+    }
     if (segment.kind === "stackTeleport") {
       chunk.push({
         kind: "stackTeleport",
@@ -273,6 +307,14 @@ export function applyAtomicCellsStep(
       step.entityIds
     );
   }
+  if (step.kind === "stackPromote") {
+    return teleportEntitySliceCellsOnly(
+      cells,
+      step.cellIndex,
+      step.cellIndex,
+      step.entityIds
+    );
+  }
   if (step.kind === "stackTeleport") {
     return applyStackTeleportCellsOnly(
       cells,
@@ -309,6 +351,23 @@ export function applyAtomicStepToEntities(
           ...runtime,
           cellIndex: step.toCell,
           raceDisplacement: id === ABBY_ID ? 0 : runtime.raceDisplacement,
+        },
+      };
+    }
+    return nextEntities;
+  }
+  if (step.kind === "stackPromote") {
+    let nextEntities = { ...entities };
+    for (const id of step.entityIds) {
+      const runtime = nextEntities[id];
+      if (!runtime) {
+        continue;
+      }
+      nextEntities = {
+        ...nextEntities,
+        [id]: {
+          ...runtime,
+          cellIndex: step.cellIndex,
         },
       };
     }

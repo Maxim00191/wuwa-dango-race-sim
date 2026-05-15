@@ -241,16 +241,16 @@ export const zhCnDictionary: TranslationDictionary = {
       autoRun: "开启自动演播",
       reset: "重置赛道",
       quickRuns: "快速结算",
-      instantTurn: "直接结算本回合",
-      instantGame: "直接得出本场结果",
+      instantTurn: "结算本回合",
+      instantGame: "结算本场结果",
     },
     replay: {
       clusterTitle: "比赛回放与时间轴",
-      toolbarCaption: "回放数据",
-      idleHint: "播放时自动记录关键帧；导出或导入 JSON 文件。",
+      toolbarCaption: "回放时间轴",
+      idleHint: "播放时自动记录，可导出或导入 JSON 文件。",
       jumpToPresent: "回到最新进度",
-      stepBack: "后退一步",
-      stepForward: "前进一步（带动画）",
+      stepBack: "<- 后退",
+      stepForward: "前进 ->",
       seekEngineTurn: "总回合",
       seekTurnButton: "跳转到回合",
       replayAutoplay: "回放自动演播",
@@ -259,6 +259,8 @@ export const zhCnDictionary: TranslationDictionary = {
       import: "导入 JSON",
       scrubAria: "在已记录时间轴上拖动跳转",
       importInvalid: "无法读取该回放文件。",
+      bannersOn: "横幅开启",
+      bannersOff: "横幅关闭",
     },
     board: {
       panelTitle: "赛道实况",
@@ -267,7 +269,7 @@ export const zhCnDictionary: TranslationDictionary = {
       legend: {
         finishLine: {
           label: "终点",
-          description: "不管起点距离终点有多近，都必须完整跑完赛场才能夺下冠军。",
+          description: "不管发生什么事，都必须完整跑完赛场才能夺下冠军。",
         },
         propulsion: {
           label: "推进装置",

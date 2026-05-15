@@ -3,11 +3,14 @@ import type {
   EntityRuntimeState,
   GameState,
   PendingTurnResolution,
+  PlaybackSegment,
+  TurnPlaybackPlan,
   TurnRollPlan,
 } from "@/types/game";
 import type {
   BoardEffectAssignmentJson,
   MatchGameFrameJson,
+  ReplayFrameVisualEvents,
 } from "@/types/replay";
 
 function cloneTurnRollPlan(plan: TurnRollPlan): TurnRollPlan {
@@ -54,6 +57,61 @@ function clonePendingTurn(
   };
 }
 
+function clonePlaybackSegment(segment: PlaybackSegment): PlaybackSegment {
+  if (segment.kind === "idle") {
+    return { ...segment };
+  }
+  if (segment.kind === "roll") {
+    return { ...segment };
+  }
+  if (segment.kind === "skill") {
+    return { ...segment, message: { ...segment.message } };
+  }
+  if (segment.kind === "hops") {
+    return {
+      ...segment,
+      travelingIds: [...segment.travelingIds],
+      cellsPath: [...segment.cellsPath],
+    };
+  }
+  if (segment.kind === "teleport") {
+    return { ...segment, entityIds: [...segment.entityIds] };
+  }
+  if (segment.kind === "stackPromote") {
+    return { ...segment, entityIds: [...segment.entityIds] };
+  }
+  if (segment.kind === "stackTeleport") {
+    return {
+      ...segment,
+      moves: segment.moves.map((move) => ({ ...move })),
+      stackBottomToTop: [...segment.stackBottomToTop],
+    };
+  }
+  if (segment.kind === "cellEffect") {
+    return { ...segment, message: { ...segment.message } };
+  }
+  if (segment.kind === "victory") {
+    return { ...segment };
+  }
+  return { ...segment, travelingIds: [...segment.travelingIds] };
+}
+
+function serializeVisualEvents(
+  playback: TurnPlaybackPlan | null
+): ReplayFrameVisualEvents | null {
+  if (!playback) {
+    return null;
+  }
+  return {
+    turnIndex: playback.turnIndex,
+    segments: playback.segments.map(clonePlaybackSegment),
+    showTurnIntroBanner: playback.showTurnIntroBanner,
+    turnOrderActorIds: playback.turnOrderActorIds
+      ? [...playback.turnOrderActorIds]
+      : undefined,
+  };
+}
+
 export function serializeBoardEffectAssignments(
   boardEffectByCellIndex: Map<number, string | null>
 ): BoardEffectAssignmentJson[] {
@@ -92,6 +150,7 @@ export function serializeEngineFrame(state: GameState): MatchGameFrameJson {
     entities,
     cells,
     pendingTurn: clonePendingTurn(state.pendingTurn),
+    visualEvents: serializeVisualEvents(state.lastTurnPlayback),
   };
 }
 

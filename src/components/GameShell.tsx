@@ -41,6 +41,9 @@ export type GameShellSpectate = {
   onPlayTurn: () => void;
   onToggleAuto: () => void;
   autoActive: boolean;
+  replayBannersEnabled: boolean;
+  replayBannerPayload: BroadcastBannerPayload | null;
+  onToggleReplayBanners: () => void;
   playTurnBusy?: boolean;
   stepDisabled: boolean;
   playTurnDisabled: boolean;
@@ -129,6 +132,13 @@ export function GameShell({
       isAnimating ||
       playTurnEnabled ||
       autoPlayEnabled;
+  const keyboardEngineStepDisabled =
+    state.phase !== "running" ||
+    Boolean(state.winnerId) ||
+    isAnimating ||
+    playTurnEnabled ||
+    autoPlayEnabled ||
+    Boolean(spectate?.autoActive);
   const playTurnDisabled = spectate
     ? spectate.playTurnDisabled
     : state.phase !== "running" ||
@@ -152,10 +162,19 @@ export function GameShell({
     : state.phase !== "running" || Boolean(state.winnerId);
   const showWinnerBadge =
     state.phase === "finished" && Boolean(state.winnerId) && !isAnimating;
+  const visibleBroadcastPayload = spectate?.replayBannerPayload ?? broadcastPayload;
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (shouldIgnoreKeyboardShortcuts(e.target)) return;
+
+      if (e.code === "PageUp" || e.code === "PageDown") {
+        if (e.altKey || e.shiftKey || e.metaKey || e.ctrlKey) {
+          return;
+        }
+        e.preventDefault();
+        return;
+      }
 
       if (e.code === "Space") {
         if (spectate) {
@@ -174,7 +193,7 @@ export function GameShell({
         return;
       }
 
-      if (e.code === "ArrowLeft") {
+      if (e.code === "ArrowUp" || e.code === "ArrowLeft") {
         if (e.altKey || e.shiftKey || e.metaKey || e.ctrlKey) {
           return;
         }
@@ -186,6 +205,18 @@ export function GameShell({
         }
         e.preventDefault();
         spectate.onHistoryStepBack();
+        return;
+      }
+
+      if (e.code === "ArrowDown") {
+        if (e.altKey || e.shiftKey || e.metaKey || e.ctrlKey) {
+          return;
+        }
+        if (!spectate || spectate.stepDisabled) {
+          return;
+        }
+        e.preventDefault();
+        spectate.onStep();
         return;
       }
 
@@ -205,15 +236,19 @@ export function GameShell({
         if (e.altKey || e.shiftKey || e.metaKey) {
           return;
         }
-        if (nextTurnDisabled) {
+        if (spectate) {
+          if (spectate.stepDisabled) {
+            return;
+          }
+          e.preventDefault();
+          spectate.onStep();
+          return;
+        }
+        if (keyboardEngineStepDisabled) {
           return;
         }
         e.preventDefault();
-        if (spectate) {
-          spectate.onStep();
-        } else {
-          onStepAction();
-        }
+        onStepAction();
         return;
       }
 
@@ -236,7 +271,7 @@ export function GameShell({
     autoPlayEnabled,
     autoRunDisabled,
     instantDisabled,
-    nextTurnDisabled,
+    keyboardEngineStepDisabled,
     onAutoPlayEnabledChange,
     onInstantGame,
     onPlayTurn,
@@ -266,37 +301,6 @@ export function GameShell({
       {showSetupPanel ? setupPanel : null}
 
       <div className="flex w-full flex-col gap-3 sm:gap-4">
-        {spectate?.replayToolbar ? (
-          <ControlCluster label={t("game.replay.toolbarCaption")}>
-            <div className="flex flex-col gap-3">
-              {spectate.timelineVisible ? (
-                <div className="flex flex-wrap items-center gap-3">
-                  <input
-                    type="range"
-                    min={0}
-                    max={spectate.timelineMax}
-                    step={1}
-                    value={Math.min(
-                      spectate.timelineStep,
-                      spectate.timelineMax
-                    )}
-                    aria-label={spectate.scrubAria}
-                    onChange={(event) =>
-                      spectate.onScrub(
-                        Number.parseInt(event.target.value, 10)
-                      )
-                    }
-                    className="h-2 w-full min-w-[12rem] flex-1 cursor-pointer accent-indigo-600"
-                  />
-                  <span className="min-w-[10rem] text-right text-xs font-semibold tabular-nums text-slate-600 dark:text-slate-300 sm:text-sm">
-                    {spectate.turnSummaryText}
-                  </span>
-                </div>
-              ) : null}
-              {spectate.replayToolbar}
-            </div>
-          </ControlCluster>
-        ) : null}
         <div className="grid w-full grid-cols-1 items-stretch gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-[minmax(0,1.35fr)_auto_minmax(0,0.9fr)]">
         <ControlCluster label={t("game.controls.watch")}>
           <div className="flex flex-col gap-3">
@@ -324,7 +328,7 @@ export function GameShell({
               </button>
               {(spectate ? spectate.autoActive : autoPlayEnabled) ? (
                 <span
-                  className={`relative inline-flex overflow-hidden rounded-full p-[2px] shadow-lg shadow-violet-900/25 dark:shadow-violet-950/40 ${autoRunDisabled ? "opacity-55" : ""}`}
+                  className={`relative inline-flex overflow-hidden rounded-full p-[3px] shadow-lg shadow-violet-900/25 dark:shadow-violet-950/40 ${autoRunDisabled ? "opacity-55" : ""}`}
                 >
                   <span className="pause-auto-run-rainbow__wrap">
                     <span aria-hidden className="pause-auto-run-rainbow__spin" />
@@ -345,7 +349,7 @@ export function GameShell({
                 </span>
               ) : (
                 <span
-                  className={`inline-flex rounded-full bg-[linear-gradient(90deg,#f43f5e,#fb923c,#fbbf24,#4ade80,#38bdf8,#818cf8,#e879f9,#f43f5e)] p-[2px] shadow-lg shadow-violet-900/25 dark:shadow-violet-950/40 ${autoRunDisabled ? "opacity-55" : ""}`}
+                  className={`inline-flex rounded-full bg-[linear-gradient(90deg,#f43f5e,#fb923c,#fbbf24,#4ade80,#38bdf8,#818cf8,#e879f9,#f43f5e)] p-[3px] shadow-lg shadow-violet-900/25 dark:shadow-violet-950/40 ${autoRunDisabled ? "opacity-55" : ""}`}
                 >
                   <button
                     type="button"
@@ -421,7 +425,7 @@ export function GameShell({
       </div>
 
       <div className="grid min-h-0 w-full flex-1 items-start gap-5 lg:grid-cols-[minmax(0,2.3fr)_minmax(18rem,1fr)] lg:gap-8 xl:grid-cols-[minmax(0,2.85fr)_minmax(19rem,1fr)] xl:gap-10 2xl:grid-cols-[minmax(0,3.1fr)_minmax(20rem,1fr)]">
-        <section className="grid min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)_auto] rounded-[1.75rem] border border-slate-200 bg-white/90 p-4 shadow-md shadow-slate-900/10 backdrop-blur dark:border-slate-800 dark:bg-slate-900/60 dark:shadow-2xl dark:shadow-slate-950/60 sm:rounded-3xl sm:p-6 xl:p-8">
+        <section className="grid min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)_auto_auto] rounded-[1.75rem] border border-slate-200 bg-white/90 p-4 shadow-md shadow-slate-900/10 backdrop-blur dark:border-slate-800 dark:bg-slate-900/60 dark:shadow-2xl dark:shadow-slate-950/60 sm:rounded-3xl sm:p-6 xl:p-8">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0 flex flex-wrap items-baseline gap-x-3 gap-y-1">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 sm:text-sm">
@@ -457,7 +461,7 @@ export function GameShell({
                         hoppingEntityIds={hoppingEntityIds}
                       />
                       <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center px-4 py-5 sm:px-10 sm:py-6 md:px-16 md:py-10 lg:px-24 lg:py-14">
-                        <BroadcastBanner payload={broadcastPayload} />
+                        <BroadcastBanner payload={visibleBroadcastPayload} />
                       </div>
                     </div>
                   </div>
@@ -465,6 +469,38 @@ export function GameShell({
               </div>
             </div>
           </div>
+          {spectate?.replayToolbar ? (
+            <div className="flex flex-col gap-3 border-t border-slate-200/80 pt-5 pb-2 dark:border-slate-800/80">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 sm:text-sm">
+                {t("game.replay.toolbarCaption")}
+              </p>
+              {spectate.timelineVisible ? (
+                <div className="flex flex-wrap items-center gap-3">
+                  <input
+                    type="range"
+                    min={0}
+                    max={spectate.timelineMax}
+                    step={1}
+                    value={Math.min(
+                      spectate.timelineStep,
+                      spectate.timelineMax
+                    )}
+                    aria-label={spectate.scrubAria}
+                    onChange={(event) =>
+                      spectate.onScrub(
+                        Number.parseInt(event.target.value, 10)
+                      )
+                    }
+                    className="h-2 w-full min-w-[12rem] flex-1 cursor-pointer accent-indigo-600"
+                  />
+                  <span className="min-w-[10rem] text-right text-xs font-semibold tabular-nums text-slate-600 dark:text-slate-300 sm:text-sm">
+                    {spectate.turnSummaryText}
+                  </span>
+                </div>
+              ) : null}
+              {spectate.replayToolbar}
+            </div>
+          ) : null}
           <div className="hidden shrink-0 gap-3 pt-2 text-sm text-slate-600 dark:text-slate-300 sm:grid sm:grid-cols-2 xl:grid-cols-5">
             <LegendSwatch
               label={t("game.board.legend.finishLine.label")}

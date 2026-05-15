@@ -18,14 +18,14 @@ export type EntitySkillState = {
   sequentialDiceOrdinal?: number;
   hasUsedMidpointLeap?: boolean;
   hasUsedAnchoredDestiny?: boolean;
-  anchoredDestinyMidpointArmed?: boolean;
   previousRoll?: number;
   hasMetAbby?: boolean;
   comebackActive?: boolean;
   actLastNextRound?: boolean;
   actLastNextRoundOrder?: number;
-  skipTurnThisRound?: boolean;
   augustaServingDelayedTurn?: boolean;
+  augustaGovernorAuthorityNextEligibleTurnIndex?: number;
+  augustaGovernorAuthorityZeroMovePending?: boolean;
   phrolovaBottomBoostReady?: boolean;
 };
 
@@ -177,12 +177,18 @@ export type MovementStepHookHandler = (
   context: MovementStepHookContext
 ) => MovementStepHookResult;
 
+export type StackReactiveLandingCause =
+  | "standardMove"
+  | "teleport"
+  | "shuffle"
+  | "cellEffectSlide";
+
 export type DirectTopLandingHookContext = {
   turnIndex: number;
   actorId: DangoId;
   cellIndex: CellIndex;
   directlyAboveId: DangoId;
-  trigger: "movement" | "cellEffect" | "timeRift";
+  landingCause: StackReactiveLandingCause;
 };
 
 export type DirectTopLandingHookHandler = (
@@ -320,6 +326,12 @@ export type PlaybackTeleportSegment = {
   toCell: CellIndex;
 };
 
+export type PlaybackStackPromoteSegment = {
+  kind: "stackPromote";
+  entityIds: DangoId[];
+  cellIndex: CellIndex;
+};
+
 export type PlaybackStackTeleportMove = {
   entityId: DangoId;
   fromCell: CellIndex;
@@ -359,6 +371,7 @@ export type PlaybackSegment =
   | PlaybackSkillSegment
   | PlaybackHopsSegment
   | PlaybackTeleportSegment
+  | PlaybackStackPromoteSegment
   | PlaybackStackTeleportSegment
   | PlaybackSlideSegment
   | PlaybackCellEffectSegment

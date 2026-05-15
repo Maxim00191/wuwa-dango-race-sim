@@ -4,6 +4,7 @@ import type {
   EntityRuntimeState,
   GamePhase,
   PendingTurnResolution,
+  PlaybackSegment,
   RaceMode,
   RaceSetup,
 } from "@/types/game";
@@ -13,6 +14,13 @@ export type MatchRecordSchemaVersion = 1;
 export type BoardEffectAssignmentJson = {
   cellIndex: number;
   effectId: string | null;
+};
+
+export type ReplayFrameVisualEvents = {
+  turnIndex: number;
+  segments: PlaybackSegment[];
+  showTurnIntroBanner: boolean;
+  turnOrderActorIds?: DangoId[];
 };
 
 export type MatchGameFrameJson = {
@@ -30,6 +38,7 @@ export type MatchGameFrameJson = {
   entities: Record<string, EntityRuntimeState>;
   cells: Record<string, DangoId[]>;
   pendingTurn: PendingTurnResolution | null;
+  visualEvents?: ReplayFrameVisualEvents | null;
 };
 
 export type MatchRecord = {

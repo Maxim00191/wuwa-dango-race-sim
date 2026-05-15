@@ -14,6 +14,9 @@ function resolveJinhsiStackAscend(
   state: GameState,
   context: DirectTopLandingHookContext
 ): SkillHookResolution {
+  if (context.landingCause !== "standardMove") {
+    return { state };
+  }
   const stack = state.cells.get(context.cellIndex);
   if (!stack) {
     return { state };
@@ -41,10 +44,9 @@ function resolveJinhsiStackAscend(
     },
     segments: [
       {
-        kind: "teleport",
+        kind: "stackPromote",
         entityIds: [context.actorId],
-        fromCell: context.cellIndex,
-        toCell: context.cellIndex,
+        cellIndex: context.cellIndex,
       },
     ],
     skillNarrative: text("simulation.skills.jinhsiStackAscend", {

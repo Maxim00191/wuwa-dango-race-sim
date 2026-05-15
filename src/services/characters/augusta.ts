@@ -7,12 +7,22 @@ import type {
   RoundStartHookResolution,
 } from "@/types/game";
 
+const AUGUSTA_GOVERNOR_AUTHORITY_COOLDOWN_ENGINE_CYCLES = 2;
+
 function resolveAugustaGovernorAuthority(
   state: GameState,
   context: RoundStartHookContext
 ): RoundStartHookResolution {
   const entity = state.entities[context.actorId];
   if (entity?.skillState.augustaServingDelayedTurn) {
+    return { state };
+  }
+  const nextEligible =
+    entity?.skillState.augustaGovernorAuthorityNextEligibleTurnIndex;
+  if (
+    nextEligible !== undefined &&
+    state.turnIndex < nextEligible
+  ) {
     return { state };
   }
   const stack = state.cells.get(context.cellIndex);
@@ -25,6 +35,7 @@ function resolveAugustaGovernorAuthority(
     return { state };
   }
   const actLastNextRoundOrder = state.actLastNextRoundOrderCounter + 1;
+  const cooldownTurns = AUGUSTA_GOVERNOR_AUTHORITY_COOLDOWN_ENGINE_CYCLES;
   return {
     state: {
       ...state,
@@ -37,7 +48,9 @@ function resolveAugustaGovernorAuthority(
             ...entity.skillState,
             actLastNextRound: true,
             actLastNextRoundOrder,
-            skipTurnThisRound: true,
+            augustaGovernorAuthorityZeroMovePending: true,
+            augustaGovernorAuthorityNextEligibleTurnIndex:
+              state.turnIndex + cooldownTurns + 1,
           },
         },
       },

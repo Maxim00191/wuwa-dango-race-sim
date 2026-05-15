@@ -66,6 +66,9 @@ function accentDangoIdForTurnIntro(
     if (segment.kind === "stackTeleport") {
       return segment.actorId;
     }
+    if (segment.kind === "stackPromote") {
+      return segment.entityIds[segment.entityIds.length - 1];
+    }
     if (
       segment.kind === "idle" ||
       segment.kind === "roll" ||
@@ -294,7 +297,9 @@ export function useGame() {
                 ? step.travelingIds
                 : step.kind === "teleport"
                   ? step.entityIds
-                  : step.movedIds;
+                  : step.kind === "stackPromote"
+                    ? step.entityIds
+                    : step.movedIds;
           setHoppingEntityIds(new Set(movers));
           await delayMilliseconds(getScaledDurationMs(ATOMIC_STEP_DELAY_MS));
         }
@@ -361,6 +366,11 @@ export function useGame() {
       ) {
         const segment = playback.segments[segmentIndex]!;
         const chunk = segmentChunks[segmentIndex] ?? [];
+
+        if (segment.kind === "stackPromote") {
+          await runAtomicSteps(chunk);
+          continue;
+        }
 
         if (segment.kind === "teleport" || segment.kind === "stackTeleport") {
           const accentDangoId =

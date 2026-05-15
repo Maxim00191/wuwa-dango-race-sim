@@ -55,6 +55,7 @@ import type {
   PostMovementHookContext,
   RaceSetup,
   SkillHookContext,
+  StackReactiveLandingCause,
   TurnPlaybackPlan,
   TravelDirection,
   TurnQueueAttachment,
@@ -761,10 +762,7 @@ function resolveMovementDiceValue(
 } {
   const character = CHARACTER_BY_ID[plan.actorId];
   const handler = character?.skillHooks.resolveMovement;
-  if (!handler) {
-    return { diceValue: plan.diceValue };
-  }
-  const resolved = handler(state, {
+  const resolvedFromHook = handler?.(state, {
     turnIndex: state.turnIndex,
     rollerId: plan.actorId,
     initialDiceValue: plan.initialDiceValue,
@@ -776,8 +774,10 @@ function resolveMovementDiceValue(
     allResolvedRollsById,
   });
   const resolvedSteps =
-    typeof resolved.diceValue === "number" && Number.isFinite(resolved.diceValue)
-      ? resolved.diceValue
+    resolvedFromHook &&
+    typeof resolvedFromHook.diceValue === "number" &&
+    Number.isFinite(resolvedFromHook.diceValue)
+      ? resolvedFromHook.diceValue
       : plan.diceValue;
   const movementModifierDelta = (plan.movementModifiers ?? []).reduce(
     (sum, modifier) => sum + modifier.delta,
@@ -793,7 +793,9 @@ function resolveMovementDiceValue(
     minimumMovement > Number.NEGATIVE_INFINITY
       ? Math.max(minimumMovement, adjustedSteps)
       : Math.max(0, adjustedSteps);
-  return { ...resolved, diceValue };
+  return resolvedFromHook
+    ? { ...resolvedFromHook, diceValue }
+    : { diceValue };
 }
 
 function buildDirectlyAboveByActor(
@@ -813,7 +815,7 @@ function applyDirectTopLandingHooks(
     cellIndex: number;
     previousStackBottomToTop: DangoId[];
     nextStackBottomToTop: DangoId[];
-    trigger: "movement" | "cellEffect" | "timeRift";
+    landingCause: StackReactiveLandingCause;
   }
 ): {
   state: GameState;
@@ -850,7 +852,7 @@ function applyDirectTopLandingHooks(
       actorId,
       cellIndex: context.cellIndex,
       directlyAboveId,
-      trigger: context.trigger,
+      landingCause: context.landingCause,
     });
     nextState = resolution.state;
     segments.push(...(resolution.segments ?? []));
@@ -1009,13 +1011,42 @@ function clearCompletedDelayedTurnState(
   };
 }
 
+function clearAugustaGovernorAuthorityZeroMovePending(
+  state: GameState,
+  actorId: DangoId
+): GameState {
+  if (actorId !== "augusta") {
+    return state;
+  }
+  const actor = state.entities.augusta;
+  if (!actor?.skillState.augustaGovernorAuthorityZeroMovePending) {
+    return state;
+  }
+  return {
+    ...state,
+    entities: {
+      ...state.entities,
+      augusta: {
+        ...actor,
+        skillState: {
+          ...actor.skillState,
+          augustaGovernorAuthorityZeroMovePending: false,
+        },
+      },
+    },
+  };
+}
+
 function finalizeActorTurnResolution(
   state: GameState,
   actorId: DangoId,
   segments: PlaybackSegment[]
 ): { state: GameState; segments: PlaybackSegment[] } {
   return finalizeTurnIfWinnerResolved(
-    clearCompletedDelayedTurnState(state, actorId),
+    clearAugustaGovernorAuthorityZeroMovePending(
+      clearCompletedDelayedTurnState(state, actorId),
+      actorId
+    ),
     segments
   );
 }
@@ -1043,6 +1074,8 @@ function executeStepwiseMovement(
     const restingStack =
       restingCellIndex === null ? [] : nextState.cells.get(restingCellIndex) ?? [];
     const actorIndexInStack = restingStack.indexOf(actingEntityId);
+    finalLandingCellIndex = restingCellIndex;
+    finalLandingPreviousStackBottomToTop = [...restingStack];
     segments.push({
       kind: "hops",
       actorId: actingEntityId,
@@ -1503,6 +1536,28 @@ function resolveMovementStabilization(
   let resolvedState = state;
   const segments: PlaybackSegment[] = [];
   if (diceValue <= 0) {
+    const effectiveCellIndex =
+      finalLandingCellIndex ?? findCellIndexForEntity(state.cells, actingEntityId);
+    if (effectiveCellIndex === null) {
+      return { state: resolvedState, segments };
+    }
+    const previousStack = [...finalLandingPreviousStackBottomToTop];
+    const nextStack = [...(state.cells.get(effectiveCellIndex) ?? [])];
+    const zeroStepReactionOutcome = applyDirectTopLandingHooks(resolvedState, {
+      turnIndex: resolvedState.turnIndex,
+      cellIndex: effectiveCellIndex,
+      previousStackBottomToTop: previousStack,
+      nextStackBottomToTop: nextStack,
+      landingCause: "standardMove",
+    });
+    resolvedState = zeroStepReactionOutcome.state;
+    for (const narrative of zeroStepReactionOutcome.skillNarratives) {
+      resolvedState = appendLog(resolvedState, {
+        kind: "skillTrigger",
+        message: narrative,
+      });
+    }
+    segments.push(...zeroStepReactionOutcome.segments);
     return { state: resolvedState, segments };
   }
   const finalCellIndex = findCellIndexForEntity(state.cells, actingEntityId);
@@ -1559,8 +1614,10 @@ function resolveMovementStabilization(
           ? stackBeforeCellEffect
           : [...(state.cells.get(reactiveCellIndex) ?? [])],
       nextStackBottomToTop: [...(resolvedState.cells.get(reactiveCellIndex) ?? [])],
-      trigger:
-        effectOutcome.effectId === CELL_EFFECT_IDS.timeRift ? "timeRift" : "cellEffect",
+      landingCause:
+        effectOutcome.effectId === CELL_EFFECT_IDS.timeRift
+          ? "shuffle"
+          : "cellEffectSlide",
     });
     resolvedState = reactiveOutcome.state;
     for (const narrative of reactiveOutcome.skillNarratives) {
@@ -1580,7 +1637,7 @@ function resolveMovementStabilization(
     cellIndex: finalLandingCellIndex,
     previousStackBottomToTop: finalLandingPreviousStackBottomToTop,
     nextStackBottomToTop: [...(resolvedState.cells.get(finalLandingCellIndex) ?? [])],
-    trigger: "movement",
+    landingCause: "standardMove",
   });
   resolvedState = landingReactionOutcome.state;
   for (const narrative of landingReactionOutcome.skillNarratives) {
@@ -1681,9 +1738,6 @@ function createTurnRollPlans(
     if (!character) {
       continue;
     }
-    if (state.entities[actorId]?.skillState.skipTurnThisRound) {
-      continue;
-    }
     const shouldStandbyBoss =
       character.role === "boss" &&
       state.turnIndex <= character.activateAfterTurnIndex;
@@ -1761,48 +1815,6 @@ function resolveTurnForEntity(
           },
         ]
       )
-    );
-  }
-  const actingEntity = state.entities[actingEntityId];
-  if (actingEntity?.skillState.skipTurnThisRound) {
-    let skippedState: GameState = {
-      ...state,
-      entities: {
-        ...state.entities,
-        [actingEntityId]: {
-          ...actingEntity,
-          skillState: {
-            ...actingEntity.skillState,
-            skipTurnThisRound: false,
-          },
-        },
-      },
-    };
-    const skippedSegments: PlaybackSegment[] = [];
-    const actingCellIndex =
-      findCellIndexForEntity(skippedState.cells, actingEntityId) ??
-      FINISH_LINE_CELL_INDEX;
-    const afterTurnOutcome = applySkillHookAfterTurn(skippedState, {
-      turnIndex: state.turnIndex,
-      rollerId: actingEntityId,
-      diceValue: 0,
-      cellIndex: actingCellIndex,
-    });
-    skippedState = afterTurnOutcome.state;
-    skippedSegments.push(...afterTurnOutcome.segments);
-    if (afterTurnOutcome.skillNarrative) {
-      skippedState = appendLog(skippedState, {
-        kind: "skillTrigger",
-        message: afterTurnOutcome.skillNarrative,
-      });
-      skippedSegments.push({
-        kind: "skill",
-        actorId: actingEntityId,
-        message: afterTurnOutcome.skillNarrative,
-      });
-    }
-    return finalizeResolvedTurn(
-      finalizeActorTurnResolution(skippedState, actingEntityId, skippedSegments)
     );
   }
   if (!plan) {
@@ -1946,12 +1958,18 @@ function resolveTurnForEntity(
       finalizeActorTurnResolution(skippedState, actingEntityId, skippedSegments)
     );
   }
-  const executedMovementStepCount = resolveExecutedMovementStepCount(
+  let executedMovementStepCount = resolveExecutedMovementStepCount(
     nextState,
     actingEntityId,
     resolvedMovementStepCount,
     character.travelDirection
   );
+  if (
+    actingEntityId === "augusta" &&
+    nextState.entities.augusta?.skillState.augustaGovernorAuthorityZeroMovePending
+  ) {
+    executedMovementStepCount = 0;
+  }
   const movementStartState = nextState;
   const movementResult = executeStepwiseMovement(
     movementStartState,

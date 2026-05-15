@@ -22,6 +22,10 @@ export function formatTurnOrderArrowLine(
     if (segment.kind === "stackTeleport") {
       return getCharacterName(segment.actorId);
     }
+    if (segment.kind === "stackPromote") {
+      const id = segment.entityIds[segment.entityIds.length - 1];
+      return id ? getCharacterName(id) : "";
+    }
     if (segment.kind === "slide") {
       return bonusSlideLabel;
     }

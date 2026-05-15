@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useReplayVisualBanners } from "@/hooks/useReplayVisualBanners";
 import { reduceGameState } from "@/services/gameEngine";
 import {
   encodeMatchRecordJson,
@@ -66,6 +67,13 @@ function computeReplayPlayTurnTarget(
 
 export function useReplayTimeline(options: UseReplayTimelineOptions) {
   const { game } = options;
+  const {
+    enabled: replayBannersEnabled,
+    payload: replayBannerPayload,
+    clear: clearReplayVisualBanners,
+    toggleEnabled: toggleReplayBanners,
+    playFrameVisualEvents,
+  } = useReplayVisualBanners();
   const gameRef = useRef(game);
   gameRef.current = game;
 
@@ -103,6 +111,7 @@ export function useReplayTimeline(options: UseReplayTimelineOptions) {
   }, []);
 
   const loadReplayRecord = useCallback((nextRecord: MatchRecord) => {
+    clearReplayVisualBanners();
     gameRef.current.reset();
     gameRef.current.setAutoPlayEnabled(false);
     resetLiveCommitted();
@@ -112,9 +121,10 @@ export function useReplayTimeline(options: UseReplayTimelineOptions) {
     setCursorStep(0);
     const snapshot = materializeGameStateFromFrame(nextRecord.frames[0]!);
     gameRef.current.hydrateEngineState(snapshot);
-  }, [resetLiveCommitted]);
+  }, [clearReplayVisualBanners, resetLiveCommitted]);
 
   const clearReplay = useCallback(() => {
+    clearReplayVisualBanners();
     expectingReplayAdvanceRef.current = false;
     setPlaybackAuto(false);
     setReplayPlayTurnTarget(null);
@@ -123,9 +133,10 @@ export function useReplayTimeline(options: UseReplayTimelineOptions) {
     setCursorStep(0);
     gameRef.current.setAutoPlayEnabled(false);
     gameRef.current.reset();
-  }, [resetLiveCommitted]);
+  }, [clearReplayVisualBanners, resetLiveCommitted]);
 
   const flushPlaybackForNewSession = useCallback(() => {
+    clearReplayVisualBanners();
     expectingReplayAdvanceRef.current = false;
     setPlaybackAuto(false);
     setReplayPlayTurnTarget(null);
@@ -134,13 +145,14 @@ export function useReplayTimeline(options: UseReplayTimelineOptions) {
     setCursorStep(0);
     setSeekTurnDraft("");
     gameRef.current.setAutoPlayEnabled(false);
-  }, [resetLiveCommitted]);
+  }, [clearReplayVisualBanners, resetLiveCommitted]);
 
   const scrubToStep = useCallback(
     (
       stepIndex: number,
-      opts?: { preservePlaybackAuto?: boolean }
+      opts?: { preservePlaybackAuto?: boolean; playVisualEvents?: boolean }
     ) => {
+      clearReplayVisualBanners();
       expectingReplayAdvanceRef.current = false;
       setReplayPlayTurnTarget(null);
       if (!opts?.preservePlaybackAuto) {
@@ -149,9 +161,13 @@ export function useReplayTimeline(options: UseReplayTimelineOptions) {
       gameRef.current.setAutoPlayEnabled(false);
       if (record) {
         const bounded = Math.max(0, Math.min(stepIndex, record.frames.length - 1));
-        const snapshot = materializeGameStateFromFrame(record.frames[bounded]!);
+        const frame = record.frames[bounded]!;
+        const snapshot = materializeGameStateFromFrame(frame);
         gameRef.current.hydrateEngineState(snapshot);
         setCursorStep(bounded);
+        if (opts?.playVisualEvents) {
+          playFrameVisualEvents(frame.visualEvents);
+        }
         return;
       }
       const frames = liveCommittedFramesRef.current;
@@ -159,11 +175,15 @@ export function useReplayTimeline(options: UseReplayTimelineOptions) {
         return;
       }
       const bounded = Math.max(0, Math.min(stepIndex, frames.length - 1));
-      const snapshot = materializeGameStateFromFrame(frames[bounded]!);
+      const frame = frames[bounded]!;
+      const snapshot = materializeGameStateFromFrame(frame);
       gameRef.current.hydrateEngineState(snapshot);
       setCursorStep(bounded);
+      if (opts?.playVisualEvents) {
+        playFrameVisualEvents(frame.visualEvents);
+      }
     },
-    [record]
+    [record, clearReplayVisualBanners, playFrameVisualEvents]
   );
 
   const stepReplayBackward = useCallback(() => {
@@ -182,13 +202,12 @@ export function useReplayTimeline(options: UseReplayTimelineOptions) {
       if (cursorStep >= record.frames.length - 1) {
         return;
       }
-      expectingReplayAdvanceRef.current = true;
-      live.stepAction();
+      scrubToStep(cursorStep + 1, { playVisualEvents: true });
       return;
     }
     const frames = liveCommittedFramesRef.current;
     if (cursorStep < frames.length - 1) {
-      scrubToStep(cursorStep + 1);
+      scrubToStep(cursorStep + 1, { playVisualEvents: true });
       return;
     }
     if (live.state.phase !== "running" || live.state.winnerId) {
@@ -318,6 +337,7 @@ export function useReplayTimeline(options: UseReplayTimelineOptions) {
         return;
       }
 
+      clearReplayVisualBanners();
       expectingReplayAdvanceRef.current = false;
       setPlaybackAuto(false);
       setReplayPlayTurnTarget(null);
@@ -332,7 +352,7 @@ export function useReplayTimeline(options: UseReplayTimelineOptions) {
       );
       live.hydrateEngineState(finalSnapshot);
     },
-    [record, cursorStep]
+    [record, cursorStep, clearReplayVisualBanners]
   );
 
   const quickResolveTurn = useCallback(() => {
@@ -451,9 +471,14 @@ export function useReplayTimeline(options: UseReplayTimelineOptions) {
       setPlaybackAuto(false);
       return;
     }
-    expectingReplayAdvanceRef.current = true;
-    gameRef.current.stepAction();
-  }, [playbackAuto, record, cursorStep, game.isAnimating]);
+    const id = window.setTimeout(() => {
+      scrubToStep(cursorStep + 1, {
+        preservePlaybackAuto: true,
+        playVisualEvents: true,
+      });
+    }, 0);
+    return () => window.clearTimeout(id);
+  }, [playbackAuto, record, cursorStep, game.isAnimating, scrubToStep]);
 
   useEffect(() => {
     if (!playbackAuto || record) {
@@ -473,7 +498,10 @@ export function useReplayTimeline(options: UseReplayTimelineOptions) {
       return;
     }
     const id = window.setTimeout(() => {
-      scrubToStep(cursorStep + 1, { preservePlaybackAuto: true });
+      scrubToStep(cursorStep + 1, {
+        preservePlaybackAuto: true,
+        playVisualEvents: true,
+      });
     }, 0);
     return () => window.clearTimeout(id);
   }, [
@@ -497,9 +525,14 @@ export function useReplayTimeline(options: UseReplayTimelineOptions) {
       setReplayPlayTurnTarget(null);
       return;
     }
-    expectingReplayAdvanceRef.current = true;
-    gameRef.current.stepAction();
-  }, [replayPlayTurnTarget, record, cursorStep, game.isAnimating]);
+    const id = window.setTimeout(() => {
+      scrubToStep(cursorStep + 1, {
+        preservePlaybackAuto: true,
+        playVisualEvents: true,
+      });
+    }, 0);
+    return () => window.clearTimeout(id);
+  }, [replayPlayTurnTarget, record, cursorStep, game.isAnimating, scrubToStep]);
 
   useEffect(() => {
     setCursorStep((s) => Math.min(s, timelineMax));
@@ -539,6 +572,9 @@ export function useReplayTimeline(options: UseReplayTimelineOptions) {
     spectateToggleAuto,
     spectateAutoActive: playbackAuto,
     spectatePlayTurnChaining: replayPlayTurnTarget !== null,
+    replayBannersEnabled,
+    replayBannerPayload,
+    toggleReplayBanners,
     jumpToPresentVisible: cursorStep < timelineMax,
     quickResolveTurn,
     quickResolveRace,
