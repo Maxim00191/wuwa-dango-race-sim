@@ -341,6 +341,7 @@ export const enDictionary: TranslationDictionary = {
       description:
         "Generated from {runs} simulations of the current roster. Includes placement spreads, conditional win scenarios, and tournament flow.",
       back: "Return to Simulation",
+      scrollToTop: "Go to Top",
     },
     tabs: {
       overview: "Overview",
@@ -379,9 +380,6 @@ export const enDictionary: TranslationDictionary = {
       averageRaceLengthHint: "Average turns needed to finish a single race",
       fastestFinish: "Speedrun Record",
       fastestFinishHint: "The shortest match in this batch of simulations",
-      batchWallClock: "Total simulation time",
-      batchWallClockHint:
-        "Time from task start to batch consolidation",
       titleShare: "Highest Win Rate",
       titleShareHint: "{name} took home the most trophies",
       noWinnerData: "No champion data yet",

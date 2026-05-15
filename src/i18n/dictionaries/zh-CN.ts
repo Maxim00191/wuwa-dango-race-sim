@@ -324,6 +324,7 @@ export const zhCnDictionary: TranslationDictionary = {
       description:
         "基于当前阵容的 {runs} 次模拟得出，包含名次分布、特定条件下的战局推演，以及杯赛多轮次的表现趋势。",
       back: "返回模拟",
+      scrollToTop: "回到顶部",
     },
     tabs: {
       overview: "总览数据",
@@ -361,8 +362,6 @@ export const zhCnDictionary: TranslationDictionary = {
       averageRaceLengthHint: "平均需要多少回合才能完赛",
       fastestFinish: "最速通关",
       fastestFinishHint: "本批次模拟中用时最短的一局",
-      batchWallClock: "本次模拟总耗时",
-      batchWallClockHint: "从任务开始到批次统合的耗时",
       titleShare: "最高夺冠率",
       titleShareHint: "{name} 捧杯的次数最多",
       noWinnerData: "暂无冠军数据",
