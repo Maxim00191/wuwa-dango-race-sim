@@ -59,6 +59,19 @@ const EXTREME_MIN_DISPATCH_CHUNK = 5000;
 const EXTREME_MIN_WORKER_PROGRESS_STRIDE = 5000;
 let workerRequestId = 0;
 
+class MonteCarloCancelledError extends Error {
+  constructor() {
+    super("Monte Carlo run cancelled");
+    this.name = "MonteCarloCancelledError";
+  }
+}
+
+type WorkerChunkRegistry = {
+  register: (reject: (reason?: unknown) => void) => void;
+  unregister: (reject: (reason?: unknown) => void) => void;
+  rejectAll: () => void;
+};
+
 function createSeedBase(): number {
   return Math.floor(Math.random() * 0x100000000) >>> 0;
 }
@@ -184,12 +197,39 @@ function decodeWorkerCompletePayload(
   return JSON.parse(new TextDecoder().decode(message.payload)) as MonteCarloWorkerCompletePayload;
 }
 
+function createWorkerChunkRegistry(): WorkerChunkRegistry {
+  const pendingRejects = new Set<(reason?: unknown) => void>();
+  return {
+    register: (reject) => {
+      pendingRejects.add(reject);
+    },
+    unregister: (reject) => {
+      pendingRejects.delete(reject);
+    },
+    rejectAll: () => {
+      for (const reject of pendingRejects) {
+        reject(new MonteCarloCancelledError());
+      }
+      pendingRejects.clear();
+    },
+  };
+}
+
 function runWorkerChunk(
   worker: Worker,
   request: MonteCarloWorkerRequest,
-  onProgress: (message: MonteCarloWorkerProgressMessage) => void
+  onProgress: (message: MonteCarloWorkerProgressMessage) => void,
+  chunkRegistry: WorkerChunkRegistry
 ): Promise<MonteCarloWorkerCompleteMessage> {
   return new Promise((resolve, reject) => {
+    chunkRegistry.register(reject);
+
+    const detach = () => {
+      chunkRegistry.unregister(reject);
+      worker.onmessage = null;
+      worker.onerror = null;
+    };
+
     worker.onmessage = (event: MessageEvent<MonteCarloWorkerMessage>) => {
       const message = event.data;
       if (message.requestId !== request.requestId) {
@@ -200,14 +240,17 @@ function runWorkerChunk(
         return;
       }
       if (message.type === "complete") {
+        detach();
         resolve(message);
         return;
       }
       const errorMessage = (message as MonteCarloWorkerErrorMessage).message;
+      detach();
       reject(new Error(errorMessage));
     };
-    worker.onerror = (event) => {
-      reject(new Error(event.message));
+    worker.onerror = () => {
+      detach();
+      reject(new MonteCarloCancelledError());
     };
     worker.postMessage(request);
   });
@@ -230,12 +273,41 @@ async function runMonteCarloInWorkers(
   const workerCount = getWorkerCount(totalRuns, extremePerformance);
   const chunkSize = getDispatchChunkSize(totalRuns, workerCount, extremePerformance);
   const workers = Array.from({ length: workerCount }, createMonteCarloWorker);
+  const chunkRegistry = createWorkerChunkRegistry();
   const boardEffects = serializeBoardEffects(boardEffectByCellIndex);
   const workerCompletedRuns = Array.from({ length: workerCount }, () => 0);
   const seedBase = createSeedBase();
   let nextStart = 0;
   let aborted = false;
   let inFlightCompletedRuns = 0;
+  let workersTerminated = false;
+
+  const disposeWorkers = () => {
+    if (workersTerminated) {
+      return;
+    }
+    workersTerminated = true;
+    for (const worker of workers) {
+      worker.terminate();
+    }
+    workers.length = 0;
+  };
+
+  const hardTerminateWorkers = () => {
+    aborted = true;
+    chunkRegistry.rejectAll();
+    disposeWorkers();
+  };
+
+  const onAbortRequested = () => {
+    hardTerminateWorkers();
+  };
+
+  if (hasAbortBeenRequested(signal, shouldAbort)) {
+    hardTerminateWorkers();
+  } else {
+    signal?.addEventListener("abort", onAbortRequested, { once: true });
+  }
 
   const reportProgress = () => {
     onProgress(
@@ -258,7 +330,7 @@ async function runMonteCarloInWorkers(
   try {
     await Promise.all(
       workers.map(async (worker, workerIndex) => {
-        while (!hasAbortBeenRequested(signal, shouldAbort)) {
+        while (!aborted && !hasAbortBeenRequested(signal, shouldAbort)) {
           const chunk = takeChunk();
           if (!chunk) {
             return;
@@ -266,50 +338,75 @@ async function runMonteCarloInWorkers(
           const { start, runs } = chunk;
           workerCompletedRuns[workerIndex] = 0;
           const requestId = (workerRequestId += 1);
-          const completeMessage = await runWorkerChunk(
-            worker,
-            {
-              type: "run",
-              requestId,
-              totalRuns: runs,
-              seedBase: (seedBase + start) >>> 0,
-              progressReportInterval: getWorkerProgressStride(
-                runs,
-                extremePerformance
-              ),
-              scenario,
-              selectedBasicIds: controls.selectedBasicIds,
-              scenarioKind: controls.scenarioKind,
-              scenarioLabel: controls.scenarioLabel,
-              boardEffects,
-            },
-            (message) => {
-              inFlightCompletedRuns +=
-                message.completedRuns - workerCompletedRuns[workerIndex];
-              workerCompletedRuns[workerIndex] = message.completedRuns;
-              reportProgress();
+          try {
+            const completeMessage = await runWorkerChunk(
+              worker,
+              {
+                type: "run",
+                requestId,
+                totalRuns: runs,
+                seedBase: (seedBase + start) >>> 0,
+                progressReportInterval: getWorkerProgressStride(
+                  runs,
+                  extremePerformance
+                ),
+                scenario,
+                selectedBasicIds: controls.selectedBasicIds,
+                scenarioKind: controls.scenarioKind,
+                scenarioLabel: controls.scenarioLabel,
+                boardEffects,
+              },
+              (message) => {
+                inFlightCompletedRuns +=
+                  message.completedRuns - workerCompletedRuns[workerIndex];
+                workerCompletedRuns[workerIndex] = message.completedRuns;
+                reportProgress();
+              },
+              chunkRegistry
+            );
+            inFlightCompletedRuns -= workerCompletedRuns[workerIndex];
+            workerCompletedRuns[workerIndex] = 0;
+            const payload = decodeWorkerCompletePayload(completeMessage);
+            absorbMonteCarloAggregateIntoAggregate(
+              aggregate,
+              payload.aggregate
+            );
+            absorbObserverRecordsIntoSession(
+              observerSession,
+              payload.observerRecords
+            );
+            reportProgress();
+          } catch (error) {
+            inFlightCompletedRuns -= workerCompletedRuns[workerIndex];
+            workerCompletedRuns[workerIndex] = 0;
+            if (
+              error instanceof MonteCarloCancelledError ||
+              hasAbortBeenRequested(signal, shouldAbort)
+            ) {
+              return;
             }
-          );
-          inFlightCompletedRuns -= workerCompletedRuns[workerIndex];
-          workerCompletedRuns[workerIndex] = 0;
-          const payload = decodeWorkerCompletePayload(completeMessage);
-          absorbMonteCarloAggregateIntoAggregate(
-            aggregate,
-            payload.aggregate
-          );
-          absorbObserverRecordsIntoSession(
-            observerSession,
-            payload.observerRecords
-          );
-          reportProgress();
+            throw error;
+          }
         }
       })
     );
-    aborted = hasAbortBeenRequested(signal, shouldAbort);
-  } finally {
-    for (const worker of workers) {
-      worker.terminate();
+    if (!aborted) {
+      aborted = hasAbortBeenRequested(signal, shouldAbort);
     }
+  } catch (error) {
+    if (
+      error instanceof MonteCarloCancelledError ||
+      hasAbortBeenRequested(signal, shouldAbort)
+    ) {
+      aborted = true;
+    } else {
+      throw error;
+    }
+  } finally {
+    signal?.removeEventListener("abort", onAbortRequested);
+    disposeWorkers();
+    inFlightCompletedRuns = 0;
+    reportProgress();
   }
 
   return {
@@ -420,8 +517,11 @@ export async function runMonteCarloBatch(
   if (canUseWorkers()) {
     try {
       return withWallClock(await runMonteCarloInWorkers(controls));
-    } catch {
-      if (hasAbortBeenRequested(controls.signal, controls.shouldAbort)) {
+    } catch (error) {
+      if (
+        error instanceof MonteCarloCancelledError ||
+        hasAbortBeenRequested(controls.signal, controls.shouldAbort)
+      ) {
         return {
           completedRuns: 0,
           aborted: true,
