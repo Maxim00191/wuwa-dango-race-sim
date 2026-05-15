@@ -32,6 +32,7 @@ export function createTurnRollPlans(
       actorId,
       diceValue: diceOutcome.diceValue,
       initialDiceValue,
+      locksMovementSteps: diceOutcome.locksMovementSteps,
       entityPatches: diceOutcome.entityPatches,
       skillNarrative: diceOutcome.skillNarrative,
       skillBannerActionId: diceOutcome.skillBannerActionId,

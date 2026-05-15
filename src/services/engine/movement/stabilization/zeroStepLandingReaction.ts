@@ -1,4 +1,3 @@
-import { appendLog } from "@/services/engine/state/mutations";
 import { applyDirectTopLandingHooks } from "@/services/engine/movement/diceAndLanding";
 import { findCellIndexForEntity } from "@/services/stateCells";
 import type { DangoId, GameState, PlaybackSegment } from "@/types/game";
@@ -23,15 +22,8 @@ export function resolveZeroStepLandingReaction(
     nextStackBottomToTop,
     landingCause: "standardMove",
   });
-  let nextState = landingReactionOutcome.state;
-  for (const narrative of landingReactionOutcome.skillNarratives) {
-    nextState = appendLog(nextState, {
-      kind: "skillTrigger",
-      message: narrative,
-    });
-  }
   return {
-    state: nextState,
+    state: landingReactionOutcome.state,
     segments: [...landingReactionOutcome.segments],
   };
 }

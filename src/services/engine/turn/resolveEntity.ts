@@ -90,33 +90,36 @@ export function resolveTurnForEntity(
       finalizeActorTurnResolution(state, actingEntityId, segments)
     );
   }
-  const movementOutcome = resolveMovementDiceValue(
+  const beforeTurn = executionContext.bus.publish("skill:before-turn", {
     state,
+    context: {
+      turnIndex: state.turnIndex,
+      rollerId: actingEntityId,
+      diceValue: turnRollPlan.diceValue,
+      cellIndex:
+        findCellIndexForEntity(state.cells, actingEntityId) ??
+        FINISH_LINE_CELL_INDEX,
+    },
+    segments: [],
     turnRollPlan,
+  });
+  const effectiveTurnRollPlan = beforeTurn.turnRollPlanPatch
+    ? { ...turnRollPlan, ...beforeTurn.turnRollPlanPatch }
+    : turnRollPlan;
+  const movementOutcome = resolveMovementDiceValue(
+    beforeTurn.state,
+    effectiveTurnRollPlan,
     allInitialRollsById,
     allResolvedRollsById
   );
   const resolvedMovementStepCount = movementOutcome.diceValue;
   let nextState: GameState = {
-    ...state,
+    ...beforeTurn.state,
     entities: applyEntityRuntimePatches(
-      applyEntityRuntimePatches(state.entities, turnRollPlan.entityPatches),
+      applyEntityRuntimePatches(beforeTurn.state.entities, turnRollPlan.entityPatches),
       movementOutcome.entityPatches
     ),
   };
-  const beforeTurn = executionContext.bus.publish("skill:before-turn", {
-    state: nextState,
-    context: {
-      turnIndex: state.turnIndex,
-      rollerId: actingEntityId,
-      diceValue: resolvedMovementStepCount,
-      cellIndex:
-        findCellIndexForEntity(nextState.cells, actingEntityId) ??
-        FINISH_LINE_CELL_INDEX,
-    },
-    segments: [],
-  });
-  nextState = beforeTurn.state;
   segments.push(...beforeTurn.segments);
   nextState = {
     ...nextState,
@@ -209,18 +212,12 @@ export function resolveTurnForEntity(
       finalizeActorTurnResolution(skippedState, actingEntityId, skippedSegments)
     );
   }
-  let executedMovementStepCount = resolveExecutedMovementStepCount(
+  const executedMovementStepCount = resolveExecutedMovementStepCount(
     nextState,
     actingEntityId,
     resolvedMovementStepCount,
     character.travelDirection
   );
-  if (
-    actingEntityId === "augusta" &&
-    nextState.entities.augusta?.skillState.augustaGovernorAuthorityZeroMovePending
-  ) {
-    executedMovementStepCount = 0;
-  }
   const movementStartState = nextState;
   const movementResult = executeStepwiseMovement(
     movementStartState,

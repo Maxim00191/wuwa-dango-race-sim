@@ -61,42 +61,13 @@ export function clearCompletedDelayedTurnState(
   };
 }
 
-export function clearAugustaGovernorAuthorityZeroMovePending(
-  state: GameState,
-  actorId: DangoId
-): GameState {
-  if (actorId !== "augusta") {
-    return state;
-  }
-  const actor = state.entities.augusta;
-  if (!actor?.skillState.augustaGovernorAuthorityZeroMovePending) {
-    return state;
-  }
-  return {
-    ...state,
-    entities: {
-      ...state.entities,
-      augusta: {
-        ...actor,
-        skillState: {
-          ...actor.skillState,
-          augustaGovernorAuthorityZeroMovePending: false,
-        },
-      },
-    },
-  };
-}
-
 export function finalizeActorTurnResolution(
   state: GameState,
   actorId: DangoId,
   segments: PlaybackSegment[]
 ): { state: GameState; segments: PlaybackSegment[] } {
   return finalizeTurnIfWinnerResolved(
-    clearAugustaGovernorAuthorityZeroMovePending(
-      clearCompletedDelayedTurnState(state, actorId),
-      actorId
-    ),
+    clearCompletedDelayedTurnState(state, actorId),
     segments
   );
 }

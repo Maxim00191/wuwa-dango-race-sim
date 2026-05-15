@@ -25,11 +25,7 @@ function resolveChangliActLastNextRound(
     return { state };
   }
   const actorIndex = stack.indexOf(context.actorId);
-  if (
-    actorIndex <= 0 ||
-    actorIndex !== stack.length - 1 ||
-    entity.skillState.actLastNextRound
-  ) {
+  if (actorIndex <= 0 || entity.skillState.actLastNextRound) {
     return { state };
   }
   if (Math.random() >= CHANGLI_ACT_LAST_CHANCE) {

@@ -2,6 +2,7 @@ import { LAP_DISTANCE_IN_CLOCKWISE_STEPS } from "@/constants/board";
 import { CHARACTER_BY_ID } from "@/services/characters";
 import type { SkillBannerActionId } from "@/broadcast/skillBannerLexicon";
 import type { LocalizedText } from "@/i18n";
+import { recordSkillTrigger } from "@/services/engine/state/mutations";
 import { orderedRacerIdsForLeaderboard } from "@/services/racerRanking";
 import { hasReachedWinningDistance } from "@/services/engine/victory/distance";
 import type {
@@ -25,6 +26,9 @@ export function resolveMovementDiceValue(
   skillNarrative?: LocalizedText;
   skillBannerActionId?: SkillBannerActionId;
 } {
+  if (plan.locksMovementSteps) {
+    return { diceValue: plan.diceValue };
+  }
   const character = CHARACTER_BY_ID[plan.actorId];
   const handler = character?.skillHooks.resolveMovement;
   const resolvedFromHook = handler?.(state, {
@@ -85,17 +89,15 @@ export function applyDirectTopLandingHooks(
 ): {
   state: GameState;
   segments: PlaybackSegment[];
-  skillNarratives: LocalizedText[];
 } {
   if (
     context.previousStackBottomToTop.join("|") ===
     context.nextStackBottomToTop.join("|")
   ) {
-    return { state, segments: [], skillNarratives: [] };
+    return { state, segments: [] };
   }
   let nextState = state;
   const segments: PlaybackSegment[] = [];
-  const skillNarratives: LocalizedText[] = [];
   const previousDirectlyAbove = buildDirectlyAboveByActor(
     context.previousStackBottomToTop
   );
@@ -122,10 +124,16 @@ export function applyDirectTopLandingHooks(
     nextState = resolution.state;
     segments.push(...(resolution.segments ?? []));
     if (resolution.skillNarrative) {
-      skillNarratives.push(resolution.skillNarrative);
+      nextState = recordSkillTrigger(
+        nextState,
+        segments,
+        actorId,
+        resolution.skillNarrative,
+        resolution.skillBannerActionId
+      );
     }
   }
-  return { state: nextState, segments, skillNarratives };
+  return { state: nextState, segments };
 }
 
 export function applyMovementStepHooksForTravelGroup(

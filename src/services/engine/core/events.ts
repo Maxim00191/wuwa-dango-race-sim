@@ -23,6 +23,8 @@ export type EngineEventMap = {
     state: GameState;
     context: SkillHookContext;
     segments: PlaybackSegment[];
+    turnRollPlan: TurnRollPlan;
+    turnRollPlanPatch?: Partial<TurnRollPlan>;
   };
   "skill:after-dice": {
     state: GameState;

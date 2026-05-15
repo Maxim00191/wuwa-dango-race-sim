@@ -1,20 +1,22 @@
 import { skillTrigger } from "@/broadcast/skillTrigger";
 import { characterParam, text } from "@/i18n";
 import { rollStandardBasicDice } from "@/services/characters/basic";
+import { LOCKED_ZERO_MOVEMENT_PLAN_PATCH } from "@/services/engine/movement/lockedZeroMovement";
 import type {
   CharacterDefinition,
   GameState,
-  RoundStartHookContext,
-  RoundStartHookResolution,
+  SkillHookContext,
+  SkillHookResolution,
 } from "@/types/game";
 
 const AUGUSTA_GOVERNOR_AUTHORITY_COOLDOWN_ENGINE_CYCLES = 2;
 
 function resolveAugustaGovernorAuthority(
   state: GameState,
-  context: RoundStartHookContext
-): RoundStartHookResolution {
-  const entity = state.entities[context.actorId];
+  context: SkillHookContext
+): SkillHookResolution {
+  const actorId = context.rollerId;
+  const entity = state.entities[actorId];
   if (entity?.skillState.augustaServingDelayedTurn) {
     return { state };
   }
@@ -31,7 +33,7 @@ function resolveAugustaGovernorAuthority(
     !entity ||
     !stack ||
     stack.length < 2 ||
-    stack[stack.length - 1] !== context.actorId
+    stack[stack.length - 1] !== actorId
   ) {
     return { state };
   }
@@ -43,23 +45,23 @@ function resolveAugustaGovernorAuthority(
       actLastNextRoundOrderCounter: actLastNextRoundOrder,
       entities: {
         ...state.entities,
-        [context.actorId]: {
+        [actorId]: {
           ...entity,
           skillState: {
             ...entity.skillState,
             actLastNextRound: true,
             actLastNextRoundOrder,
-            augustaGovernorAuthorityZeroMovePending: true,
             augustaGovernorAuthorityNextEligibleTurnIndex:
               state.turnIndex + cooldownTurns + 1,
           },
         },
       },
     },
+    turnRollPlanPatch: LOCKED_ZERO_MOVEMENT_PLAN_PATCH,
     ...skillTrigger(
       "augusta.governorAuthority",
       text("simulation.skills.augustaGovernorAuthority", {
-        actor: characterParam(context.actorId),
+        actor: characterParam(actorId),
       })
     ),
   };
@@ -74,6 +76,6 @@ export const augustaCharacter: CharacterDefinition = {
   travelDirection: "clockwise",
   activateAfterTurnIndex: 0,
   skillHooks: {
-    atRoundStart: resolveAugustaGovernorAuthority,
+    beforeTurn: resolveAugustaGovernorAuthority,
   },
 };

@@ -25,8 +25,6 @@ export type EntitySkillState = {
   actLastNextRoundOrder?: number;
   augustaServingDelayedTurn?: boolean;
   augustaGovernorAuthorityNextEligibleTurnIndex?: number;
-  augustaGovernorAuthorityZeroMovePending?: boolean;
-  phrolovaBottomBoostReady?: boolean;
 };
 
 export type TravelDirection = "clockwise" | "counterClockwise";
@@ -54,6 +52,7 @@ export type SkillHookResolution = {
   segments?: PlaybackSegment[];
   skillNarrative?: LocalizedText;
   skillBannerActionId?: import("@/broadcast/skillBannerLexicon").SkillBannerActionId;
+  turnRollPlanPatch?: Partial<TurnRollPlan>;
 };
 
 export type SkillHookHandler = (
@@ -414,6 +413,7 @@ export type TurnRollPlan = {
   actorId: DangoId;
   diceValue: number;
   initialDiceValue: number;
+  locksMovementSteps?: boolean;
   movementModifiers?: MovementModifier[];
   entityPatches?: Partial<Record<DangoId, Partial<EntityRuntimeState>>>;
   skillNarrative?: LocalizedText;
@@ -452,6 +452,7 @@ export type GameState = {
 export type DiceRollResult = {
   diceValue: number;
   initialDiceValue?: number;
+  locksMovementSteps?: boolean;
   entityPatches?: Partial<Record<DangoId, Partial<EntityRuntimeState>>>;
   skillNarrative?: LocalizedText;
   skillBannerActionId?: import("@/broadcast/skillBannerLexicon").SkillBannerActionId;

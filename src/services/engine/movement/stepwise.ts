@@ -41,7 +41,8 @@ export function executeStepwiseMovement(
       restingCellIndex === null ? [] : nextState.cells.get(restingCellIndex) ?? [];
     const actorIndexInStack = restingStack.indexOf(actingEntityId);
     finalLandingCellIndex = restingCellIndex;
-    finalLandingPreviousStackBottomToTop = [...restingStack];
+    finalLandingPreviousStackBottomToTop =
+      actorIndexInStack === -1 ? [] : restingStack.slice(0, actorIndexInStack);
     segments.push({
       kind: "hops",
       actorId: actingEntityId,

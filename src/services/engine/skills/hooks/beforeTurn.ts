@@ -1,7 +1,12 @@
 import { CHARACTER_BY_ID } from "@/services/characters";
 import type { SkillBannerActionId } from "@/broadcast/skillBannerLexicon";
 import type { LocalizedText } from "@/i18n";
-import type { GameState, PlaybackSegment, SkillHookContext } from "@/types/game";
+import type {
+  GameState,
+  PlaybackSegment,
+  SkillHookContext,
+  TurnRollPlan,
+} from "@/types/game";
 
 export function applySkillHookBeforeTurn(
   state: GameState,
@@ -11,6 +16,7 @@ export function applySkillHookBeforeTurn(
   segments: PlaybackSegment[];
   skillNarrative?: LocalizedText;
   skillBannerActionId?: SkillBannerActionId;
+  turnRollPlanPatch?: Partial<TurnRollPlan>;
 } {
   const character = CHARACTER_BY_ID[context.rollerId];
   if (!character?.skillHooks.beforeTurn) {
@@ -22,5 +28,6 @@ export function applySkillHookBeforeTurn(
     segments: resolution.segments ?? [],
     skillNarrative: resolution.skillNarrative,
     skillBannerActionId: resolution.skillBannerActionId,
+    turnRollPlanPatch: resolution.turnRollPlanPatch,
   };
 }

@@ -87,12 +87,6 @@ export function resolveCellEffectStabilization(
         : "cellEffectSlide",
   });
   nextState = reactiveLandingOutcome.state;
-  for (const narrative of reactiveLandingOutcome.skillNarratives) {
-    nextState = appendLog(nextState, {
-      kind: "skillTrigger",
-      message: narrative,
-    });
-  }
   segments.push(...reactiveLandingOutcome.segments);
   return { state: nextState, segments };
 }

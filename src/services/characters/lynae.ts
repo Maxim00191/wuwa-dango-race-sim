@@ -1,5 +1,6 @@
 import { skillTrigger } from "@/broadcast/skillTrigger";
 import { rollInclusive } from "@/services/characters/dice";
+import { lockedZeroMovementDiceRoll } from "@/services/engine/movement/lockedZeroMovement";
 import { characterParam, text } from "@/i18n";
 import type {
   CharacterDefinition,
@@ -33,8 +34,7 @@ function rollLynaeUnstableDice(
     };
   }
   if (unstableRoll < LYNAE_DOUBLE_CHANCE + LYNAE_STUCK_CHANCE) {
-    return {
-      diceValue: 0,
+    return lockedZeroMovementDiceRoll({
       initialDiceValue,
       ...skillTrigger(
         "lynae.stuck",
@@ -42,7 +42,7 @@ function rollLynaeUnstableDice(
           actor: characterParam("lynae"),
         })
       ),
-    };
+    });
   }
   return { diceValue: initialDiceValue, initialDiceValue };
 }

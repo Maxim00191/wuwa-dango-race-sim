@@ -21,7 +21,12 @@ export function registerSkillBeforeTurnSubscriber(
           outcome.skillBannerActionId
         );
       }
-      return { ...payload, state: nextState, segments };
+      return {
+        ...payload,
+        state: nextState,
+        segments,
+        turnRollPlanPatch: outcome.turnRollPlanPatch,
+      };
     },
     ENGINE_EVENT_PRIORITY.skillHooks
   );
