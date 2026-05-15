@@ -205,15 +205,20 @@ function StabilitySpotlight({ rows }: { rows: PlacementRowDatum[] }) {
                   {row.label}
                 </h4>
               </div>
-              <span
-                className="rounded-full px-3 py-1 text-sm font-bold ring-1 ring-black/10"
-                style={{
-                  backgroundColor: colorWithAlpha(row.accentHex, 0.18),
-                  color: row.accentHex,
-                }}
-              >
-                {Math.round(row.stabilityScore)}
-              </span>
+              <div className="flex flex-col items-end gap-1">
+                <span className="text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-500 dark:text-slate-400">
+                  {t("analysis.overview.stabilityScoreLabel")}
+                </span>
+                <span
+                  className="rounded-full px-3 py-1 text-sm font-bold ring-1 ring-black/10"
+                  style={{
+                    backgroundColor: colorWithAlpha(row.accentHex, 0.18),
+                    color: row.accentHex,
+                  }}
+                >
+                  {Math.round(row.stabilityScore)}
+                </span>
+              </div>
             </div>
             <div className="mt-4 grid grid-cols-3 gap-2">
               <div className="min-h-0 rounded-xl bg-slate-50 px-2 py-2 dark:bg-slate-950/70">

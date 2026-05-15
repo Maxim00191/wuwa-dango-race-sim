@@ -429,6 +429,7 @@ export const enDictionary: TranslationDictionary = {
       distributionHint:
         "Colors map from 1st place (left) to 6th place (right)",
       stabilityScore: "Consistency {value}",
+      stabilityScoreLabel: "Consistency Score",
       winRate: "Win Rate",
       podiumRate: "Top 3 Rate",
       bottomTwoRate: "Bottom 2 Rate",

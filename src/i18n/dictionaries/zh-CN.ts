@@ -407,6 +407,7 @@ export const zhCnDictionary: TranslationDictionary = {
       distributionTitle: "各选手的综合实力画像",
       distributionHint: "色带从左到右依次代表第 1 名到第 6 名的概率",
       stabilityScore: "稳定性 {value}",
+      stabilityScoreLabel: "稳定性评分",
       winRate: "夺冠率",
       podiumRate: "前三率",
       bottomTwoRate: "垫底率",
