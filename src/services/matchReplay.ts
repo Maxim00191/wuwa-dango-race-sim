@@ -1,4 +1,5 @@
 import {
+  createEngineExecutionContext,
   createInitialGameState,
   reduceGameState,
 } from "@/services/gameEngine";
@@ -47,12 +48,9 @@ export function compileSingleRaceMatchRecord(
   boardEffectByCellIndex: Map<number, string | null>
 ): MatchRecord {
   const board = serializeBoardEffectAssignments(boardEffectByCellIndex);
+  const executionContext = createEngineExecutionContext(boardEffectByCellIndex);
   let working = createInitialGameState();
-  working = reduceGameState(
-    working,
-    { type: "START", setup },
-    boardEffectByCellIndex
-  );
+  working = reduceGameState(working, { type: "START", setup }, executionContext);
   let frames: MatchGameFrameJson[] = [serializeEngineFrame(working)];
   const safetyCap = 250_000;
   let iterations = 0;
@@ -62,11 +60,7 @@ export function compileSingleRaceMatchRecord(
     }
     iterations += 1;
     const previousStamp = working.playbackStamp;
-    working = reduceGameState(
-      working,
-      { type: "STEP_ACTION" },
-      boardEffectByCellIndex
-    );
+    working = reduceGameState(working, { type: "STEP_ACTION" }, executionContext);
     if (
       working.playbackStamp === previousStamp &&
       working.phase === "running" &&

@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useReplayVisualBanners } from "@/hooks/useReplayVisualBanners";
-import { reduceGameState } from "@/services/gameEngine";
+import {
+  createEngineExecutionContext,
+  reduceGameState,
+} from "@/services/gameEngine";
 import {
   commitEngineFrameToBuffer,
   encodeMatchRecordJson,
@@ -310,12 +313,13 @@ export function useReplayTimeline(options: UseReplayTimelineOptions) {
       let merged = buffer;
       let working: GameState = live.state;
       let advanced = false;
+      const executionContext = createEngineExecutionContext(live.boardEffects);
       for (let iteration = 0; iteration < QUICK_RESOLVE_SAFETY_CAP; iteration++) {
         const previousStamp = working.playbackStamp;
         const next = reduceGameState(
           working,
           { type: "STEP_ACTION" },
-          live.boardEffects
+          executionContext
         );
         if (
           next.playbackStamp === previousStamp &&

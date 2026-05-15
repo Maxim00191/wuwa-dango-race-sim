@@ -19,6 +19,7 @@ import {
   type AtomicPlaybackStep,
 } from "@/services/boardPlayback";
 import {
+  createEngineExecutionContext,
   createInitialGameState,
   isValidBasicSelection,
   reduceGameState,
@@ -87,16 +88,21 @@ function accentDangoIdForTurnIntro(
   return undefined;
 }
 
-function gameReducer(state: GameState, action: GameAction): GameState {
-  return reduceGameState(state, action, BOARD_CELL_EFFECT_LOOKUP);
-}
-
 export function useGame() {
   const { getCharacterName, t } = useTranslation();
   const { speedMultiplier } = usePlaybackSettings();
   const translationHelpersRef = useRef({ getCharacterName, t });
   const playbackSpeedRef = useRef(speedMultiplier);
   const initialState = useMemo(() => createInitialGameState(), []);
+  const executionContext = useMemo(
+    () => createEngineExecutionContext(BOARD_CELL_EFFECT_LOOKUP),
+    []
+  );
+  const gameReducer = useCallback(
+    (currentState: GameState, action: GameAction): GameState =>
+      reduceGameState(currentState, action, executionContext),
+    [executionContext]
+  );
   const [state, dispatch] = useReducer(gameReducer, initialState);
   const lastRaceSetupRef = useRef<RaceSetup | null>(null);
   const [playbackCells, setPlaybackCells] = useState<
