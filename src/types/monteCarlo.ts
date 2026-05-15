@@ -89,7 +89,7 @@ export type HeadlessSimulationOutcome = {
     final: HeadlessRaceDeepMetrics;
   };
   modeMetrics: HeadlessScenarioModeMetrics;
-  capturedReplay: HeadlessCapturedMatchReplay;
+  capturedReplay?: HeadlessCapturedMatchReplay;
 };
 
 export type ConditionalPlacementSnapshot = {
@@ -241,6 +241,7 @@ export type MonteCarloModeAnalytics =
 
 export type MonteCarloAggregateSnapshot = {
   totalRuns: number;
+  totalRuntimeMs?: number;
   selectedBasicIds: DangoId[];
   participantCount: number;
   scenarioKind: MonteCarloScenarioKind;

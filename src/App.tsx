@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { AnalysisDashboard } from "@/components/AnalysisDashboard";
 import {
   AppNavigation,
@@ -11,37 +11,22 @@ import { MonteCarloPanel } from "@/components/MonteCarloPanel";
 import { ReplayTimelineCluster } from "@/components/ReplayTimelineCluster";
 import { TournamentSetupPanel } from "@/components/TournamentSetupPanel";
 import { ABBY_ID } from "@/constants/ids";
-import { text, type LocalizedText } from "@/i18n";
+import { text } from "@/i18n";
 import { useTranslation } from "@/i18n/useTranslation";
 import { useGame } from "@/hooks/useGame";
 import { useReplayTimeline } from "@/hooks/useReplayTimeline";
 import { useLineupSelection } from "@/hooks/useLineupSelection";
+import { useMonteCarloSimulation } from "@/hooks/useMonteCarloSimulation";
 import { useTheme } from "@/hooks/useTheme";
 import { useTournament } from "@/hooks/useTournament";
-import type { HeadlessSimulationScenario } from "@/services/gameEngine";
 import { isValidBasicSelection } from "@/services/gameEngine";
-import {
-  absorbHeadlessOutcomeIntoAggregate,
-  createEmptyMonteCarloAggregate,
-  finalizeMonteCarloAggregate,
-} from "@/services/monteCarloAggregate";
-import { runMonteCarloBatch } from "@/services/monteCarloRunner";
-import {
-  createObserverSession,
-  finalizeObserverRecords,
-  observeCompletedMatch,
-} from "@/services/observerSession";
 import { BASIC_CHARACTER_LIST } from "@/services/characters";
 import {
   createCustomFinalRaceSetup,
   createNormalRaceSetup,
   createTournamentFinalRaceSetup,
 } from "@/services/raceSetup";
-import type { DangoId } from "@/types/game";
-import type {
-  MonteCarloAggregateSnapshot,
-  MonteCarloScenarioKind,
-} from "@/types/monteCarlo";
+import type { MonteCarloAggregateSnapshot } from "@/types/monteCarlo";
 
 function arraysEqual(left: string[], right: string[]): boolean {
   if (left.length !== right.length) {
@@ -95,16 +80,27 @@ export default function App() {
     useState<Exclude<WorkspaceView, "analysis">>("normal");
   const [selectedTournamentMonteCarloScenarioId, setSelectedTournamentMonteCarloScenarioId] =
     useState<"tournament" | "final">("tournament");
-  const [monteCarloProgress, setMonteCarloProgress] = useState<{
-    completedGames: number;
-    totalGames: number;
-  } | null>(null);
-  const [monteCarloIsStopping, setMonteCarloIsStopping] = useState(false);
   const [monteCarloSnapshot, setMonteCarloSnapshot] =
     useState<MonteCarloAggregateSnapshot | null>(null);
-  const monteCarloRunIdRef = useRef(0);
-  const monteCarloAbortControllerRef = useRef<AbortController | null>(null);
-  const monteCarloLastProgressAtRef = useRef(0);
+  const [monteCarloExtremePerformance, setMonteCarloExtremePerformance] =
+    useState(false);
+
+  const handleMonteCarloComplete = useCallback(
+    (
+      snapshot: MonteCarloAggregateSnapshot,
+      returnView: Exclude<WorkspaceView, "analysis">
+    ) => {
+      setMonteCarloSnapshot(snapshot);
+      setAnalysisReturnView(returnView);
+      setWorkspaceView("analysis");
+    },
+    []
+  );
+
+  const monteCarlo = useMonteCarloSimulation({
+    boardEffectByCellIndex: normalGame.boardEffects,
+    onComplete: handleMonteCarloComplete,
+  });
 
   const rosterBasics = useMemo(() => BASIC_CHARACTER_LIST, []);
   const idleParticipantIds = useMemo(
@@ -164,101 +160,8 @@ export default function App() {
     tournament.race.state.phase,
   ]);
 
-  const runScenarioMonteCarlo = useCallback(
-    async (options: {
-      totalGames: number;
-      scenario: HeadlessSimulationScenario;
-      selectedBasicIds: DangoId[];
-      scenarioKind: MonteCarloScenarioKind;
-      scenarioLabel: LocalizedText;
-      returnView: Exclude<WorkspaceView, "analysis">;
-    }) => {
-      const {
-        totalGames,
-        scenario,
-        selectedBasicIds,
-        scenarioKind,
-        scenarioLabel,
-        returnView,
-      } = options;
-      if (
-        !Number.isSafeInteger(totalGames) ||
-        totalGames < 1 ||
-        !isValidBasicSelection(selectedBasicIds)
-      ) {
-        return;
-      }
-      monteCarloAbortControllerRef.current?.abort();
-      const runId = (monteCarloRunIdRef.current += 1);
-      const abortController = new AbortController();
-      monteCarloAbortControllerRef.current = abortController;
-      setMonteCarloIsStopping(false);
-      setMonteCarloProgress({ completedGames: 0, totalGames });
-      monteCarloLastProgressAtRef.current = 0;
-      const aggregate = createEmptyMonteCarloAggregate(
-        selectedBasicIds,
-        scenarioKind,
-        scenarioLabel
-      );
-      const observerSession = createObserverSession();
-      try {
-        await runMonteCarloBatch({
-          totalRuns: totalGames,
-          scenario,
-          boardEffectByCellIndex: normalGame.boardEffects,
-          onProgress: (completedGames, totalGamesBatch) => {
-            if (monteCarloRunIdRef.current === runId) {
-              const now = performance.now();
-              if (
-                completedGames === totalGamesBatch ||
-                now - monteCarloLastProgressAtRef.current > 60
-              ) {
-                setMonteCarloProgress({
-                  completedGames,
-                  totalGames: totalGamesBatch,
-                });
-                monteCarloLastProgressAtRef.current = now;
-              }
-            }
-          },
-          onOutcome: (outcome) => {
-            absorbHeadlessOutcomeIntoAggregate(aggregate, outcome);
-            observeCompletedMatch(observerSession, outcome);
-          },
-          signal: abortController.signal,
-          shouldAbort: () => monteCarloRunIdRef.current !== runId,
-        });
-      } finally {
-        if (monteCarloAbortControllerRef.current === abortController) {
-          monteCarloAbortControllerRef.current = null;
-        }
-      }
-      if (monteCarloRunIdRef.current !== runId) {
-        return;
-      }
-      setMonteCarloProgress(null);
-      setMonteCarloIsStopping(false);
-      if (aggregate.totalRuns === 0) {
-        return;
-      }
-      setMonteCarloSnapshot({
-        ...finalizeMonteCarloAggregate(aggregate),
-        observerRecords: finalizeObserverRecords(observerSession),
-      });
-      setAnalysisReturnView(returnView);
-      setWorkspaceView("analysis");
-    },
-    [normalGame.boardEffects]
-  );
-
-  const abortMonteCarloRun = useCallback(() => {
-    const controller = monteCarloAbortControllerRef.current;
-    if (!controller || controller.signal.aborted) {
-      return;
-    }
-    setMonteCarloIsStopping(true);
-    controller.abort();
-  }, []);
+  const runScenarioMonteCarlo = monteCarlo.runScenario;
+  const abortMonteCarloRun = monteCarlo.abortRun;
 
   const requestNormalMonteCarloBatch = useCallback(
     async (_scenarioId: string, totalGames: number) => {
@@ -272,9 +175,14 @@ export default function App() {
         scenarioKind: "normalRace",
         scenarioLabel: text("normal.monteCarlo.scenario.analysisLabel"),
         returnView: "normal",
+        extremePerformance: monteCarloExtremePerformance,
       });
     },
-    [resolvedNormalLineupBasicIds, runScenarioMonteCarlo]
+    [
+      resolvedNormalLineupBasicIds,
+      runScenarioMonteCarlo,
+      monteCarloExtremePerformance,
+    ]
   );
 
   const requestTournamentMonteCarloBatch = useCallback(
@@ -290,6 +198,7 @@ export default function App() {
           scenarioKind: "tournament",
           scenarioLabel: text("tournament.monteCarlo.scenarios.tournament.analysisLabel"),
           returnView: "tournament",
+          extremePerformance: monteCarloExtremePerformance,
         });
         return;
       }
@@ -312,6 +221,7 @@ export default function App() {
           ? text("tournament.monteCarlo.scenarios.final.officialAnalysisLabel")
           : text("tournament.monteCarlo.scenarios.final.customAnalysisLabel"),
         returnView: "tournament",
+        extremePerformance: monteCarloExtremePerformance,
       });
     },
     [
@@ -319,6 +229,7 @@ export default function App() {
       runScenarioMonteCarlo,
       tournament.finalPlacements,
       tournament.preliminaryPlacements,
+      monteCarloExtremePerformance,
     ]
   );
 
@@ -644,8 +555,10 @@ export default function App() {
               description={t("normal.monteCarlo.description")}
               lineupBasicIds={resolvedNormalLineupBasicIds}
               runDisabled={normalMonteCarloRunDisabled}
-              progress={monteCarloProgress}
-              isStopping={monteCarloIsStopping}
+              progress={monteCarlo.progress}
+              isStopping={monteCarlo.isStopping}
+              extremePerformanceEnabled={monteCarloExtremePerformance}
+              onExtremePerformanceEnabledChange={setMonteCarloExtremePerformance}
               scenarioOptions={[
                 {
                   id: "normalRace",
@@ -713,8 +626,10 @@ export default function App() {
               description={t("tournament.monteCarlo.description")}
               lineupBasicIds={resolvedTournamentLineupBasicIds}
               runDisabled={tournamentMonteCarloRunDisabled}
-              progress={monteCarloProgress}
-              isStopping={monteCarloIsStopping}
+              progress={monteCarlo.progress}
+              isStopping={monteCarlo.isStopping}
+              extremePerformanceEnabled={monteCarloExtremePerformance}
+              onExtremePerformanceEnabledChange={setMonteCarloExtremePerformance}
               scenarioOptions={[
                 {
                   id: "tournament",

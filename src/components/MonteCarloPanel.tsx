@@ -15,8 +15,14 @@ type MonteCarloPanelProps = {
   description: string;
   lineupBasicIds: DangoId[];
   runDisabled: boolean;
-  progress: { completedGames: number; totalGames: number } | null;
+  progress: {
+    completedGames: number;
+    totalGames: number;
+    timeRemainingLabel: string | null;
+  } | null;
   isStopping: boolean;
+  extremePerformanceEnabled: boolean;
+  onExtremePerformanceEnabledChange: (enabled: boolean) => void;
   scenarioOptions: MonteCarloScenarioOption[];
   selectedScenarioId: string;
   onSelectedScenarioChange: (scenarioId: string) => void;
@@ -25,7 +31,7 @@ type MonteCarloPanelProps = {
 };
 
 const PRESET_BATCH_SIZES = [100, 1_000, 10_000] as const;
-const DEFAULT_CUSTOM_BATCH_SIZE = "5000";
+const DEFAULT_CUSTOM_BATCH_SIZE = "100000";
 
 export function MonteCarloPanel({
   heading,
@@ -35,6 +41,8 @@ export function MonteCarloPanel({
   runDisabled,
   progress,
   isStopping,
+  extremePerformanceEnabled,
+  onExtremePerformanceEnabledChange,
   scenarioOptions,
   selectedScenarioId,
   onSelectedScenarioChange,
@@ -162,6 +170,43 @@ export function MonteCarloPanel({
               ) : null}
               <div className="rounded-[1.9rem] bg-slate-100/70 p-4 ring-1 ring-slate-200/80 dark:bg-slate-900/45 dark:ring-slate-800/80 md:p-5">
                 <div className="grid gap-4">
+                  <div className="flex flex-col gap-2.5 rounded-[1.35rem] bg-white/55 px-3.5 py-3 ring-1 ring-slate-200/70 dark:bg-slate-950/40 dark:ring-slate-800/70 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0 space-y-1">
+                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                        {t("monteCarlo.extremeMode.label")}
+                      </p>
+                      <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                        {t("monteCarlo.extremeMode.description")}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={isRunning}
+                      role="switch"
+                      aria-checked={extremePerformanceEnabled}
+                      onClick={() =>
+                        onExtremePerformanceEnabledChange(
+                          !extremePerformanceEnabled
+                        )
+                      }
+                      className={`relative inline-flex h-9 w-[3.25rem] shrink-0 items-center rounded-full transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500 disabled:cursor-not-allowed disabled:opacity-60 ${
+                        extremePerformanceEnabled
+                          ? "bg-gradient-to-r from-amber-500 to-orange-600 shadow-md shadow-orange-950/25"
+                          : "bg-slate-300/90 dark:bg-slate-700"
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-7 w-7 translate-x-1 rounded-full bg-white shadow transition-transform dark:bg-slate-100 ${
+                          extremePerformanceEnabled
+                            ? "translate-x-[1.35rem]"
+                            : "translate-x-0"
+                        }`}
+                      />
+                      <span className="sr-only">
+                        {t("monteCarlo.extremeMode.label")}
+                      </span>
+                    </button>
+                  </div>
                   <div className="grid grid-cols-4 items-stretch gap-2 sm:gap-2.5">
                     {PRESET_BATCH_SIZES.map((batchSize) => (
                       <button
@@ -288,13 +333,31 @@ export function MonteCarloPanel({
                   <span className="text-sm font-semibold tracking-tight text-slate-700 dark:text-slate-200">
                     {t("monteCarlo.progress")}
                   </span>
-                  <span className="font-mono text-xs text-slate-500 dark:text-slate-400 md:text-sm">
-                    {`${progress.completedGames.toLocaleString()} / ${progress.totalGames.toLocaleString()} (${progressPercentRounded}%)${isStopping ? ` · ${t("monteCarlo.stopping")}` : ""}`}
-                  </span>
+                  <div className="flex flex-col items-end gap-0.5 text-right sm:items-end">
+                    <span className="font-mono text-xs text-slate-500 dark:text-slate-400 md:text-sm">
+                      {`${progress.completedGames.toLocaleString()} / ${progress.totalGames.toLocaleString()} (${progressPercentRounded}%)${isStopping ? ` · ${t("monteCarlo.stopping")}` : ""}`}
+                    </span>
+                    {progress.timeRemainingLabel && !isStopping ? (
+                      <span className="font-mono text-[11px] font-medium tabular-nums text-teal-700 dark:text-teal-300/90 md:text-xs">
+                        {t("monteCarlo.timeRemaining", {
+                          value: progress.timeRemainingLabel,
+                        })}
+                      </span>
+                    ) : null}
+                  </div>
                 </div>
+                {extremePerformanceEnabled ? (
+                  <p className="mt-2 text-xs leading-relaxed text-amber-800/90 dark:text-amber-300/90">
+                    {t("monteCarlo.extremeMode.progressCoarse")}
+                  </p>
+                ) : null}
                 <div className="relative mt-4 h-2.5 overflow-hidden rounded-full bg-white ring-1 ring-slate-200/90 dark:bg-slate-950/70 dark:ring-slate-800/90">
                   <div
-                    className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 transition-[width] duration-500 ease-out"
+                    className={`absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 ease-out ${
+                      extremePerformanceEnabled
+                        ? "transition-[width] duration-150"
+                        : "transition-[width] duration-500"
+                    }`}
                     style={{ width: `${progressRatio * 100}%` }}
                   >
                     <div className="absolute inset-0 bg-[length:200%_100%] bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />

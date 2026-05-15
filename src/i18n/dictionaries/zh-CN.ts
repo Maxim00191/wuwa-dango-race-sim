@@ -222,14 +222,22 @@ export const zhCnDictionary: TranslationDictionary = {
     useCustomNumber: "使用自定义次数",
     customRunsLabel: "自定义次数",
     customRunsUnit: "次",
-    customRunsPlaceholder: "5000",
+    customRunsPlaceholder: "100000",
     customRunsHint: "可输入任意正整数。",
     customRunsInvalid: "请输入正整数。",
     stop: "停止推演",
     stopping: "正在停止...",
     progress: "推演进度",
+    timeRemaining: "剩余时间：{value}",
     standingBy: "待命中",
     lineupIncomplete: "需要集齐 {count} 只团子才能启动推演台。",
+    extremeMode: {
+      label: "性能模式",
+      description:
+        "完全占满 CPU，并增加单次吞吐量并减少进度上报。进度条将延迟更新。仅推荐10万次以上的推演使用，否则可能会更慢！",
+      progressCoarse:
+        "正在后台运算，进度条会卡住和延迟更新。",
+    },
   },
   game: {
     controls: {
@@ -353,6 +361,8 @@ export const zhCnDictionary: TranslationDictionary = {
       averageRaceLengthHint: "平均需要多少回合才能完赛",
       fastestFinish: "最速通关",
       fastestFinishHint: "本批次模拟中用时最短的一局",
+      batchWallClock: "本次模拟总耗时",
+      batchWallClockHint: "从任务开始到批次统合的耗时",
       titleShare: "最高夺冠率",
       titleShareHint: "{name} 捧杯的次数最多",
       noWinnerData: "暂无冠军数据",
@@ -361,6 +371,23 @@ export const zhCnDictionary: TranslationDictionary = {
       bottomHalfComebackHint: "预赛排在 4-6 名却最终夺冠的概率",
       stabilityHint: "{name} 的名次波动最小",
       noStabilityData: "暂无稳定性数据",
+    },
+    funStats: {
+      eyebrow: "模拟演算",
+      title: "性能分析",
+      intro:
+        "团子们还好吗，是轻轻松松还是汗流浃背？",
+      runtimeLabel: "总耗时",
+      runtimeHint: "从任务开始到统计结束的时间。",
+      throughputLabel: "每位团子每秒经历局数",
+      throughputHint: "一秒跑这么多局，超速了吧！",
+      marathonLabel: "全马公里数",
+      marathonHint:
+        "全程马拉松按 42,195 米计；距离 ≈ 阵容累计正向前进的 {cells} 个棋盘格（1 格 ≈ 1 米）。",
+      methodology:
+        "数据来自演算里累计的正向位移（自身移动与回合外移动之和）。",
+      unavailable: "—",
+      runtimeUnavailable: "—",
     },
     overview: {
       winRateEyebrow: "胜率总览",

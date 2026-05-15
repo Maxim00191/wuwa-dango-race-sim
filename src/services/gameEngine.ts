@@ -82,6 +82,27 @@ function shuffleOrderStableCopy(ids: string[]): string[] {
   return copy;
 }
 
+function createSeededRandom(seed: number): () => number {
+  let state = seed >>> 0;
+  return () => {
+    state = (state + 0x6d2b79f5) >>> 0;
+    let value = state;
+    value = Math.imul(value ^ (value >>> 15), value | 1);
+    value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
+    return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function withSeededRandom<T>(seed: number, run: () => T): T {
+  const originalRandom = Math.random;
+  Math.random = createSeededRandom(seed);
+  try {
+    return run();
+  } finally {
+    Math.random = originalRandom;
+  }
+}
+
 function buildRoundActorOrder(state: GameState): {
   state: GameState;
   orderedActors: DangoId[];
@@ -2394,10 +2415,15 @@ export type HeadlessSimulationScenario =
       selectedBasicIds: DangoId[];
     };
 
+export type HeadlessSimulationOptions = {
+  captureReplay?: boolean;
+  seed?: number;
+};
+
 type HeadlessRaceResult = {
   state: GameState;
   metrics: HeadlessRaceDeepMetrics;
-  record: MatchRecord;
+  record: MatchRecord | null;
 };
 
 function buildHeadlessRaceMetrics(
@@ -2430,51 +2456,78 @@ function buildHeadlessRaceMetrics(
 
 function simulateHeadlessRace(
   setup: RaceSetup,
-  boardEffectByCellIndex: Map<number, string | null>
+  boardEffectByCellIndex: Map<number, string | null>,
+  captureReplay: boolean
 ): HeadlessRaceResult {
   let working = createRunningSessionFromSetup(setup);
   const telemetry = createHeadlessRaceTelemetryCollector(setup);
-  const board = serializeBoardEffectAssignments(boardEffectByCellIndex);
-  const frames: MatchGameFrameJson[] = [serializeEngineFrame(working)];
   const safetyCap = 250_000;
   let iterations = 0;
+  if (captureReplay) {
+    const board = serializeBoardEffectAssignments(boardEffectByCellIndex);
+    const frames: MatchGameFrameJson[] = [serializeEngineFrame(working)];
+    while (working.phase === "running" && !working.winnerId) {
+      if (iterations >= safetyCap) {
+        break;
+      }
+      iterations += 1;
+      const previousStamp = working.playbackStamp;
+      working = applyStepAction(working, boardEffectByCellIndex, telemetry);
+      if (
+        working.playbackStamp === previousStamp &&
+        working.phase === "running" &&
+        !working.winnerId
+      ) {
+        break;
+      }
+      frames.push(serializeEngineFrame(working));
+    }
+    return {
+      state: working,
+      metrics: buildHeadlessRaceMetrics(setup, working, telemetry),
+      record: {
+        schemaVersion: 1,
+        setup,
+        board,
+        frames,
+      },
+    };
+  }
   while (working.phase === "running" && !working.winnerId) {
     if (iterations >= safetyCap) {
       break;
     }
     iterations += 1;
-    const previousStamp = working.playbackStamp;
-    working = applyStepAction(working, boardEffectByCellIndex, telemetry);
+    const previousState = working;
+    working = applyInstantFullTurn(working, boardEffectByCellIndex, telemetry);
     if (
-      working.playbackStamp === previousStamp &&
+      working === previousState &&
       working.phase === "running" &&
       !working.winnerId
     ) {
       break;
     }
-    frames.push(serializeEngineFrame(working));
   }
-  const record: MatchRecord = {
-    schemaVersion: 1,
-    setup,
-    board,
-    frames,
-  };
   return {
     state: working,
     metrics: buildHeadlessRaceMetrics(setup, working, telemetry),
-    record,
+    record: null,
   };
 }
 
-export function simulateHeadlessScenario(
+function simulateHeadlessScenarioInternal(
   scenario: HeadlessSimulationScenario,
-  boardEffectByCellIndex: Map<number, string | null>
+  boardEffectByCellIndex: Map<number, string | null>,
+  captureReplay: boolean
 ): HeadlessSimulationOutcome {
   if (scenario.kind === "singleRace") {
-    const race = simulateHeadlessRace(scenario.setup, boardEffectByCellIndex);
+    const race = simulateHeadlessRace(
+      scenario.setup,
+      boardEffectByCellIndex,
+      captureReplay
+    );
     const finalPlacements = deriveBasicPlacementsFromRace(race.state);
-    return {
+    const outcome: HeadlessSimulationOutcome = {
       scenarioKind: scenario.kind,
       winnerBasicId: race.state.winnerId ?? finalPlacements[0] ?? null,
       turnsAtFinish: race.state.turnIndex,
@@ -2491,29 +2544,34 @@ export function simulateHeadlessScenario(
         kind: "singleRace",
         finalStartingPlacementByBasicId: race.metrics.startingPlacementByBasicId,
       },
-      capturedReplay: {
+    };
+    if (race.record) {
+      outcome.capturedReplay = {
         scenarioKind: "singleRace",
         record: race.record,
-      },
-    };
+      };
+    }
+    return outcome;
   }
 
   const preliminaryRace = simulateHeadlessRace(
     createTournamentPreliminaryRaceSetup(scenario.selectedBasicIds),
-    boardEffectByCellIndex
+    boardEffectByCellIndex,
+    captureReplay
   );
   const preliminaryPlacements = deriveBasicPlacementsFromRace(
     preliminaryRace.state
   );
   const finalRace = simulateHeadlessRace(
     createTournamentFinalRaceSetup(preliminaryPlacements),
-    boardEffectByCellIndex
+    boardEffectByCellIndex,
+    captureReplay
   );
   const finalPlacements = deriveBasicPlacementsFromRace(finalRace.state);
   const preliminaryWinnerBasicId =
     preliminaryRace.state.winnerId ?? preliminaryPlacements[0] ?? null;
   const finalWinnerBasicId = finalRace.state.winnerId ?? finalPlacements[0] ?? null;
-  return {
+  const outcome: HeadlessSimulationOutcome = {
     scenarioKind: scenario.kind,
     winnerBasicId: finalWinnerBasicId,
     turnsAtFinish: preliminaryRace.state.turnIndex + finalRace.state.turnIndex,
@@ -2536,12 +2594,37 @@ export function simulateHeadlessScenario(
         preliminaryWinnerBasicId !== null &&
         preliminaryWinnerBasicId === finalWinnerBasicId,
     },
-    capturedReplay: {
+  };
+  if (preliminaryRace.record && finalRace.record) {
+    outcome.capturedReplay = {
       scenarioKind: "tournament",
       preliminary: preliminaryRace.record,
       final: finalRace.record,
-    },
-  };
+    };
+  }
+  return outcome;
+}
+
+export function simulateHeadlessScenario(
+  scenario: HeadlessSimulationScenario,
+  boardEffectByCellIndex: Map<number, string | null>,
+  options: HeadlessSimulationOptions = {}
+): HeadlessSimulationOutcome {
+  const captureReplay = options.captureReplay ?? true;
+  if (options.seed !== undefined) {
+    return withSeededRandom(options.seed, () =>
+      simulateHeadlessScenarioInternal(
+        scenario,
+        boardEffectByCellIndex,
+        captureReplay
+      )
+    );
+  }
+  return simulateHeadlessScenarioInternal(
+    scenario,
+    boardEffectByCellIndex,
+    captureReplay
+  );
 }
 
 export function simulateHeadlessFullGame(

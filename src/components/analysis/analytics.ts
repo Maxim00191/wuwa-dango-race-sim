@@ -53,6 +53,40 @@ export function formatPercent(
   return `${value.toFixed(fractionDigits)}%`;
 }
 
+export const FULL_MARATHON_METERS = 42195;
+
+export function formatBatchWallClockMs(ms: number): string {
+  if (ms < 1000) {
+    return `${Math.round(ms)} ms`;
+  }
+  const sec = ms / 1000;
+  if (sec < 60) {
+    return `${sec.toFixed(2)}s`;
+  }
+  const totalSec = Math.floor(sec);
+  const mm = Math.floor(totalSec / 60);
+  const ss = totalSec % 60;
+  return `${mm}:${String(ss).padStart(2, "0")}`;
+}
+
+export function sumAggregateForwardDisplacementCells(
+  selectedBasicIds: string[],
+  basicMetricTotalsByBasicId: Record<
+    string,
+    { ownTurnProgressSum: number; passiveProgressSum: number }
+  >
+): number {
+  return selectedBasicIds.reduce((sum, basicId) => {
+    const totals = basicMetricTotalsByBasicId[basicId];
+    if (!totals) {
+      return sum;
+    }
+    return (
+      sum + totals.ownTurnProgressSum + totals.passiveProgressSum
+    );
+  }, 0);
+}
+
 export function derivePlacementRow(
   basicId: DangoId,
   counts: PlacementCountVector,

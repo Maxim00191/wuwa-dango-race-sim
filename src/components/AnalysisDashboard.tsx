@@ -6,8 +6,10 @@ import { TournamentInsights } from "@/components/analysis/TournamentInsights";
 import { useTranslation } from "@/i18n/useTranslation";
 import {
   derivePlacementRows,
+  formatBatchWallClockMs,
   formatPercent,
 } from "@/components/analysis/analytics";
+import { SimulationFunStatsCard } from "@/components/analysis/SimulationFunStatsCard";
 import type { MonteCarloAggregateSnapshot } from "@/types/monteCarlo";
 import type { DangoId } from "@/types/game";
 
@@ -145,6 +147,11 @@ export function AnalysisDashboard({
     snapshot.totalRuns > 0 && Number.isFinite(snapshot.minTurns)
       ? snapshot.minTurns
       : "—";
+  const wallClockMs = snapshot.totalRuntimeMs;
+  const batchWallClockDisplay =
+    wallClockMs !== undefined && Number.isFinite(wallClockMs) && wallClockMs >= 0
+      ? formatBatchWallClockMs(wallClockMs)
+      : null;
 
   return (
     <div className="flex w-full flex-1 flex-col gap-6 px-3 py-6 text-slate-900 dark:text-slate-100 sm:gap-8 sm:px-6 sm:py-8 md:px-10 lg:gap-10 lg:px-14 xl:px-16 2xl:px-24">
@@ -171,7 +178,14 @@ export function AnalysisDashboard({
         </button>
       </header>
 
-      <section className="grid grid-cols-2 gap-2 sm:grid-cols-2 md:grid-cols-4">
+      <section className="grid grid-cols-2 gap-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
+        {batchWallClockDisplay ? (
+          <MetricHighlightCard
+            label={t("analysis.metrics.batchWallClock")}
+            value={batchWallClockDisplay}
+            hint={t("analysis.metrics.batchWallClockHint")}
+          />
+        ) : null}
         <MetricHighlightCard
           label={
             snapshot.scenarioKind === "tournament"
@@ -229,6 +243,8 @@ export function AnalysisDashboard({
           }
         />
       </section>
+
+      <SimulationFunStatsCard snapshot={snapshot} />
 
       <section className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap sm:gap-3">
         {availableTabs.map((tabId) => {

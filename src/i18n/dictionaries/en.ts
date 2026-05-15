@@ -231,15 +231,23 @@ export const enDictionary: TranslationDictionary = {
     useCustomNumber: "Use custom number",
     customRunsLabel: "Custom runs",
     customRunsUnit: "runs",
-    customRunsPlaceholder: "5000",
+    customRunsPlaceholder: "100000",
     customRunsHint: "Enter any positive whole number.",
     customRunsInvalid: "Use a positive whole number.",
     stop: "Stop simulation",
     stopping: "Stopping...",
     progress: "Progress",
+    timeRemaining: "Time remaining: {value}",
     standingBy: "Standing by",
     lineupIncomplete:
       "Gather all {count} dangos before starting the divination.",
+    extremeMode: {
+      label: "Performance mode",
+      description:
+        "Fully takes up CPU, and increases worker batches, and reduces progress messages. Progress updating will be delayed. Only recommended for 100,000 runs or more, otherwise it may be slower.",
+      progressCoarse:
+        "Running in the background, progress bar will be stuck and delayed.",
+    },
   },
   game: {
     controls: {
@@ -371,6 +379,9 @@ export const enDictionary: TranslationDictionary = {
       averageRaceLengthHint: "Average turns needed to finish a single race",
       fastestFinish: "Speedrun Record",
       fastestFinishHint: "The shortest match in this batch of simulations",
+      batchWallClock: "Total simulation time",
+      batchWallClockHint:
+        "Time from task start to batch consolidation",
       titleShare: "Highest Win Rate",
       titleShareHint: "{name} took home the most trophies",
       noWinnerData: "No champion data yet",
@@ -379,6 +390,24 @@ export const enDictionary: TranslationDictionary = {
       bottomHalfComebackHint: "Win rate for dangos who placed 4th-6th in prelims",
       stabilityHint: "{name} had the least placement variance",
       noStabilityData: "No consistency data yet",
+    },
+    funStats: {
+      eyebrow: "Divinations",
+      title: "Performance Analysis",
+      intro:
+        "How are the dangos doing, are they chilling or sweating?",
+      runtimeLabel: "Total runtime",
+      runtimeHint: "Time from task start to statistics end.",
+      throughputLabel: "Matches per dango per second",
+      throughputHint:
+        "That's so fast, are they taking a rocket?",
+      marathonLabel: "Full Marathon equivalents",
+      marathonHint:
+        "Full marathon ≈ 42,195 m. Distance ≈ {cells} forward board cells summed across the roster (1 cell ≈ 1 m).",
+      methodology:
+        "Data from aggregated positive displacement (own-turn gains plus off-turn gains).",
+      unavailable: "—",
+      runtimeUnavailable: "—",
     },
     overview: {
       winRateEyebrow: "Win Rate Overview",
