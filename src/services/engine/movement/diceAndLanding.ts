@@ -8,11 +8,37 @@ import type {
   DangoId,
   EntityRuntimeState,
   GameState,
+  MovementModifier,
   PlaybackSegment,
   StackReactiveLandingCause,
   TravelDirection,
   TurnRollPlan,
 } from "@/types/game";
+
+export function resolveStepsWithMovementModifiers(
+  resolvedSteps: number,
+  exemptRaw: number,
+  movementModifiers: MovementModifier[] | undefined
+): number {
+  const exempt =
+    exemptRaw > 0 ? Math.min(exemptRaw, resolvedSteps) : 0;
+  const modifiableSteps = resolvedSteps - exempt;
+  const movementModifierDelta = (movementModifiers ?? []).reduce(
+    (sum, modifier) => sum + modifier.delta,
+    0
+  );
+  const minimumMovement = (movementModifiers ?? []).reduce(
+    (current, modifier) =>
+      Math.max(current, modifier.minimumSteps ?? Number.NEGATIVE_INFINITY),
+    Number.NEGATIVE_INFINITY
+  );
+  const adjustedModifiable = modifiableSteps + movementModifierDelta;
+  const adjustedModifiableClamped =
+    minimumMovement > Number.NEGATIVE_INFINITY
+      ? Math.max(minimumMovement, adjustedModifiable)
+      : Math.max(0, adjustedModifiable);
+  return adjustedModifiableClamped + exempt;
+}
 
 export function resolveMovementDiceValue(
   state: GameState,
@@ -47,23 +73,24 @@ export function resolveMovementDiceValue(
     Number.isFinite(resolvedFromHook.diceValue)
       ? resolvedFromHook.diceValue
       : plan.diceValue;
-  const movementModifierDelta = (plan.movementModifiers ?? []).reduce(
-    (sum, modifier) => sum + modifier.delta,
-    0
+  const exemptFromDiceRoll = plan.stepsExemptFromMovementModifiers ?? 0;
+  const exemptFromHookRaw =
+    resolvedFromHook?.stepsExemptFromMovementModifiers ?? 0;
+  const exemptRaw = exemptFromDiceRoll + exemptFromHookRaw;
+  const diceValue = resolveStepsWithMovementModifiers(
+    resolvedSteps,
+    exemptRaw,
+    plan.movementModifiers
   );
-  const minimumMovement = (plan.movementModifiers ?? []).reduce(
-    (current, modifier) =>
-      Math.max(current, modifier.minimumSteps ?? Number.NEGATIVE_INFINITY),
-    Number.NEGATIVE_INFINITY
-  );
-  const adjustedSteps = resolvedSteps + movementModifierDelta;
-  const diceValue =
-    minimumMovement > Number.NEGATIVE_INFINITY
-      ? Math.max(minimumMovement, adjustedSteps)
-      : Math.max(0, adjustedSteps);
-  return resolvedFromHook
-    ? { ...resolvedFromHook, diceValue }
-    : { diceValue };
+  if (!resolvedFromHook) {
+    return { diceValue };
+  }
+  const {
+    stepsExemptFromMovementModifiers: exemptFromDeclared,
+    ...restFromHook
+  } = resolvedFromHook;
+  void exemptFromDeclared;
+  return { ...restFromHook, diceValue };
 }
 
 export function buildDirectlyAboveByActor(

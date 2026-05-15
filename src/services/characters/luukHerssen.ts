@@ -1,10 +1,28 @@
 import { rollInclusive } from "@/services/characters/dice";
 import type {
+  CellEffectSlideModifierContext,
   CharacterDefinition,
   DiceRollContext,
   DiceRollResult,
   GameState,
+  MovementModifier,
 } from "@/types/game";
+
+const PROPULSION_DEVICE_EFFECT_ID = "propulsionDevice";
+const HINDRANCE_DEVICE_EFFECT_ID = "hindranceDevice";
+
+function luukCellEffectSlideModifiers(
+  _state: GameState,
+  context: CellEffectSlideModifierContext
+): MovementModifier[] | undefined {
+  if (context.effectId === PROPULSION_DEVICE_EFFECT_ID) {
+    return [{ sourceId: "luukHerssen", delta: 3 }];
+  }
+  if (context.effectId === HINDRANCE_DEVICE_EFFECT_ID) {
+    return [{ sourceId: "luukHerssen", delta: 1 }];
+  }
+  return undefined;
+}
 
 function rollLuukHerssenDice(
   state: GameState,
@@ -23,5 +41,7 @@ export const luukHerssenCharacter: CharacterDefinition = {
   diceRoll: rollLuukHerssenDice,
   travelDirection: "clockwise",
   activateAfterTurnIndex: 0,
-  skillHooks: {},
+  skillHooks: {
+    cellEffectSlideModifiers: luukCellEffectSlideModifiers,
+  },
 };

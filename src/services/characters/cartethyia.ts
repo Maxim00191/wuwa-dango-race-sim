@@ -34,6 +34,7 @@ function resolveCartethyiaComebackMovement(
   }
   return {
     diceValue: context.diceValue + 2,
+    stepsExemptFromMovementModifiers: 2,
     ...skillTrigger(
       "cartethyia.boost",
       text("simulation.skills.cartethyiaComebackBoost", {

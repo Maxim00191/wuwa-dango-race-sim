@@ -22,6 +22,7 @@ function rollCarlottaLuckyDoubleDice(
   return {
     diceValue,
     initialDiceValue: baseFace,
+    stepsExemptFromMovementModifiers: isLuckyDouble ? baseFace : undefined,
     ...(isLuckyDouble
       ? skillTrigger(
           "carlotta.double",

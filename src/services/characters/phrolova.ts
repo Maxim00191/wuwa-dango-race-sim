@@ -23,6 +23,7 @@ function resolvePhrolovaElegantConspiracy(
   }
   return {
     diceValue: context.diceValue + 3,
+    stepsExemptFromMovementModifiers: 3,
     ...skillTrigger(
       "phrolova.bottomBoost",
       text("simulation.skills.phrolovaBottomBoost", {

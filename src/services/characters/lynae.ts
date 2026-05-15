@@ -24,6 +24,7 @@ function rollLynaeUnstableDice(
     return {
       diceValue: initialDiceValue * 2,
       initialDiceValue,
+      stepsExemptFromMovementModifiers: initialDiceValue,
       ...skillTrigger(
         "lynae.double",
         text("simulation.skills.lynaeDouble", {

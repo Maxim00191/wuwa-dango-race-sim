@@ -33,6 +33,7 @@ function resolveChisaUnderdogMovement(
   }
   return {
     diceValue: context.diceValue + 2,
+    stepsExemptFromMovementModifiers: 2,
     ...skillTrigger(
       "chisa.underdog",
       text("simulation.skills.chisaUnderdog", {

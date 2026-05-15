@@ -2,6 +2,7 @@ import { skillTrigger } from "@/broadcast/skillTrigger";
 import { characterParam, text } from "@/i18n";
 import { rollInclusive } from "@/services/characters/dice";
 import type {
+  CellIndex,
   CharacterDefinition,
   DiceRollContext,
   DiceRollResult,
@@ -19,10 +20,33 @@ function rollSigrikaDice(
   return { diceValue: rollInclusive(1, 3) };
 }
 
+function allActiveBasicsShareCell(state: GameState): boolean {
+  const { activeBasicIds, entities } = state;
+  if (activeBasicIds.length === 0) {
+    return false;
+  }
+  let shared: CellIndex | undefined;
+  for (const id of activeBasicIds) {
+    const cell = entities[id]?.cellIndex;
+    if (cell === undefined) {
+      return false;
+    }
+    if (shared === undefined) {
+      shared = cell;
+    } else if (cell !== shared) {
+      return false;
+    }
+  }
+  return true;
+}
+
 function applySigrikaPressure(
   state: GameState,
   context: TurnRollPreparationContext
 ): TurnRollPreparationResolution {
+  if (context.turnIndex <= 1 && allActiveBasicsShareCell(state)) {
+    return { state };
+  }
   const rankIndex = context.rankedBasicIds.indexOf(context.actorId);
   if (rankIndex <= 0) {
     return { state };

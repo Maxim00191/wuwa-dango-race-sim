@@ -29,6 +29,7 @@ function resolvePhoebeLuckyMovement(
   }
   return {
     diceValue: context.diceValue + 1,
+    stepsExemptFromMovementModifiers: 1,
     ...skillTrigger(
       "phoebe.lucky",
       text("simulation.skills.phoebeLucky", {

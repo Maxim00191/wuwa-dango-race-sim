@@ -18,6 +18,7 @@ function rollDeniaDice(
   return {
     diceValue: matchedPreviousRoll ? initialDiceValue + 2 : initialDiceValue,
     initialDiceValue,
+    stepsExemptFromMovementModifiers: matchedPreviousRoll ? 2 : undefined,
     entityPatches: {
       [context.rollerId]: {
         skillState: { previousRoll: initialDiceValue },

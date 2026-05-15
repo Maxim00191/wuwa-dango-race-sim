@@ -31,6 +31,7 @@ function resolveHiyukiBondedMovement(
   }
   return {
     diceValue: context.diceValue + 1,
+    stepsExemptFromMovementModifiers: 1,
     ...skillTrigger(
       "hiyuki.bondedAdvance",
       text("simulation.skills.hiyukiBondedAdvance", {

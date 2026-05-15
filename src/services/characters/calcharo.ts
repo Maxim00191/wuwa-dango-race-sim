@@ -19,6 +19,7 @@ function resolveCalcharoLastPlaceBoost(
   }
   return {
     diceValue: context.diceValue + 3,
+    stepsExemptFromMovementModifiers: 3,
     ...skillTrigger(
       "calcharo.lastPlaceBoost",
       text("simulation.skills.calcharoLastPlaceBoost", {

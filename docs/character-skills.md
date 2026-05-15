@@ -19,5 +19,3 @@
 | 长离   | Changli      | 谋而后定    | Plan Before Acting            | 如果下方堆叠其他团子，下一个回合有 65% 的概率最后一个行动。                                              |
 | 今汐   | Jinhsi       | 令尹之名    | The Name of the Lingyin       | 如果头顶堆叠其他团子，有 40% 的概率移动到所有团子的最上方。                                              |
 | 卡卡罗  | Calcharo     | 如影随形    | Misery follows                | 开始移动时，如果在最后一名，额外前进 3 格。                                                       |
-
-

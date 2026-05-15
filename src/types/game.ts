@@ -150,6 +150,7 @@ export type MovementEvaluationContext = {
 
 export type MovementEvaluationResult = {
   diceValue: number;
+  stepsExemptFromMovementModifiers?: number;
   entityPatches?: Partial<Record<DangoId, Partial<EntityRuntimeState>>>;
   skillNarrative?: LocalizedText;
   skillBannerActionId?: import("@/broadcast/skillBannerLexicon").SkillBannerActionId;
@@ -204,6 +205,18 @@ export type DirectTopLandingHookHandler = (
   context: DirectTopLandingHookContext
 ) => SkillHookResolution;
 
+export type CellEffectTriggerContext = {
+  turnIndex: number;
+  moverId: DangoId;
+  destinationCellIndex: CellIndex;
+  stackBottomToTop: DangoId[];
+  moverTravelDirection: TravelDirection;
+};
+
+export type CellEffectSlideModifierContext = CellEffectTriggerContext & {
+  effectId: string;
+};
+
 export type CharacterSkillHooks = {
   atRoundStart?: RoundStartHookHandler;
   atRoundEnd?: RoundEndHookHandler;
@@ -215,16 +228,12 @@ export type CharacterSkillHooks = {
   afterHalfwayCrossing?: SkillHookHandler;
   afterTurnRolls?: TurnRollPreparationHookHandler;
   resolveMovement?: MovementEvaluationHookHandler;
+  cellEffectSlideModifiers?: (
+    state: GameState,
+    context: CellEffectSlideModifierContext
+  ) => MovementModifier[] | undefined;
   afterMovementStep?: MovementStepHookHandler;
   afterDirectTopLanding?: DirectTopLandingHookHandler;
-};
-
-export type CellEffectTriggerContext = {
-  turnIndex: number;
-  moverId: DangoId;
-  destinationCellIndex: CellIndex;
-  stackBottomToTop: DangoId[];
-  moverTravelDirection: TravelDirection;
 };
 
 export type CellEffectShift = {
@@ -420,6 +429,7 @@ export type TurnRollPlan = {
   diceValue: number;
   initialDiceValue: number;
   locksMovementSteps?: boolean;
+  stepsExemptFromMovementModifiers?: number;
   movementModifiers?: MovementModifier[];
   entityPatches?: Partial<Record<DangoId, Partial<EntityRuntimeState>>>;
   skillNarrative?: LocalizedText;
@@ -461,6 +471,7 @@ export type DiceRollResult = {
   diceValue: number;
   initialDiceValue?: number;
   locksMovementSteps?: boolean;
+  stepsExemptFromMovementModifiers?: number;
   entityPatches?: Partial<Record<DangoId, Partial<EntityRuntimeState>>>;
   skillNarrative?: LocalizedText;
   skillBannerActionId?: import("@/broadcast/skillBannerLexicon").SkillBannerActionId;

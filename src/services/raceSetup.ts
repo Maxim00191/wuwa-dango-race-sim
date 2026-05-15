@@ -67,19 +67,23 @@ function buildSprintStartingStacks(selectedBasicIds: DangoId[]): {
   seededFirstTurnActorOrder: DangoId[];
   raceWinDistanceInClockwiseSteps: number;
 } {
-  const stackBottomToTop = [
-    ABBY_ID,
-    ...shuffleOrderStableCopy(selectedBasicIds),
-  ];
+  const racersBottomToTop = shuffleOrderStableCopy(selectedBasicIds);
+  const stacks: RaceStartingStack[] = [];
+  if (racersBottomToTop.length > 0) {
+    stacks.push({
+      cellIndex: SPRINT_START_CELL_INDEX,
+      stackBottomToTop: racersBottomToTop,
+    });
+  }
+  stacks.push({
+    cellIndex: FINISH_LINE_CELL_INDEX,
+    stackBottomToTop: [ABBY_ID],
+  });
+  const turnOrderStackBottomToTop = [ABBY_ID, ...racersBottomToTop];
   return {
-    stacks: [
-      {
-        cellIndex: SPRINT_START_CELL_INDEX,
-        stackBottomToTop,
-      },
-    ],
+    stacks,
     seededFirstTurnActorOrder:
-      entityOrderFromStackTopToBottom(stackBottomToTop),
+      entityOrderFromStackTopToBottom(turnOrderStackBottomToTop),
     raceWinDistanceInClockwiseSteps: winDistanceFromStartCellToFinish(
       SPRINT_START_CELL_INDEX
     ),

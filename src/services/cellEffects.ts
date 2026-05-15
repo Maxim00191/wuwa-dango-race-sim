@@ -1,5 +1,7 @@
 import { ABBY_ID } from "@/constants/ids";
 import { text } from "@/i18n";
+import { CHARACTER_BY_ID } from "@/services/characters";
+import { resolveStepsWithMovementModifiers } from "@/services/engine/movement/diceAndLanding";
 import {
   addClockwise,
   addCounterClockwise,
@@ -72,22 +74,34 @@ function moveTriggeredStack(
   };
 }
 
-function resolveLuukAdjustedShiftSteps(
+function resolveShiftStepsWithMovementPipeline(
+  state: GameState,
   context: CellEffectTriggerContext,
-  defaultShiftSteps: number,
-  boostedShiftSteps: number
+  effectId: string,
+  baseShiftSteps: number
 ): number {
-  return context.moverId === "luukHerssen" ? boostedShiftSteps : defaultShiftSteps;
+  const skillMods =
+    CHARACTER_BY_ID[context.moverId]?.skillHooks.cellEffectSlideModifiers?.(
+      state,
+      { ...context, effectId }
+    );
+  return resolveStepsWithMovementModifiers(baseShiftSteps, 0, skillMods);
 }
 
 const propulsionDeviceEffect: CellEffectDefinition = {
   id: CELL_EFFECT_IDS.propulsionDevice,
   apply: (state, context) => {
+    const shiftSteps = resolveShiftStepsWithMovementPipeline(
+      state,
+      context,
+      CELL_EFFECT_IDS.propulsionDevice,
+      1
+    );
     return moveTriggeredStack(
       state,
       context.stackBottomToTop,
       context.destinationCellIndex,
-      resolveLuukAdjustedShiftSteps(context, 1, 4),
+      shiftSteps,
       "clockwise",
       CELL_EFFECT_LOG_KEY_BY_ID[CELL_EFFECT_IDS.propulsionDevice]
     );
@@ -97,11 +111,17 @@ const propulsionDeviceEffect: CellEffectDefinition = {
 const hindranceDeviceEffect: CellEffectDefinition = {
   id: CELL_EFFECT_IDS.hindranceDevice,
   apply: (state, context) => {
+    const shiftSteps = resolveShiftStepsWithMovementPipeline(
+      state,
+      context,
+      CELL_EFFECT_IDS.hindranceDevice,
+      1
+    );
     return moveTriggeredStack(
       state,
       context.stackBottomToTop,
       context.destinationCellIndex,
-      resolveLuukAdjustedShiftSteps(context, 1, 2),
+      shiftSteps,
       "counterClockwise",
       CELL_EFFECT_LOG_KEY_BY_ID[CELL_EFFECT_IDS.hindranceDevice]
     );
