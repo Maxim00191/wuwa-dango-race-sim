@@ -7,6 +7,7 @@ import type { MonteCarloAggregateSnapshot } from "@/types/monteCarlo";
 import {
   colorWithAlpha,
   derivePlacementRows,
+  formatPlacementLabel,
   formatPercent,
   type PlacementRowDatum,
 } from "@/components/analysis/analytics";
@@ -62,22 +63,42 @@ function ConditionalHeatmap({
       .sort((left, right) => (right.rates[1] ?? 0) - (left.rates[1] ?? 0));
     return winnerRow ? [winnerRow, ...otherRows] : otherRows;
   }, [rows, selectedWinnerId]);
+  const placementCount = orderedRows.reduce(
+    (max, row) => Math.max(max, row.rates.length),
+    0
+  );
+  const heatmapGridStyle = {
+    gridTemplateColumns: `minmax(10rem,1.2fr) repeat(${Math.max(
+      placementCount,
+      1
+    )}, minmax(4.5rem,1fr))`,
+  };
 
   return (
     <div className="overflow-x-auto rounded-3xl border border-slate-200 bg-white shadow-sm shadow-slate-900/5 dark:border-slate-700 dark:bg-slate-950/70">
       <div className="min-w-[44rem]">
-        <div className="grid grid-cols-[minmax(10rem,1.2fr)_repeat(6,minmax(4.5rem,1fr))] border-b border-slate-200 bg-slate-50 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-300">
+        <div
+          className="grid border-b border-slate-200 bg-slate-50 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-300"
+          style={heatmapGridStyle}
+        >
           <div className="px-4 py-3">{t("analysis.conditional.tableDango")}</div>
-          {rows[0]?.rates.map((_, placementIndex) => (
-            <div key={`conditional-header-${placementIndex}`} className="px-2 py-3 text-center">
-              {t(`common.placements.${placementIndex}`)}
-            </div>
-          ))}
+          {Array.from({ length: placementCount }, (_, placementIndex) => {
+            const placementLabel = formatPlacementLabel(t, placementIndex);
+            return (
+              <div
+                key={`conditional-header-${placementIndex}`}
+                className="px-2 py-3 text-center"
+              >
+                {placementLabel}
+              </div>
+            );
+          })}
         </div>
         {orderedRows.map((row) => (
           <div
             key={`conditional-${row.basicId}`}
-            className="grid grid-cols-[minmax(10rem,1.2fr)_repeat(6,minmax(4.5rem,1fr))] border-b border-slate-200 last:border-b-0 dark:border-slate-800"
+            className="grid border-b border-slate-200 last:border-b-0 dark:border-slate-800"
+            style={heatmapGridStyle}
           >
             <div className="flex items-center gap-3 px-4 py-3">
               <span
@@ -95,7 +116,8 @@ function ConditionalHeatmap({
                 </p>
               </div>
             </div>
-            {row.rates.map((rate, placementIndex) => {
+            {Array.from({ length: placementCount }, (_, placementIndex) => {
+              const rate = row.rates[placementIndex] ?? 0;
               const isWinnerCell = row.basicId === selectedWinnerId && placementIndex === 0;
               const alpha = isWinnerCell ? 0.92 : 0.08 + (rate / 100) * 0.72;
               const cellHex = blendHexColors(row.accentHex, heatmapSurfaceHex, alpha);
@@ -220,19 +242,19 @@ export function ConditionalAnalysisPanel({
     snapshot.conditionalPlacementCountsByWinnerId[selectedWinnerId];
   const sampleSize = conditionalSnapshot?.sampleSize ?? 0;
   const rows = useMemo(
-    () =>
-      derivePlacementRows(
+    () => {
+      const placementRows = derivePlacementRows(
         snapshot.selectedBasicIds,
-        conditionalSnapshot?.placementCountsByBasicId ??
-          snapshot.finalPlacementCountsByBasicId,
+        conditionalSnapshot?.placementCountsByBasicId ?? {},
         getCharacterName,
         resolveRowColors
-      ),
+      );
+      return placementRows.filter((row) => row.total > 0);
+    },
     [
       conditionalSnapshot?.placementCountsByBasicId,
       getCharacterName,
       resolveRowColors,
-      snapshot.finalPlacementCountsByBasicId,
       snapshot.selectedBasicIds,
     ]
   );

@@ -1,3 +1,4 @@
+import type { KnockoutPhaseId } from "@/services/knockout/bracket";
 import type { DangoId } from "@/types/game";
 import type { HeadlessSimulationOutcome } from "@/types/monteCarlo";
 import type { MatchRecord } from "@/types/replay";
@@ -12,6 +13,10 @@ export type ObserverReplayPayload =
       kind: "tournamentPair";
       preliminary: MatchRecord;
       final: MatchRecord;
+    }
+  | {
+      kind: "knockoutSeries";
+      phases: Partial<Record<KnockoutPhaseId, MatchRecord>>;
     };
 
 export type ObserverCapturedRecord = {

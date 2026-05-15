@@ -10,6 +10,7 @@ import type {
 import {
   colorWithAlpha,
   derivePlacementRows,
+  formatPlacementLabel,
   formatPercent,
   type PlacementRowDatum,
 } from "@/components/analysis/analytics";
@@ -22,6 +23,9 @@ const RACE_CONTEXT_OPTIONS: MonteCarloRaceContext[] = [
   "sprint",
   "preliminary",
   "final",
+  "knockoutGroup",
+  "knockoutBracket",
+  "knockoutFinal",
 ];
 
 function sortRows(rows: PlacementRowDatum[]): PlacementRowDatum[] {
@@ -101,7 +105,7 @@ function WinRateOverview({
             {t("analysis.overview.winRateEyebrow")}
           </p>
           <h3 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
-            {scenarioKind === "tournament"
+            {scenarioKind === "tournament" || scenarioKind === "knockoutTournament"
               ? t("analysis.overview.winRateTitleTournament")
               : t("analysis.overview.winRateTitleRace")}
           </h3>
@@ -289,14 +293,17 @@ function DistributionRow({ row }: { row: PlacementRowDatum }) {
               className="grid border-b border-slate-200 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600 dark:border-slate-700 dark:text-slate-300"
               style={placementGridStyle}
             >
-              {row.rates.map((_, placementIndex) => (
-                <div
-                  key={`${row.basicId}-header-${placementIndex}`}
-                  className="px-2 py-2 text-center"
-                >
-                  {t(`common.placements.${placementIndex}`)}
-                </div>
-              ))}
+              {row.rates.map((_, placementIndex) => {
+                const placementLabel = formatPlacementLabel(t, placementIndex);
+                return (
+                  <div
+                    key={`${row.basicId}-header-${placementIndex}`}
+                    className="px-2 py-2 text-center"
+                  >
+                    {placementLabel}
+                  </div>
+                );
+              })}
             </div>
             <div
               className="h-12 rounded-b-2xl shadow-inner shadow-slate-900/10 dark:shadow-slate-950/20"
@@ -378,7 +385,11 @@ export function OverviewPanel({ snapshot }: OverviewPanelProps) {
   const { getCharacterName } = useTranslation();
   const getSafeDangoColors = useSafeDangoColors();
   const initialContext: MonteCarloRaceContext =
-    snapshot.scenarioKind === "normalRace" ? "sprint" : "final";
+    snapshot.scenarioKind === "normalRace"
+      ? "sprint"
+      : snapshot.scenarioKind === "knockoutTournament"
+        ? "knockoutFinal"
+        : "final";
   const [selectedContext, setSelectedContext] =
     useState<MonteCarloRaceContext>(initialContext);
   const availableContexts = useMemo(
@@ -413,7 +424,7 @@ export function OverviewPanel({ snapshot }: OverviewPanelProps) {
             ?.placementCountsByBasicId ?? snapshot.finalPlacementCountsByBasicId,
           getCharacterName,
           resolveRowColors
-        )
+        ).filter((row) => row.total > 0)
       ),
     [
       getCharacterName,

@@ -1,5 +1,9 @@
 import { useTranslation } from "@/i18n/useTranslation";
 import { encodeMatchRecordJson } from "@/services/matchReplay";
+import {
+  KNOCKOUT_PHASE_SEQUENCE,
+  type KnockoutPhaseId,
+} from "@/services/knockout/bracket";
 import { DEFAULT_OBSERVER_CRITERIA } from "@/services/observerSession";
 import type { MonteCarloAggregateSnapshot } from "@/types/monteCarlo";
 import type { ObserverCapturedRecord, ObserverRuleId } from "@/types/observer";
@@ -13,6 +17,17 @@ type ObserverRecordsPanelProps = {
 const OBSERVER_RULE_ORDER: ObserverRuleId[] = DEFAULT_OBSERVER_CRITERIA.map(
   (criterion) => criterion.id
 );
+
+const KNOCKOUT_REPLAY_BUTTON_BASE =
+  "inline-flex min-h-11 items-center justify-center rounded-full px-4 py-2 text-sm font-semibold shadow-md transition";
+
+const KNOCKOUT_REPLAY_BUTTON_CLASSES = {
+  groupA: `${KNOCKOUT_REPLAY_BUTTON_BASE} bg-sky-500 text-sky-950 shadow-sky-900/25 hover:bg-sky-400 dark:shadow-sky-950/40`,
+  groupB: `${KNOCKOUT_REPLAY_BUTTON_BASE} bg-violet-500 text-violet-950 shadow-violet-900/25 hover:bg-violet-400 dark:shadow-violet-950/40`,
+  winnersBracket: `${KNOCKOUT_REPLAY_BUTTON_BASE} bg-emerald-500 text-emerald-950 shadow-emerald-900/25 hover:bg-emerald-400 dark:shadow-emerald-950/40`,
+  losersBracket: `${KNOCKOUT_REPLAY_BUTTON_BASE} bg-amber-500 text-amber-950 shadow-amber-900/25 hover:bg-amber-400 dark:shadow-amber-950/40`,
+  finals: `${KNOCKOUT_REPLAY_BUTTON_BASE} bg-rose-500 text-rose-950 shadow-rose-900/25 hover:bg-rose-400 dark:shadow-rose-950/40`,
+} satisfies Record<KnockoutPhaseId, string>;
 
 function ruleTitleKey(ruleId: ObserverRuleId): string {
   return `analysis.observer.ruleTitles.${ruleId}`;
@@ -121,6 +136,23 @@ function RecordCard({
               {t("analysis.observer.watchFinalReplay")}
             </button>
           </>
+        ) : replay.kind === "knockoutSeries" ? (
+          KNOCKOUT_PHASE_SEQUENCE.flatMap((phaseId) => {
+            const payload = replay.phases[phaseId];
+            if (!payload) {
+              return [];
+            }
+            return [
+              <button
+                key={phaseId}
+                type="button"
+                onClick={() => launch(payload)}
+                className={KNOCKOUT_REPLAY_BUTTON_CLASSES[phaseId]}
+              >
+                {t(`analysis.observer.knockoutPhaseReplay.${phaseId}`)}
+              </button>,
+            ];
+          })
         ) : null}
       </div>
     </div>

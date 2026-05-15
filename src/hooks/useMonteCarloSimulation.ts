@@ -3,6 +3,7 @@ import type { LocalizedText } from "@/i18n";
 import type { WorkspaceView } from "@/components/AppNavigation";
 import type { HeadlessSimulationScenario } from "@/services/gameEngine";
 import { isValidBasicSelection } from "@/services/gameEngine";
+import { isValidKnockoutGroupLineups } from "@/services/savedKnockoutSetup";
 import { runMonteCarloBatch } from "@/services/monteCarloRunner";
 import type { DangoId } from "@/types/game";
 import type {
@@ -29,6 +30,7 @@ export type MonteCarloRunOptions = {
   scenarioLabel: LocalizedText;
   returnView: Exclude<WorkspaceView, "analysis">;
   extremePerformance?: boolean;
+  boardEffectByCellIndex?: Map<number, string | null>;
 };
 
 export type UseMonteCarloSimulationOptions = {
@@ -41,6 +43,19 @@ export type UseMonteCarloSimulationOptions = {
 
 const THROUGHPUT_EMA_ALPHA = 0.11;
 const ETA_DISPLAY_SMOOTH = 0.17;
+
+function isMonteCarloScenarioReady(
+  scenario: HeadlessSimulationScenario,
+  selectedBasicIds: DangoId[]
+): boolean {
+  if (scenario.kind === "knockoutTournament") {
+    return isValidKnockoutGroupLineups({
+      groupAIds: scenario.groupAIds,
+      groupBIds: scenario.groupBIds,
+    });
+  }
+  return isValidBasicSelection(selectedBasicIds);
+}
 
 function formatEtaRemainingSeconds(totalSeconds: number): string {
   const s = Math.max(0, Math.ceil(totalSeconds));
@@ -198,11 +213,14 @@ export function useMonteCarloSimulation({
         scenarioLabel,
         returnView,
         extremePerformance = false,
+        boardEffectByCellIndex: scenarioBoardEffects,
       } = options;
+      const effectiveBoardEffects =
+        scenarioBoardEffects ?? boardEffectByCellIndex;
       if (
         !Number.isSafeInteger(totalGames) ||
         totalGames < 1 ||
-        !isValidBasicSelection(selectedBasicIds)
+        !isMonteCarloScenarioReady(scenario, selectedBasicIds)
       ) {
         return;
       }
@@ -227,7 +245,7 @@ export function useMonteCarloSimulation({
         selectedBasicIds,
         scenarioKind,
         scenarioLabel,
-        boardEffectByCellIndex,
+        boardEffectByCellIndex: effectiveBoardEffects,
         extremePerformance,
         onProgress: (completedGames, totalGamesBatch) => {
           if (runIdRef.current !== runId) {

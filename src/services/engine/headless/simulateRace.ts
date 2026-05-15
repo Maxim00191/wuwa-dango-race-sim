@@ -1,3 +1,5 @@
+import { KNOCKOUT_ADVANCE_COUNT } from "@/services/knockout/bracket";
+import { runKnockoutTournament } from "@/services/knockout/tournamentRunner";
 import {
   createTournamentFinalRaceSetup,
   createTournamentPreliminaryRaceSetup,
@@ -19,7 +21,10 @@ import {
 } from "@/services/engine/headless/telemetry";
 import type { HeadlessSimulationScenario } from "@/services/engine/headless/scenarioTypes";
 import type { HeadlessRaceResult } from "@/services/engine/headless/metrics";
-import type { HeadlessSimulationOutcome } from "@/types/monteCarlo";
+import type {
+  HeadlessSimulationOutcome,
+  KnockoutBracketLane,
+} from "@/types/monteCarlo";
 import type { MatchGameFrameJson } from "@/types/replay";
 import type { RaceSetup } from "@/types/game";
 
@@ -124,6 +129,95 @@ export function simulateHeadlessScenarioInternal(
       outcome.capturedReplay = {
         scenarioKind: "singleRace",
         record: race.record,
+      };
+    }
+    return outcome;
+  }
+
+  if (scenario.kind === "knockoutTournament") {
+    const tournament = runKnockoutTournament(
+      scenario.groupAIds,
+      scenario.groupBIds,
+      boardEffectByCellIndex,
+      captureReplay
+    );
+    const finalsMetrics =
+      tournament.phaseResults.find((result) => result.phase === "finals")
+        ?.metrics ?? tournament.phaseResults.at(-1)!.metrics;
+    const groupPlacementByBasicId: Record<string, number> = {};
+    const bracketPlacementByBasicId: Record<string, number> = {};
+    const groupTopThreeReachedFinalsByBasicId: Record<string, boolean> = {};
+    const bracketLaneByBasicId: Record<string, KnockoutBracketLane> = {};
+    const reachedFinalsByBasicId: Record<string, boolean> = {};
+    const finalsParticipantSet = new Set(tournament.finalsPlacements);
+    for (const phaseResult of tournament.phaseResults) {
+      const placementIndexByBasicId = buildPlacementIndexByBasicId(
+        phaseResult.placements
+      );
+      if (phaseResult.phase === "groupA" || phaseResult.phase === "groupB") {
+        for (const [basicId, placementIndex] of Object.entries(
+          placementIndexByBasicId
+        )) {
+          groupPlacementByBasicId[basicId] = placementIndex;
+          groupTopThreeReachedFinalsByBasicId[basicId] =
+            placementIndex < KNOCKOUT_ADVANCE_COUNT &&
+            finalsParticipantSet.has(basicId);
+        }
+      }
+      if (
+        phaseResult.phase === "winnersBracket" ||
+        phaseResult.phase === "losersBracket"
+      ) {
+        const lane = phaseResult.phase;
+        for (const [basicId, placementIndex] of Object.entries(
+          placementIndexByBasicId
+        )) {
+          bracketPlacementByBasicId[basicId] = placementIndex;
+          bracketLaneByBasicId[basicId] = lane;
+          reachedFinalsByBasicId[basicId] = finalsParticipantSet.has(basicId);
+        }
+      }
+    }
+    const outcome: HeadlessSimulationOutcome = {
+      scenarioKind: scenario.kind,
+      winnerBasicId: tournament.championBasicId,
+      turnsAtFinish: tournament.totalTurns,
+      preliminaryTurnsAtFinish: 0,
+      finalTurnsAtFinish:
+        tournament.phaseResults.find((result) => result.phase === "finals")
+          ?.turnsAtFinish ?? 0,
+      preliminaryWinnerBasicId: null,
+      finalPlacements: tournament.finalsPlacements,
+      preliminaryPlacements: null,
+      raceMetrics: {
+        preliminary: null,
+        final: finalsMetrics,
+      },
+      modeMetrics: {
+        kind: "knockout",
+        groupPlacementByBasicId,
+        bracketPlacementByBasicId,
+        groupTopThreeReachedFinalsByBasicId,
+        bracketLaneByBasicId,
+        reachedFinalsByBasicId,
+      },
+      knockoutPhases: tournament.phaseResults,
+    };
+    if (captureReplay) {
+      const phases: Partial<
+        Record<
+          import("@/services/knockout/bracket").KnockoutPhaseId,
+          import("@/types/replay").MatchRecord
+        >
+      > = {};
+      for (const phaseResult of tournament.phaseResults) {
+        if (phaseResult.record) {
+          phases[phaseResult.phase] = phaseResult.record;
+        }
+      }
+      outcome.capturedReplay = {
+        scenarioKind: "knockoutTournament",
+        phases,
       };
     }
     return outcome;

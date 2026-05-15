@@ -68,6 +68,7 @@ export const enDictionary: TranslationDictionary = {
     views: {
       normal: "Dash Grounds",
       tournament: "Tournament Hub",
+      knockout: "Knockout Tournament",
       analysis: "Festival Archives",
     },
     playback: {
@@ -149,7 +150,7 @@ export const enDictionary: TranslationDictionary = {
     },
     shell: {
       eyebrow: "Tournament Center",
-      title: "Cubie Derby Celebration Cup",
+      title: "Cubie Derby Celebration Festival",
       description:
         "Complete a preliminary round to determine final seeding, or manually arrange a custom dream match.",
     },
@@ -181,6 +182,71 @@ export const enDictionary: TranslationDictionary = {
           topOfStack: "Top of the stack",
           bottomOfStack: "Bottom of the stack",
         },
+      },
+    },
+  },
+  knockout: {
+    session: {
+      setup: "Knockout Preparation Room",
+      complete: "Knockout Champion Crowned",
+      awaiting: {
+        groupA: "Ready for Group A",
+        groupB: "Ready for Group B",
+        winnersBracket: "Ready for Winner's Bracket",
+        losersBracket: "Ready for Loser's Bracket",
+        finals: "Ready for Finals",
+      },
+    },
+    monteCarlo: {
+      heading: "Knockout Divinations",
+      title: "Simulate the full twelve-dango knockout Tournament",
+      description:
+        "Run five sprint races across group stage, dual brackets, and finals to crown a tournament champion.",
+      scenario: {
+        label: "Full Knockout Tournament",
+        description:
+          "Group A, Group B, winner's bracket, loser's bracket, and championship finals.",
+        analysisLabel: "Knockout Tournament Divination",
+      },
+      lineupIncomplete:
+        "Fill both six-dango groups with no duplicates before starting.",
+    },
+    shell: {
+      eyebrow: "Elimination Grounds",
+      title: "Cubie Derby Knockout Tournament",
+      description:
+        "Twelve dangos enter across two groups. Top three advance to the winner's bracket, bottom three to the loser's bracket, then six meet in the finals.",
+    },
+    phases: {
+      groupA: "Group A",
+      groupB: "Group B",
+      winnersBracket: "Winner's Bracket",
+      losersBracket: "Loser's Bracket",
+      finals: "Finals",
+    },
+    setup: {
+      groupA: {
+        eyebrow: "Group A",
+        title: "Group A Roster",
+        label: "Group A",
+        description:
+          "Augusta, Jinhsi, Hiyuki, Iuno, Calcharo, Cartethyia",
+      },
+      groupB: {
+        eyebrow: "Group B",
+        title: "Group B Roster",
+        label: "Group B",
+        description: "Denia, Sigrika, Shorekeeper, Chisa, Carlotta, Aemeath",
+      },
+      progress: {
+        eyebrow: "Bracket Progress",
+        champion: "Knockout Champion: {name}",
+      },
+      actions: {
+        start: "Start Knockout Tournament",
+        advance: "Run {phase}",
+        advanceIdle: "Continue Tournament",
+        reset: "Reset Knockout Progress",
       },
     },
   },
@@ -347,6 +413,7 @@ export const enDictionary: TranslationDictionary = {
       overview: "Overview",
       conditional: "If They Win...",
       tournament: "Tournament Flow",
+      knockout: "Knockout Flow",
       observer: "Observer's Records",
     },
     observer: {
@@ -367,14 +434,134 @@ export const enDictionary: TranslationDictionary = {
       watchReplay: "Watch replay",
       watchPreliminaryReplay: "Watch preliminary replay",
       watchFinalReplay: "Watch final replay",
+      knockoutPhaseReplay: {
+        groupA: "Group A replay",
+        groupB: "Group B replay",
+        winnersBracket: "Winner bracket replay",
+        losersBracket: "Loser bracket replay",
+        finals: "Final groups replay",
+      },
+ 
     },
     contexts: {
       sprint: "Sprint Analytics",
       preliminary: "Preliminary Analytics",
       final: "Finals Analytics",
+      knockoutGroup: "Group Stage",
+      knockoutBracket: "Bracket Stage",
+      knockoutFinal: "Championship Finals",
+    },
+    knockout: {
+      eyebrow: "Knockout Analytics",
+      title: "Phase-aware bracket intelligence",
+      description:
+        "Cross-path summaries use conditional rates derived from aggregated counts—not fixed bracket capacities—highlighting comeback efficiency, trophy routing, and choke patterns.",
+      tabs: {
+        flow: "Tournament Flow",
+        competitors: "Competitors",
+        drilldown: "Drill-down",
+      },
+      championshipTitle: "Tournament Championship Rates",
+      championshipDescription:
+        "Share of simulated tournaments each dango wins after all five knockout races.",
+      groupTitle: "Group Stage Win Rates",
+      advancementTitle: "Group Top-Three Advancement",
+      topThreeToFinals: "Reached finals",
+      topThreeToChampion: "Won tournament from top-three group finish",
+      winnersPathChampion: "Winners Path Titles",
+      winnersPathChampionHint:
+        "Championships won by competitors who entered the Winner's Bracket",
+      losersPathChampion: "Losers Path Titles",
+      losersPathChampionHint:
+        "Championships won by competitors who entered the Loser's Bracket",
+      finalistConversionLeader: "Best Final Closer",
+      finalistConversionLeaderHint: "Wins {rate} of Finals they reach",
+      noFinalistData: "No finalist data yet",
+      comebackShareOfCups: "Comeback Win Share",
+      comebackShareOfCupsHint:
+        "Share of all simulated tournaments where the champion routed through the Loser's Bracket lane",
+      laneFinalClose: "Finalist → Champion",
+      laneFinalCloseHint:
+        "Among finalists who survived this bracket lane, share that closed the trophy",
+      laneStructuralNote:
+        "Raw lane entry totals mirror bracket size × runs; funnel rates below are simulation-driven.",
+      flowComebackKingTitle: "Comeback Kings",
+      flowComebackKingDescription:
+        "Highest championship rate conditioned on appearing in the Loser's Bracket (minimum sample)",
+      comebackKingSample: "{count} loser-lane appearances",
+      flowPathSplitTitle: "Champion path dependency",
+      flowPathSplitDescription:
+        "How each contender split their trophies between Winner vs. Loser bracket routes when they crowned",
+      pathSplitWinnerShare: "{rate} via Winner's Lane",
+      pathSplitLoserShare: "{rate} via Loser's Lane",
+      pathSplitTitles: "{count} titles tracked",
+      flowPremiumLaneTitle: "Premium lane drag",
+      flowPremiumLaneDescription:
+        "Frequent Winner's Bracket entrants whose crown share lagged expectations (presence minus trophies)",
+      premiumLaneOccupancy: "Winner lane share of wins",
+      premiumLaneTitles: "Championship share",
+      premiumLaneSpread: "Load minus crowns",
+      flowFinalChokeTitle: "Final-stage tension",
+      flowFinalChokeDescription:
+        "Lowest finalist → champion conversion among repeat finals visitors",
+      flowEmptySample: "Not enough routed samples yet",
+      entries: "Entries",
+      entriesHint: "Phase-path appearances in this simulation batch",
+      finalists: "Finalists",
+      finalistsHint: "Path entries that survive into the championship Finals",
+      conversion: "Final Conversion",
+      conversionHint: "Championship rate among finalists from this path",
+      winnersLaneTitle: "Winner's Bracket funnel",
+      winnersLaneDescription:
+        "Conversion after reaching the Finals from this lane—not aggregate lane registrations.",
+      losersLaneTitle: "Loser's Bracket funnel",
+      losersLaneDescription:
+        "Upset finalists from the lower cohort; finalist-level conversion summarizes lane resilience.",
+      competitorTitle: "Competitor Path Matrix",
+      competitorDescription:
+        "Each row separates group routing, bracket survival, and finalist-only title conversion so uneven match histories stay comparable.",
+      reachFinal: "Reach Finals",
+      finalConversion: "Finals -> Title",
+      titles: "Titles",
+      drilldownEyebrow: "Competitor Drill-down",
+      drilldownDescription:
+        "Only phases this competitor actually entered are shown, keeping two-match eliminations and three-match finalist runs distinct.",
+      phaseGroup: "Group Stage",
+      phaseWinners: "Winner's Bracket",
+      phaseLosers: "Loser's Bracket",
+      phaseFinal: "Championship Finals",
+      toWinners: "To Winner's",
+      toLosers: "To Loser's",
+      toFinal: "To Finals",
+      toChampion: "To Champion",
+      titleShare: "Overall Title Share",
+      selectCompetitor: "Select Competitor",
+      flowGraphTitle: "Knockout Flow Graph",
+      flowGraphDescription:
+        "Every percentage is derived from this competitor’s aggregated knockout transition counts: edges show conditional routing (given they reached the parent stage), while node headers show the marginal share of simulated tournaments.",
+      flowGraphPicker: "Competitor routing",
+      flowGraphEmpty: "Run a knockout Monte Carlo batch to populate the flow graph.",
+      flowGraphNodeCup: "Full Tournament Draw",
+      flowGraphRuns: "Batch: {count} tournaments",
+      flowGraphNodeCupHint: "Each simulation runs the fixed twelve-dango schedule from group races through grand finals.",
+      flowGraphParticipation: "Share of tournaments entering their group stage",
+      flowGraphGroupMeta: "Observed group-stage paths: {runs}",
+      flowGraphBracketPhase: "Bracket phase split",
+      flowGraphBracketMeta: "Appearances along this lane: {runs}",
+      flowGraphJoint: "Marginal · {rate} of all tournaments",
+      flowGraphMerge: "Six-player grand final",
+      flowGraphFinalMeta: "Grand final appearances: {runs}",
+      flowGraphConditionalFinalToTitle: "Conditional on reaching the grand final",
+      flowGraphChampion: "Knockout Champion",
+      flowGraphTitlesMeta: "Total titles across paths: {count}",
+      flowGraphFromWinners: "Final berths via winner’s lane",
+      flowGraphFromLosers: "Final berths via loser’s lane",
+      flowGraphCupViaWinners: "Titles routed through winner’s bracket",
+      flowGraphCupViaLosers: "Titles routed through loser’s bracket",
+      flowGraphUnknownGroup: "Group assignment (custom seeding)",
     },
     metrics: {
-      averageTournamentLength: "Avg Cup Length",
+      averageTournamentLength: "Avg Tournament Length",
       averageRaceLength: "Avg Sprint Length",
       averageTournamentLengthHint: "Total turns across prelims and finals",
       averageRaceLengthHint: "Average turns needed to finish a single race",
@@ -566,6 +753,13 @@ export const enDictionary: TranslationDictionary = {
       customFinal: "Custom Finals",
       finalsReady: "Finals Ready",
       tournamentSetup: "Tournament Seeding Room",
+      knockout: {
+        groupA: "Knockout · Group A",
+        groupB: "Knockout · Group B",
+        winnersBracket: "Knockout · Winner's Bracket",
+        losersBracket: "Knockout · Loser's Bracket",
+        finals: "Knockout · Finals",
+      },
     },
     log: {
       abbyResetScheduled:

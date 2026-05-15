@@ -9,6 +9,7 @@ import { FooterSocialLinks } from "@/components/FooterSocialLinks";
 import { GameShell, type GameShellSpectate } from "@/components/GameShell";
 import { MonteCarloPanel } from "@/components/MonteCarloPanel";
 import { ReplayTimelineCluster } from "@/components/ReplayTimelineCluster";
+import { KnockoutSetupPanel } from "@/components/KnockoutSetupPanel";
 import { TournamentSetupPanel } from "@/components/TournamentSetupPanel";
 import { ABBY_ID } from "@/constants/ids";
 import { text } from "@/i18n";
@@ -18,7 +19,11 @@ import { useReplayTimeline } from "@/hooks/useReplayTimeline";
 import { useLineupSelection } from "@/hooks/useLineupSelection";
 import { useMonteCarloSimulation } from "@/hooks/useMonteCarloSimulation";
 import { useTheme } from "@/hooks/useTheme";
+import { useKnockoutLineup } from "@/hooks/useKnockoutLineup";
+import { useKnockoutTournament } from "@/hooks/useKnockoutTournament";
 import { useTournament } from "@/hooks/useTournament";
+import { mergeKnockoutParticipantIds } from "@/services/knockout/bracket";
+import { KNOCKOUT_BOARD_CELL_EFFECT_LOOKUP } from "@/services/knockout/knockoutBoardLookup";
 import { isValidBasicSelection } from "@/services/gameEngine";
 import { BASIC_CHARACTER_LIST } from "@/services/characters";
 import {
@@ -54,6 +59,25 @@ export default function App() {
     },
   });
   const tournament = useTournament(lineup.selectedBasicIds);
+  const knockoutLineup = useKnockoutLineup();
+  const knockout = useKnockoutTournament(
+    knockoutLineup.groupAIds,
+    knockoutLineup.groupBIds
+  );
+  const knockoutReplay = useReplayTimeline({
+    game: {
+      state: knockout.race.state,
+      reset: knockout.clearRace,
+      hydrateEngineState: knockout.race.hydrateEngineState,
+      stepAction: knockout.race.stepAction,
+      playTurn: knockout.race.playTurn,
+      setAutoPlayEnabled: knockout.race.setAutoPlayEnabled,
+      isAnimating: knockout.race.isAnimating,
+      boardEffects: knockout.race.boardEffects,
+      autoPlayEnabled: knockout.race.autoPlayEnabled,
+      getLastRaceSetup: knockout.race.getLastRaceSetup,
+    },
+  });
   const tournamentReplay = useReplayTimeline({
     game: {
       state: tournament.race.state,
@@ -138,6 +162,25 @@ export default function App() {
     tournament.startFinal();
   }, [tournament, tournamentReplay]);
 
+  const flushKnockoutPlaybackAndClearRace = useCallback(() => {
+    knockoutReplay.flushPlaybackForNewSession();
+    knockout.clearRace();
+  }, [knockout, knockoutReplay]);
+
+  const flushKnockoutPlaybackAndReset = useCallback(() => {
+    knockoutReplay.flushPlaybackForNewSession();
+    knockout.resetTournament();
+  }, [knockout, knockoutReplay]);
+
+  const beginKnockoutPhase = useCallback(() => {
+    knockoutReplay.flushPlaybackForNewSession();
+    if (knockout.progress.completedPhases.length === 0) {
+      knockout.startTournament();
+      return;
+    }
+    knockout.advanceTournament();
+  }, [knockout, knockoutReplay]);
+
   const resolvedNormalLineupBasicIds = useMemo(() => {
     if (normalGame.state.phase === "idle") {
       return lineup.selectedBasicIds;
@@ -180,6 +223,35 @@ export default function App() {
     },
     [
       resolvedNormalLineupBasicIds,
+      runScenarioMonteCarlo,
+      monteCarloExtremePerformance,
+    ]
+  );
+
+  const requestKnockoutMonteCarloBatch = useCallback(
+    async (_scenarioId: string, totalGames: number) => {
+      const participantIds = mergeKnockoutParticipantIds(
+        knockoutLineup.groupAIds,
+        knockoutLineup.groupBIds
+      );
+      await runScenarioMonteCarlo({
+        totalGames,
+        scenario: {
+          kind: "knockoutTournament",
+          groupAIds: knockoutLineup.groupAIds,
+          groupBIds: knockoutLineup.groupBIds,
+        },
+        selectedBasicIds: participantIds,
+        scenarioKind: "knockoutTournament",
+        scenarioLabel: text("knockout.monteCarlo.scenario.analysisLabel"),
+        returnView: "knockout",
+        extremePerformance: monteCarloExtremePerformance,
+        boardEffectByCellIndex: KNOCKOUT_BOARD_CELL_EFFECT_LOOKUP,
+      });
+    },
+    [
+      knockoutLineup.groupAIds,
+      knockoutLineup.groupBIds,
       runScenarioMonteCarlo,
       monteCarloExtremePerformance,
     ]
@@ -237,6 +309,10 @@ export default function App() {
     !isValidBasicSelection(resolvedNormalLineupBasicIds) ||
     normalGame.isAnimating ||
     normalReplay.isReplayLoaded;
+  const knockoutMonteCarloRunDisabled =
+    !knockoutLineup.isReady ||
+    knockout.race.isAnimating ||
+    knockoutReplay.isReplayLoaded;
   const tournamentMonteCarloRunDisabled =
     !isValidBasicSelection(resolvedTournamentLineupBasicIds) ||
     tournament.race.isAnimating ||
@@ -271,6 +347,26 @@ export default function App() {
       : normalGame.state.label
         ? tText(normalGame.state.label)
         : t("normal.session.fallback");
+  const knockoutParticipantIds = useMemo(
+    () => mergeKnockoutParticipantIds(knockoutLineup.groupAIds, knockoutLineup.groupBIds),
+    [knockoutLineup.groupAIds, knockoutLineup.groupBIds]
+  );
+  const knockoutSessionLabel =
+    knockout.race.state.phase === "running"
+      ? knockout.race.state.label
+        ? tText(knockout.race.state.label)
+        : t("knockout.session.setup")
+      : knockout.race.state.phase === "finished"
+        ? knockout.race.state.label
+          ? tText(knockout.race.state.label)
+          : t("knockout.session.setup")
+        : tText(knockout.sessionLabel);
+  const knockoutControlsLocked =
+    knockout.race.state.phase === "running" || knockout.race.isAnimating;
+  const knockoutStartDisabled =
+    knockoutControlsLocked ||
+    !knockoutLineup.isReady ||
+    knockoutReplay.isReplayLoaded;
   const tournamentSessionLabel =
     tournament.race.state.phase === "running"
       ? tournament.race.state.label
@@ -365,6 +461,12 @@ export default function App() {
           setWorkspaceView("normal");
           return;
         }
+        if (analysisReturnView === "knockout") {
+          knockoutReplay.flushPlaybackForNewSession();
+          knockoutReplay.readReplayFromJsonText(json);
+          setWorkspaceView("knockout");
+          return;
+        }
         tournamentReplay.flushPlaybackForNewSession();
         tournamentReplay.readReplayFromJsonText(json);
         setWorkspaceView("tournament");
@@ -374,6 +476,7 @@ export default function App() {
     },
     [
       analysisReturnView,
+      knockoutReplay,
       normalReplay,
       tournamentReplay,
       t,
@@ -456,6 +559,121 @@ export default function App() {
     normalGame.state.winnerId,
     normalReplay,
     normalReplayLabels,
+    t,
+  ]);
+
+  const knockoutReplayLabels = useMemo(
+    () => ({
+      toolbarCaption: t("game.replay.toolbarCaption"),
+      idleHint: t("game.replay.idleHint"),
+      seekTurnLabel: t("game.replay.seekEngineTurn"),
+      seekTurnButton: t("game.replay.seekTurnButton"),
+      exportCopy: t("game.replay.exportCopy"),
+      import: t("game.replay.import"),
+      jumpToPresent: t("game.replay.jumpToPresent"),
+      stepBack: t("game.replay.stepBack"),
+      stepForward: t("game.replay.stepForward"),
+      bannersOn: t("game.replay.bannersOn"),
+      bannersOff: t("game.replay.bannersOff"),
+    }),
+    [t]
+  );
+
+  const handleKnockoutReplayImport = useCallback(
+    (payload: string) => {
+      try {
+        knockoutReplay.readReplayFromJsonText(payload);
+      } catch {
+        window.alert(t("game.replay.importInvalid"));
+      }
+    },
+    [knockoutReplay, t]
+  );
+
+  const handleKnockoutReplayExportCopy = useCallback(() => {
+    const raw = knockoutReplay.exportRecordJson();
+    if (!raw) {
+      return;
+    }
+    void navigator.clipboard.writeText(raw);
+  }, [knockoutReplay]);
+
+  const knockoutSpectate = useMemo((): GameShellSpectate => {
+    const file = knockoutReplay.isReplayLoaded;
+    const stepDisabled = file
+      ? knockout.race.isAnimating ||
+        knockout.race.state.phase !== "running" ||
+        Boolean(knockout.race.state.winnerId) ||
+        knockoutReplay.timelineStep >= knockoutReplay.timelineMax
+      : knockout.race.state.phase !== "running" ||
+        Boolean(knockout.race.state.winnerId) ||
+        knockout.race.isAnimating ||
+        knockout.race.playTurnEnabled ||
+        knockoutReplay.spectateAutoActive;
+    const playTurnDisabled = file
+      ? knockout.race.isAnimating ||
+        knockoutReplay.spectatePlayTurnChaining ||
+        knockoutReplay.timelineStep >= knockoutReplay.timelineMax
+      : knockout.race.state.phase !== "running" ||
+        Boolean(knockout.race.state.winnerId) ||
+        knockout.race.isAnimating ||
+        knockout.race.playTurnEnabled ||
+        knockoutReplay.spectateAutoActive;
+    const autoRunDisabled = file
+      ? knockout.race.isAnimating ||
+        knockoutReplay.timelineStep >= knockoutReplay.timelineMax
+      : knockout.race.state.phase !== "running" ||
+        Boolean(knockout.race.state.winnerId);
+    return {
+      replayFileActive: file,
+      timelineVisible: file || knockout.race.state.phase !== "idle",
+      timelineStep: knockoutReplay.timelineStep,
+      timelineMax: knockoutReplay.timelineMax,
+      onScrub: knockoutReplay.scrubToStep,
+      scrubAria: t("game.replay.scrubAria"),
+      turnSummaryText: `${knockoutReplay.timelineStep + 1} / ${knockoutReplay.timelineMax + 1} · ${t("game.replay.seekEngineTurn")}: ${knockoutReplay.currentEngineTurn}`,
+      replayToolbar: (
+        <ReplayTimelineCluster
+          seekControlsVisible={knockoutReplay.isReplayLoaded}
+          canCopyJson={knockoutReplay.canExportReplayJson}
+          seekTurnDraft={knockoutReplay.seekTurnDraft}
+          onSeekTurnDraftChange={knockoutReplay.setSeekTurnDraft}
+          onSeekTurnSubmit={knockoutReplay.seekToEngineTurn}
+          onExportCopy={handleKnockoutReplayExportCopy}
+          onImportFile={handleKnockoutReplayImport}
+          jumpToPresentVisible={knockoutReplay.jumpToPresentVisible}
+          onJumpToPresent={knockoutReplay.jumpToPresent}
+          onStepBackward={knockoutReplay.historyStepBack}
+          onStepForward={knockoutReplay.spectateAdvanceStep}
+          stepBackwardDisabled={knockoutReplay.timelineStep <= 0}
+          stepForwardDisabled={stepDisabled}
+          bannersEnabled={knockoutReplay.replayBannersEnabled}
+          onToggleBanners={knockoutReplay.toggleReplayBanners}
+          labels={knockoutReplayLabels}
+        />
+      ),
+      onStep: knockoutReplay.spectateAdvanceStep,
+      onPlayTurn: knockoutReplay.spectatePlayTurn,
+      onToggleAuto: knockoutReplay.spectateToggleAuto,
+      autoActive: knockoutReplay.spectateAutoActive,
+      replayBannersEnabled: knockoutReplay.replayBannersEnabled,
+      replayBannerPayload: knockoutReplay.replayBannerPayload,
+      onToggleReplayBanners: knockoutReplay.toggleReplayBanners,
+      playTurnBusy: knockoutReplay.spectatePlayTurnChaining,
+      stepDisabled,
+      playTurnDisabled,
+      autoRunDisabled,
+      onHistoryStepBack: knockoutReplay.historyStepBack,
+    };
+  }, [
+    handleKnockoutReplayExportCopy,
+    handleKnockoutReplayImport,
+    knockout.race.isAnimating,
+    knockout.race.playTurnEnabled,
+    knockout.race.state.phase,
+    knockout.race.state.winnerId,
+    knockoutReplay,
+    knockoutReplayLabels,
     t,
   ]);
 
@@ -616,6 +834,86 @@ export default function App() {
               autoPlayEnabled={normalGame.autoPlayEnabled}
               onAutoPlayEnabledChange={normalGame.setAutoPlayEnabled}
               spectate={normalSpectate}
+            />
+          </>
+        ) : workspaceView === "knockout" ? (
+          <>
+            <MonteCarloPanel
+              heading={t("knockout.monteCarlo.heading")}
+              title={t("knockout.monteCarlo.title")}
+              description={t("knockout.monteCarlo.description")}
+              lineupBasicIds={knockoutParticipantIds}
+              lineupComplete={knockoutLineup.isReady}
+              runDisabled={knockoutMonteCarloRunDisabled}
+              progress={monteCarlo.progress}
+              isStopping={monteCarlo.isStopping}
+              extremePerformanceEnabled={monteCarloExtremePerformance}
+              onExtremePerformanceEnabledChange={setMonteCarloExtremePerformance}
+              scenarioOptions={[
+                {
+                  id: "knockoutTournament",
+                  label: t("knockout.monteCarlo.scenario.label"),
+                  description: t("knockout.monteCarlo.scenario.description"),
+                },
+              ]}
+              selectedScenarioId="knockoutTournament"
+              onSelectedScenarioChange={() => {}}
+              onRunBatch={requestKnockoutMonteCarloBatch}
+              onAbortRun={abortMonteCarloRun}
+            />
+            <GameShell
+              state={knockout.race.state}
+              rankingState={knockout.race.rankingState}
+              broadcastPayload={knockout.race.broadcastPayload}
+              boardCells={knockout.race.boardCells}
+              boardEffects={knockout.race.boardEffects}
+              hoppingEntityIds={knockout.race.hoppingEntityIds}
+              idleParticipantIds={[...knockoutParticipantIds, ABBY_ID]}
+              headerEyebrow={t("knockout.shell.eyebrow")}
+              headerTitle={t("knockout.shell.title")}
+              headerDescription={t("knockout.shell.description")}
+              sessionLabel={knockoutSessionLabel}
+              setupPanel={
+                <KnockoutSetupPanel
+                  rosterBasics={rosterBasics}
+                  groupAIds={knockoutLineup.groupAIds}
+                  groupBIds={knockoutLineup.groupBIds}
+                  onSetGroupLineup={knockoutLineup.setGroupLineup}
+                  onToggleGroupBasicId={knockoutLineup.toggleGroupBasicId}
+                  onClearGroupSelections={knockoutLineup.clearGroupSelections}
+                  progress={knockout.progress}
+                  lineupsReady={knockoutLineup.isReady}
+                  isComplete={knockout.isComplete}
+                  onStartTournament={beginKnockoutPhase}
+                  onAdvanceTournament={beginKnockoutPhase}
+                  onReset={flushKnockoutPlaybackAndReset}
+                  controlsLocked={knockoutControlsLocked}
+                />
+              }
+              showSetupPanel={knockout.race.state.phase === "idle"}
+              startControls={
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={beginKnockoutPhase}
+                  disabled={knockoutStartDisabled}
+                  className="inline-flex min-h-9 items-center justify-center rounded-full bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-emerald-950 shadow-lg shadow-emerald-900/40 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none sm:min-h-11 sm:px-5 sm:py-2 sm:text-sm dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
+                >
+                  {t("normal.shell.start")}
+                </button>
+              }
+              onStartSprint={beginKnockoutPhase}
+              startShortcutDisabled={knockoutStartDisabled}
+              onPlayTurn={knockout.race.playTurn}
+              onStepAction={knockout.race.stepAction}
+              onInstantTurn={knockoutReplay.quickResolveTurn}
+              onInstantGame={knockoutReplay.quickResolveRace}
+              onReset={flushKnockoutPlaybackAndClearRace}
+              isAnimating={knockout.race.isAnimating}
+              playTurnEnabled={knockout.race.playTurnEnabled}
+              autoPlayEnabled={knockout.race.autoPlayEnabled}
+              onAutoPlayEnabledChange={knockout.race.setAutoPlayEnabled}
+              spectate={knockoutSpectate}
             />
           </>
         ) : workspaceView === "tournament" ? (

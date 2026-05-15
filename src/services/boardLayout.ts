@@ -1,5 +1,5 @@
 import type { BoardCellDefinition } from "@/types/game";
-import { CELL_COUNT } from "@/constants/board";
+import { DEFAULT_MAP_CONFIG } from "@/constants/defaultMap";
 import { CELL_EFFECT_IDS } from "@/services/cellEffects";
 
 export type BoardCellEffectVisual = {
@@ -24,17 +24,6 @@ export const BOARD_CELL_EFFECT_VISUALS: Record<string, BoardCellEffectVisual> = 
     stroke: "#a855f7",
     symbol: "R",
   },
-};
-
-const BOARD_CELL_EFFECT_BY_INDEX: Record<number, string> = {
-  4: CELL_EFFECT_IDS.propulsionDevice,
-  7: CELL_EFFECT_IDS.timeRift,
-  11: CELL_EFFECT_IDS.hindranceDevice,
-  12: CELL_EFFECT_IDS.propulsionDevice,
-  17: CELL_EFFECT_IDS.propulsionDevice,
-  21: CELL_EFFECT_IDS.timeRift,
-  24: CELL_EFFECT_IDS.propulsionDevice,
-  29: CELL_EFFECT_IDS.hindranceDevice,
 };
 
 export function angleForCellIndex(
@@ -85,14 +74,47 @@ export function ellipseTangentUnitAtAngle(
   return { x: vx / length, y: vy / length };
 }
 
-export function buildLinearBoardDescriptor(): BoardCellDefinition[] {
-  return Array.from({ length: CELL_COUNT }, (_, index) => {
+export type BoardDeviceTileMapConfig = {
+  readonly tileCount: number;
+  readonly propulsionDeviceTiles: readonly number[];
+  readonly hindranceDeviceTiles: readonly number[];
+  readonly timeRiftTiles: readonly number[];
+};
+
+export function buildEffectByCellIndexFromDeviceTiles(
+  config: BoardDeviceTileMapConfig
+): Record<number, string> {
+  const effectByCellIndex: Record<number, string> = {};
+  for (const tile of config.propulsionDeviceTiles) {
+    effectByCellIndex[tile] = CELL_EFFECT_IDS.propulsionDevice;
+  }
+  for (const tile of config.hindranceDeviceTiles) {
+    effectByCellIndex[tile] = CELL_EFFECT_IDS.hindranceDevice;
+  }
+  for (const tile of config.timeRiftTiles) {
+    effectByCellIndex[tile] = CELL_EFFECT_IDS.timeRift;
+  }
+  return effectByCellIndex;
+}
+
+export function buildBoardDescriptorWithCellEffects(
+  cellCount: number,
+  effectByCellIndex: Readonly<Record<number, string>>
+): BoardCellDefinition[] {
+  return Array.from({ length: cellCount }, (_, index) => {
     const cellIndex = index + 1;
     return {
       index: cellIndex,
-      effectId: BOARD_CELL_EFFECT_BY_INDEX[cellIndex] ?? null,
+      effectId: effectByCellIndex[cellIndex] ?? null,
     };
   });
+}
+
+export function buildLinearBoardDescriptor(): BoardCellDefinition[] {
+  return buildBoardDescriptorWithCellEffects(
+    DEFAULT_MAP_CONFIG.tileCount,
+    buildEffectByCellIndexFromDeviceTiles(DEFAULT_MAP_CONFIG)
+  );
 }
 
 export function buildEffectLookup(

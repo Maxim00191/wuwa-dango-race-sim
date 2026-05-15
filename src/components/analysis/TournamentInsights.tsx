@@ -245,9 +245,10 @@ function FinalSeedDecayPanel({ snapshot }: { snapshot: MonteCarloAggregateSnapsh
   const { getCharacterName, t } = useTranslation();
   const getSafeDangoColors = useSafeDangoColors();
   const dynamics =
-    snapshot.modeAnalytics.kind === "normalRace"
-      ? null
-      : snapshot.modeAnalytics.finalStartingPlacementDynamics;
+    snapshot.modeAnalytics.kind === "tournament" ||
+    snapshot.modeAnalytics.kind === "final"
+      ? snapshot.modeAnalytics.finalStartingPlacementDynamics
+      : null;
   const rates = useMemo(
     () => dynamics?.titleRatesByStartingPlacement ?? [],
     [dynamics?.titleRatesByStartingPlacement]

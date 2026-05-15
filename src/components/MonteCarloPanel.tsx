@@ -14,6 +14,7 @@ type MonteCarloPanelProps = {
   title: string;
   description: string;
   lineupBasicIds: DangoId[];
+  lineupComplete?: boolean;
   runDisabled: boolean;
   progress: {
     completedGames: number;
@@ -38,6 +39,7 @@ export function MonteCarloPanel({
   title,
   description,
   lineupBasicIds,
+  lineupComplete: lineupCompleteOverride,
   runDisabled,
   progress,
   isStopping,
@@ -54,7 +56,9 @@ export function MonteCarloPanel({
     DEFAULT_CUSTOM_BATCH_SIZE
   );
   const [showCustomControls, setShowCustomControls] = useState(false);
-  const lineupComplete = lineupBasicIds.length === ACTIVE_BASIC_DANGO_COUNT;
+  const lineupComplete =
+    lineupCompleteOverride ??
+    lineupBasicIds.length === ACTIVE_BASIC_DANGO_COUNT;
   const isRunning = Boolean(progress);
   const progressRatio =
     progress && progress.totalGames > 0

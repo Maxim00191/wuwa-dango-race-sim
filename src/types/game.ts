@@ -33,7 +33,10 @@ export type RaceMode =
   | "normal"
   | "tournamentPreliminary"
   | "tournamentFinal"
-  | "customFinal";
+  | "customFinal"
+  | "knockoutGroup"
+  | "knockoutBracket"
+  | "knockoutFinal";
 
 export type DiceRollContext = {
   turnIndex: number;

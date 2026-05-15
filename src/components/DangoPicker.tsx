@@ -5,6 +5,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useTranslation } from "@/i18n/useTranslation";
 import { colorWithAlpha } from "@/services/colorUtils";
 import { groupCharactersByAttribute } from "@/services/characterGrouping";
+import type { LineupGroupDefinition } from "@/constants/lineupGroups";
 import {
   haveSameLineupMembers,
   resolveLineupGroups,
@@ -16,6 +17,14 @@ type PickerMode = "attribute" | "group";
 type DangoPickerProps = {
   rosterBasics: BasicCharacterDefinition[];
   selectedBasicIds: DangoId[];
+  /** When set, attribute mode shows the full roster but only these ids can be toggled. */
+  selectableBasicIds?: readonly DangoId[];
+  /**
+   * IDs already chosen for a paired lineup (e.g. the sibling knockout group).
+   * Attribute tiles stay visible, non-interactive, and use the same badge as `selectedBasicIds`.
+   */
+  otherLineupBasicIds?: readonly DangoId[];
+  lineupGroupDefinitions?: readonly LineupGroupDefinition[];
   onSetLineup: (ids: DangoId[]) => void;
   onToggleBasicId: (id: DangoId) => void;
   onClearSelections: () => void;
@@ -85,6 +94,9 @@ function GroupMemberTile({
 export function DangoPicker({
   rosterBasics,
   selectedBasicIds,
+  selectableBasicIds,
+  otherLineupBasicIds,
+  lineupGroupDefinitions,
   onSetLineup,
   onToggleBasicId,
   onClearSelections,
@@ -96,14 +108,28 @@ export function DangoPicker({
     () => new Set(selectedBasicIds),
     [selectedBasicIds]
   );
+  const selectableSet = useMemo(
+    () =>
+      selectableBasicIds === undefined
+        ? null
+        : new Set(selectableBasicIds),
+    [selectableBasicIds]
+  );
+  const otherLineupSet = useMemo(
+    () =>
+      otherLineupBasicIds === undefined
+        ? null
+        : new Set(otherLineupBasicIds),
+    [otherLineupBasicIds]
+  );
   const remainingSlots = ACTIVE_BASIC_DANGO_COUNT - selectedBasicIds.length;
   const groupedRoster = useMemo(
     () => groupCharactersByAttribute(rosterBasics),
     [rosterBasics]
   );
   const lineupGroups = useMemo(
-    () => resolveLineupGroups(rosterBasics),
-    [rosterBasics]
+    () => resolveLineupGroups(rosterBasics, lineupGroupDefinitions),
+    [lineupGroupDefinitions, rosterBasics]
   );
 
   return (
@@ -216,8 +242,16 @@ export function DangoPicker({
                   {characters.length > 0 ? (
                     characters.map((character) => {
                       const isSelected = selectedSet.has(character.id);
+                      const inOtherLineup =
+                        otherLineupSet !== null &&
+                        otherLineupSet.has(character.id);
+                      const inSelectablePool =
+                        selectableSet === null ||
+                        selectableSet.has(character.id);
                       const canAdd =
+                        inSelectablePool &&
                         !isSelected &&
+                        !inOtherLineup &&
                         selectedBasicIds.length < ACTIVE_BASIC_DANGO_COUNT;
                       const interactive = isSelected || canAdd;
 
@@ -282,7 +316,9 @@ export function DangoPicker({
                                 ? t("lineup.selected")
                                 : canAdd
                                   ? t("lineup.available")
-                                  : t("lineup.locked")}
+                                  : inOtherLineup
+                                    ? t("lineup.selected")
+                                    : t("lineup.locked")}
                             </span>
                           </span>
                         </button>

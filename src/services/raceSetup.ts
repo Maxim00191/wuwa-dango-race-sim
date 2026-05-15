@@ -10,6 +10,7 @@ import {
   fullLapWinDistanceInClockwiseSteps,
   winDistanceFromStartCellToFinish,
 } from "@/services/raceDistance";
+import type { KnockoutPhaseId } from "@/services/knockout/bracket";
 import { entityOrderFromStackTopToBottom } from "@/services/stackActorOrder";
 import { orderedRacerIdsForLeaderboard } from "@/services/racerRanking";
 import type {
@@ -83,6 +84,36 @@ function buildSprintStartingStacks(selectedBasicIds: DangoId[]): {
       SPRINT_START_CELL_INDEX
     ),
   };
+}
+
+function raceModeForKnockoutPhase(phase: KnockoutPhaseId): RaceMode {
+  if (phase === "groupA" || phase === "groupB") {
+    return "knockoutGroup";
+  }
+  if (phase === "finals") {
+    return "knockoutFinal";
+  }
+  return "knockoutBracket";
+}
+
+export function createKnockoutSprintRaceSetup(
+  selectedBasicIds: DangoId[],
+  phase: KnockoutPhaseId
+): RaceSetup {
+  const sprintStart = buildSprintStartingStacks(selectedBasicIds);
+  const label = text(`simulation.labels.knockout.${phase}`);
+  return createRaceSetup(
+    raceModeForKnockoutPhase(phase),
+    label,
+    label,
+    selectedBasicIds,
+    sprintStart.stacks,
+    {
+      raceWinDistanceInClockwiseSteps:
+        sprintStart.raceWinDistanceInClockwiseSteps,
+      seededFirstTurnActorOrder: sprintStart.seededFirstTurnActorOrder,
+    }
+  );
 }
 
 export function createNormalRaceSetup(selectedBasicIds: DangoId[]): RaceSetup {

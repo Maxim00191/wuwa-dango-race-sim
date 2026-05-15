@@ -37,6 +37,9 @@ function headlessCapturedReplayToObserverPayload(
   if (captured.scenarioKind === "singleRace") {
     return { kind: "single", record: captured.record };
   }
+  if (captured.scenarioKind === "knockoutTournament") {
+    return { kind: "knockoutSeries", phases: captured.phases };
+  }
   return {
     kind: "tournamentPair",
     preliminary: captured.preliminary,

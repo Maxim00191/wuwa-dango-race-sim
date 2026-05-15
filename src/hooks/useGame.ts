@@ -88,15 +88,21 @@ function accentDangoIdForTurnIntro(
   return undefined;
 }
 
-export function useGame() {
+export type UseGameOptions = {
+  boardEffects?: Map<number, string | null>;
+};
+
+export function useGame(options: UseGameOptions = {}) {
+  const boardEffectsLookup =
+    options.boardEffects ?? BOARD_CELL_EFFECT_LOOKUP;
   const { getCharacterName, t } = useTranslation();
   const { speedMultiplier } = usePlaybackSettings();
   const translationHelpersRef = useRef({ getCharacterName, t });
   const playbackSpeedRef = useRef(speedMultiplier);
   const initialState = useMemo(() => createInitialGameState(), []);
   const executionContext = useMemo(
-    () => createEngineExecutionContext(BOARD_CELL_EFFECT_LOOKUP),
-    []
+    () => createEngineExecutionContext(boardEffectsLookup),
+    [boardEffectsLookup]
   );
   const gameReducer = useCallback(
     (currentState: GameState, action: GameAction): GameState =>
@@ -647,7 +653,7 @@ export function useGame() {
     reset,
     hydrateEngineState,
     getLastRaceSetup,
-    boardEffects: BOARD_CELL_EFFECT_LOOKUP,
+    boardEffects: boardEffectsLookup,
     boardCells: playbackCells ?? state.cells,
     hoppingEntityIds,
     isAnimating,

@@ -3,6 +3,7 @@ import { ConditionalAnalysisPanel } from "@/components/analysis/ConditionalAnaly
 import { ObserverRecordsPanel } from "@/components/analysis/ObserverRecordsPanel";
 import { OverviewPanel } from "@/components/analysis/OverviewPanel";
 import { ScrollToTopButton } from "@/components/analysis/ScrollToTopButton";
+import { KnockoutInsights } from "@/components/analysis/KnockoutInsights";
 import { TournamentInsights } from "@/components/analysis/TournamentInsights";
 import { useTranslation } from "@/i18n/useTranslation";
 import {
@@ -19,7 +20,12 @@ type AnalysisDashboardProps = {
   onObserverWatchReplayJson: (json: string) => void;
 };
 
-type DashboardTabId = "overview" | "conditional" | "tournament" | "observer";
+type DashboardTabId =
+  | "overview"
+  | "conditional"
+  | "tournament"
+  | "knockout"
+  | "observer";
 
 function pickDominantBasicId(tallies: Record<string, number>): DangoId | null {
   return Object.entries(tallies).reduce<DangoId | null>((bestId, [basicId, value]) => {
@@ -58,6 +64,9 @@ export function AnalysisDashboard({
       snapshot?.scenarioKind === "final"
     ) {
       tabs.push("tournament");
+    }
+    if (snapshot?.scenarioKind === "knockoutTournament") {
+      tabs.push("knockout");
     }
     tabs.push("observer");
     return tabs;
@@ -178,7 +187,8 @@ export function AnalysisDashboard({
       <section className="grid grid-cols-2 gap-2 md:grid-cols-4">
         <MetricHighlightCard
           label={
-            snapshot.scenarioKind === "tournament"
+            snapshot.scenarioKind === "tournament" ||
+            snapshot.scenarioKind === "knockoutTournament"
               ? t("analysis.metrics.averageTournamentLength")
               : t("analysis.metrics.averageRaceLength")
           }
@@ -244,7 +254,9 @@ export function AnalysisDashboard({
                 ? t("analysis.tabs.conditional")
                 : tabId === "tournament"
                   ? t("analysis.tabs.tournament")
-                  : t("analysis.tabs.observer");
+                  : tabId === "knockout"
+                    ? t("analysis.tabs.knockout")
+                    : t("analysis.tabs.observer");
           return (
             <button
               key={tabId}
@@ -272,6 +284,8 @@ export function AnalysisDashboard({
         />
       ) : activeTab === "tournament" ? (
         <TournamentInsights snapshot={snapshot} />
+      ) : activeTab === "knockout" ? (
+        <KnockoutInsights snapshot={snapshot} />
       ) : (
         <ObserverRecordsPanel
           snapshot={snapshot}

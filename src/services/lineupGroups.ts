@@ -10,14 +10,23 @@ export type ResolvedLineupGroup = LineupGroupDefinition & {
   isSelectable: boolean;
 };
 
+export function filterRosterByCharacterIds(
+  roster: BasicCharacterDefinition[],
+  characterIds: readonly DangoId[]
+): BasicCharacterDefinition[] {
+  const allowed = new Set(characterIds);
+  return roster.filter((character) => allowed.has(character.id));
+}
+
 export function resolveLineupGroups(
-  roster: BasicCharacterDefinition[]
+  roster: BasicCharacterDefinition[],
+  definitions: readonly LineupGroupDefinition[] = LINEUP_GROUPS
 ): ResolvedLineupGroup[] {
   const rosterById = new Map(
     roster.map((character) => [character.id, character] as const)
   );
 
-  return LINEUP_GROUPS.map((group) => {
+  return definitions.map((group) => {
     const characters = group.characterIds.flatMap((id) => {
       const character = rosterById.get(id);
       return character ? [character] : [];

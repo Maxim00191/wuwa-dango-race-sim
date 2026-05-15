@@ -9,7 +9,7 @@ import type {
   SkillHookResolution,
 } from "@/types/game";
 
-const AUGUSTA_GOVERNOR_AUTHORITY_COOLDOWN_ENGINE_CYCLES = 2;
+const AUGUSTA_GOVERNOR_AUTHORITY_COOLDOWN_ENGINE_CYCLES = 1;
 
 function resolveAugustaGovernorAuthority(
   state: GameState,

@@ -53,6 +53,15 @@ export function formatPercent(
   return `${value.toFixed(fractionDigits)}%`;
 }
 
+export function formatPlacementLabel(
+  translateLabel: (key: string) => string,
+  placementIndex: number
+): string {
+  const key = `common.placements.${placementIndex}`;
+  const label = translateLabel(key);
+  return label === key ? "" : label;
+}
+
 export const FULL_MARATHON_METERS = 42195;
 
 export function formatBatchWallClockMs(ms: number): string {
@@ -91,22 +100,24 @@ export function derivePlacementRow(
   basicId: DangoId,
   counts: PlacementCountVector,
   getLabel: (basicId: DangoId) => string,
-  resolveColors?: PlacementRowColorResolver
+  resolveColors?: PlacementRowColorResolver,
+  placementCount = counts.length
 ): PlacementRowDatum {
-  const total = sumCounts(counts);
+  const normalizedCounts = counts.slice(0, placementCount);
+  const total = sumCounts(normalizedCounts);
   const fallbackAccentHex = accentFillHexForDango(basicId);
   const colorTokens = resolveColors?.(basicId) ?? {
     accentHex: fallbackAccentHex,
     accentInkHex: contrastingInkHexForFill(fallbackAccentHex),
   };
-  const rates = counts.map((count) => toPercent(count, total));
+  const rates = normalizedCounts.map((count) => toPercent(count, total));
   if (total === 0) {
     return {
       basicId,
       label: getLabel(basicId),
       accentHex: colorTokens.accentHex,
       accentInkHex: colorTokens.accentInkHex,
-      counts,
+      counts: normalizedCounts,
       rates,
       total,
       meanPlacement: 0,
@@ -119,19 +130,19 @@ export function derivePlacementRow(
       boomBustRate: 0,
     };
   }
-  const weightedPlacementSum = counts.reduce(
+  const weightedPlacementSum = normalizedCounts.reduce(
     (sum, count, placementIndex) => sum + count * (placementIndex + 1),
     0
   );
   const meanPlacement = weightedPlacementSum / total;
   const variance =
-    counts.reduce((sum, count, placementIndex) => {
+    normalizedCounts.reduce((sum, count, placementIndex) => {
       const delta = placementIndex + 1 - meanPlacement;
       return sum + count * delta * delta;
     }, 0) / total;
   const standardDeviation = Math.sqrt(variance);
   const theoreticalMaxStandardDeviation =
-    counts.length > 1 ? (counts.length - 1) / 2 : 1;
+    normalizedCounts.length > 1 ? (normalizedCounts.length - 1) / 2 : 1;
   const stabilityScore =
     theoreticalMaxStandardDeviation > 0
       ? clamp(
@@ -140,18 +151,19 @@ export function derivePlacementRow(
           100
         )
       : 100;
-  const podiumSpan = Math.min(3, counts.length);
-  const bottomTwoStart = Math.max(counts.length - 2, 0);
+  const podiumSpan = Math.min(3, normalizedCounts.length);
+  const bottomTwoStart = Math.max(normalizedCounts.length - 2, 0);
   const podiumRate = toPercent(
-    counts.slice(0, podiumSpan).reduce((sum, count) => sum + count, 0),
+    normalizedCounts.slice(0, podiumSpan).reduce((sum, count) => sum + count, 0),
     total
   );
   const bottomTwoRate = toPercent(
-    counts.slice(bottomTwoStart).reduce((sum, count) => sum + count, 0),
+    normalizedCounts.slice(bottomTwoStart).reduce((sum, count) => sum + count, 0),
     total
   );
   const boomBustRate = toPercent(
-    (counts[0] ?? 0) + (counts[counts.length - 1] ?? 0),
+    (normalizedCounts[0] ?? 0) +
+      (normalizedCounts[normalizedCounts.length - 1] ?? 0),
     total
   );
   return {
@@ -159,7 +171,7 @@ export function derivePlacementRow(
     label: getLabel(basicId),
     accentHex: colorTokens.accentHex,
     accentInkHex: colorTokens.accentInkHex,
-    counts,
+    counts: normalizedCounts,
     rates,
     total,
     meanPlacement,
@@ -179,12 +191,27 @@ export function derivePlacementRows(
   getLabel: (basicId: DangoId) => string,
   resolveColors?: PlacementRowColorResolver
 ): PlacementRowDatum[] {
+  const placementCount = Math.max(
+    0,
+    ...basicIds.map((basicId) => {
+      const counts = placementCountsByBasicId[basicId] ?? [];
+      let lastActivePlacementIndex = -1;
+      for (let index = counts.length - 1; index >= 0; index -= 1) {
+        if ((counts[index] ?? 0) > 0) {
+          lastActivePlacementIndex = index;
+          break;
+        }
+      }
+      return lastActivePlacementIndex + 1;
+    })
+  );
   return basicIds.map((basicId) =>
     derivePlacementRow(
       basicId,
       placementCountsByBasicId[basicId] ?? [],
       getLabel,
-      resolveColors
+      resolveColors,
+      placementCount
     )
   );
 }

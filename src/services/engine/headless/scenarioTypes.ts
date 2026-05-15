@@ -9,6 +9,11 @@ export type HeadlessSimulationScenario =
   | {
       kind: "tournament";
       selectedBasicIds: DangoId[];
+    }
+  | {
+      kind: "knockoutTournament";
+      groupAIds: DangoId[];
+      groupBIds: DangoId[];
     };
 
 export type HeadlessSimulationOptions = {

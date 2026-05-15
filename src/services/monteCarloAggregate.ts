@@ -10,6 +10,7 @@ import type {
   MonteCarloBasicAnalytics,
   MonteCarloBasicMetricTotals,
   MonteCarloContextAnalytics,
+  MonteCarloKnockoutTransitionCounts,
   MonteCarloModeAnalytics,
   MonteCarloRaceContext,
   MonteCarloRankShiftDynamics,
@@ -34,8 +35,18 @@ const RACE_MODES: RaceMode[] = [
   "tournamentPreliminary",
   "tournamentFinal",
   "customFinal",
+  "knockoutGroup",
+  "knockoutBracket",
+  "knockoutFinal",
 ];
-const RACE_CONTEXTS: MonteCarloRaceContext[] = ["sprint", "preliminary", "final"];
+const RACE_CONTEXTS: MonteCarloRaceContext[] = [
+  "sprint",
+  "preliminary",
+  "final",
+  "knockoutGroup",
+  "knockoutBracket",
+  "knockoutFinal",
+];
 
 function createPlacementVector(participantCount: number): PlacementCountVector {
   return Array.from({ length: participantCount }, () => 0);
@@ -49,6 +60,21 @@ function createPlacementMatrix(participantCount: number): PlacementCountMatrix {
 
 function createNumberRecord(selectedBasicIds: DangoId[]): Record<string, number> {
   return Object.fromEntries(selectedBasicIds.map((basicId) => [basicId, 0]));
+}
+
+function createKnockoutTransitionCounts(
+  selectedBasicIds: DangoId[]
+): MonteCarloKnockoutTransitionCounts {
+  return {
+    groupEntryCountByBasicId: createNumberRecord(selectedBasicIds),
+    winnersBracketEntryCountByBasicId: createNumberRecord(selectedBasicIds),
+    losersBracketEntryCountByBasicId: createNumberRecord(selectedBasicIds),
+    finalsEntryCountByBasicId: createNumberRecord(selectedBasicIds),
+    winnersBracketToFinalCountByBasicId: createNumberRecord(selectedBasicIds),
+    losersBracketToFinalCountByBasicId: createNumberRecord(selectedBasicIds),
+    winnersBracketChampionCountByBasicId: createNumberRecord(selectedBasicIds),
+    losersBracketChampionCountByBasicId: createNumberRecord(selectedBasicIds),
+  };
 }
 
 function createRaceCountByMode(): Partial<Record<RaceMode, number>> {
@@ -188,6 +214,24 @@ function createModeAnalytics(
       maxDebtComebackRate: 0,
       maxDebtComebackRateByBasicId: zeroes,
       startedWithMaxDebtRateByBasicId: { ...zeroes },
+    };
+  }
+  if (scenarioKind === "knockoutTournament") {
+    return {
+      kind: "knockout",
+      groupStageDynamics: createSeedDynamics(participantCount),
+      bracketStageDynamics: createSeedDynamics(participantCount),
+      finalsDynamics: createSeedDynamics(participantCount),
+      transitionCounts: createKnockoutTransitionCounts(selectedBasicIds),
+      groupToWinnersBracketRateByBasicId: { ...zeroes },
+      groupToLosersBracketRateByBasicId: { ...zeroes },
+      winnersBracketToFinalRateByBasicId: { ...zeroes },
+      losersBracketToFinalRateByBasicId: { ...zeroes },
+      finalistToChampionRateByBasicId: { ...zeroes },
+      winnersBracketChampionRateByBasicId: { ...zeroes },
+      losersBracketChampionRateByBasicId: { ...zeroes },
+      groupTopThreeToFinalRateByBasicId: { ...zeroes },
+      groupTopThreeToChampionRateByBasicId: { ...zeroes },
     };
   }
   return {
@@ -398,6 +442,15 @@ function contextForRaceMode(mode: RaceMode): MonteCarloRaceContext {
   if (mode === "tournamentPreliminary") {
     return "preliminary";
   }
+  if (mode === "knockoutGroup") {
+    return "knockoutGroup";
+  }
+  if (mode === "knockoutBracket") {
+    return "knockoutBracket";
+  }
+  if (mode === "knockoutFinal") {
+    return "knockoutFinal";
+  }
   return "final";
 }
 
@@ -547,6 +600,7 @@ function absorbScenarioLevelCorrelations(
     for (const raceMetrics of [
       outcome.raceMetrics.preliminary,
       outcome.raceMetrics.final,
+      ...(outcome.knockoutPhases?.map((phaseResult) => phaseResult.metrics) ?? []),
     ]) {
       if (!raceMetrics) {
         continue;
@@ -939,11 +993,140 @@ function finalizeRankShiftDynamics(
   };
 }
 
+function finalizeKnockoutModeAnalytics(
+  aggregate: MonteCarloAggregateSnapshot
+): Extract<MonteCarloModeAnalytics, { kind: "knockout" }> {
+  const transitionCounts: MonteCarloKnockoutTransitionCounts = {
+    groupEntryCountByBasicId: aggregate.knockoutGroupEntryCountByBasicId,
+    winnersBracketEntryCountByBasicId:
+      aggregate.knockoutWinnersBracketEntryCountByBasicId,
+    losersBracketEntryCountByBasicId:
+      aggregate.knockoutLosersBracketEntryCountByBasicId,
+    finalsEntryCountByBasicId: aggregate.knockoutFinalsEntryCountByBasicId,
+    winnersBracketToFinalCountByBasicId:
+      aggregate.knockoutWinnersBracketToFinalCountByBasicId,
+    losersBracketToFinalCountByBasicId:
+      aggregate.knockoutLosersBracketToFinalCountByBasicId,
+    winnersBracketChampionCountByBasicId:
+      aggregate.knockoutWinnersBracketChampionCountByBasicId,
+    losersBracketChampionCountByBasicId:
+      aggregate.knockoutLosersBracketChampionCountByBasicId,
+  };
+  const groupToWinnersBracketRateByBasicId = createNumberRecord(
+    aggregate.selectedBasicIds
+  );
+  const groupToLosersBracketRateByBasicId = createNumberRecord(
+    aggregate.selectedBasicIds
+  );
+  const winnersBracketToFinalRateByBasicId = createNumberRecord(
+    aggregate.selectedBasicIds
+  );
+  const losersBracketToFinalRateByBasicId = createNumberRecord(
+    aggregate.selectedBasicIds
+  );
+  const finalistToChampionRateByBasicId = createNumberRecord(
+    aggregate.selectedBasicIds
+  );
+  const winnersBracketChampionRateByBasicId = createNumberRecord(
+    aggregate.selectedBasicIds
+  );
+  const losersBracketChampionRateByBasicId = createNumberRecord(
+    aggregate.selectedBasicIds
+  );
+  const groupTopThreeToFinalRateByBasicId = createNumberRecord(
+    aggregate.selectedBasicIds
+  );
+  const groupTopThreeToChampionRateByBasicId = createNumberRecord(
+    aggregate.selectedBasicIds
+  );
+  for (const basicId of aggregate.selectedBasicIds) {
+    const groupEntries = transitionCounts.groupEntryCountByBasicId[basicId] ?? 0;
+    const winnersEntries =
+      transitionCounts.winnersBracketEntryCountByBasicId[basicId] ?? 0;
+    const losersEntries =
+      transitionCounts.losersBracketEntryCountByBasicId[basicId] ?? 0;
+    const finalists = transitionCounts.finalsEntryCountByBasicId[basicId] ?? 0;
+    const winnersToFinals =
+      transitionCounts.winnersBracketToFinalCountByBasicId[basicId] ?? 0;
+    const losersToFinals =
+      transitionCounts.losersBracketToFinalCountByBasicId[basicId] ?? 0;
+    const winnersChampions =
+      transitionCounts.winnersBracketChampionCountByBasicId[basicId] ?? 0;
+    const losersChampions =
+      transitionCounts.losersBracketChampionCountByBasicId[basicId] ?? 0;
+    const totalChampions = winnersChampions + losersChampions;
+    groupToWinnersBracketRateByBasicId[basicId] = toPercent(
+      winnersEntries,
+      groupEntries
+    );
+    groupToLosersBracketRateByBasicId[basicId] = toPercent(
+      losersEntries,
+      groupEntries
+    );
+    winnersBracketToFinalRateByBasicId[basicId] = toPercent(
+      winnersToFinals,
+      winnersEntries
+    );
+    losersBracketToFinalRateByBasicId[basicId] = toPercent(
+      losersToFinals,
+      losersEntries
+    );
+    finalistToChampionRateByBasicId[basicId] = toPercent(
+      totalChampions,
+      finalists
+    );
+    winnersBracketChampionRateByBasicId[basicId] = toPercent(
+      winnersChampions,
+      winnersEntries
+    );
+    losersBracketChampionRateByBasicId[basicId] = toPercent(
+      losersChampions,
+      losersEntries
+    );
+    groupTopThreeToFinalRateByBasicId[basicId] = toPercent(
+      winnersToFinals,
+      winnersEntries
+    );
+    groupTopThreeToChampionRateByBasicId[basicId] = toPercent(
+      winnersChampions,
+      winnersEntries
+    );
+  }
+  return {
+    kind: "knockout",
+    groupStageDynamics: buildSeedDynamics(
+      aggregate,
+      aggregate.preliminaryToFinalCountsByBasicId
+    ),
+    bracketStageDynamics: buildSeedDynamics(
+      aggregate,
+      aggregate.startingToFinalCountsByBasicId
+    ),
+    finalsDynamics: buildSeedDynamics(
+      aggregate,
+      aggregate.preliminaryToFinalCountsByBasicId
+    ),
+    transitionCounts,
+    groupToWinnersBracketRateByBasicId,
+    groupToLosersBracketRateByBasicId,
+    winnersBracketToFinalRateByBasicId,
+    losersBracketToFinalRateByBasicId,
+    finalistToChampionRateByBasicId,
+    winnersBracketChampionRateByBasicId,
+    losersBracketChampionRateByBasicId,
+    groupTopThreeToFinalRateByBasicId,
+    groupTopThreeToChampionRateByBasicId,
+  };
+}
+
 function finalizeModeAnalytics(
   aggregate: MonteCarloAggregateSnapshot
 ): MonteCarloModeAnalytics {
   if (aggregate.scenarioKind === "normalRace") {
     return { kind: "normalRace" };
+  }
+  if (aggregate.scenarioKind === "knockoutTournament") {
+    return finalizeKnockoutModeAnalytics(aggregate);
   }
   const startedWithMaxDebtRateByBasicId = createNumberRecord(
     aggregate.selectedBasicIds
@@ -1082,6 +1265,18 @@ export function createEmptyMonteCarloAggregate(
     tournamentChokeCountByBasicId: createNumberRecord(selectedBasicIds),
     tournamentClutchOpportunityCountByBasicId: createNumberRecord(selectedBasicIds),
     tournamentClutchCountByBasicId: createNumberRecord(selectedBasicIds),
+    knockoutGroupEntryCountByBasicId: createNumberRecord(selectedBasicIds),
+    knockoutWinnersBracketEntryCountByBasicId: createNumberRecord(selectedBasicIds),
+    knockoutLosersBracketEntryCountByBasicId: createNumberRecord(selectedBasicIds),
+    knockoutFinalsEntryCountByBasicId: createNumberRecord(selectedBasicIds),
+    knockoutWinnersBracketToFinalCountByBasicId:
+      createNumberRecord(selectedBasicIds),
+    knockoutLosersBracketToFinalCountByBasicId:
+      createNumberRecord(selectedBasicIds),
+    knockoutWinnersBracketChampionCountByBasicId:
+      createNumberRecord(selectedBasicIds),
+    knockoutLosersBracketChampionCountByBasicId:
+      createNumberRecord(selectedBasicIds),
     modeAnalytics: createModeAnalytics(
       scenarioKind,
       selectedBasicIds,
@@ -1123,12 +1318,72 @@ export function absorbHeadlessOutcomeIntoAggregate(
       (aggregate.preliminaryWinsByBasicId[outcome.preliminaryWinnerBasicId] ??
         0) + 1;
   }
-  absorbTransitionCounts(
-    aggregate,
-    aggregate.startingToFinalCountsByBasicId,
-    outcome.modeMetrics.finalStartingPlacementByBasicId,
-    outcome.finalPlacements
-  );
+  if ("finalStartingPlacementByBasicId" in outcome.modeMetrics) {
+    absorbTransitionCounts(
+      aggregate,
+      aggregate.startingToFinalCountsByBasicId,
+      outcome.modeMetrics.finalStartingPlacementByBasicId,
+      outcome.finalPlacements
+    );
+  }
+  if (outcome.modeMetrics.kind === "knockout") {
+    absorbTransitionCounts(
+      aggregate,
+      aggregate.preliminaryToFinalCountsByBasicId,
+      outcome.modeMetrics.groupPlacementByBasicId,
+      outcome.finalPlacements
+    );
+    absorbTransitionCounts(
+      aggregate,
+      aggregate.startingToFinalCountsByBasicId,
+      outcome.modeMetrics.bracketPlacementByBasicId,
+      outcome.finalPlacements
+    );
+    for (const basicId of aggregate.selectedBasicIds) {
+      if (outcome.modeMetrics.groupPlacementByBasicId[basicId] !== undefined) {
+        aggregate.knockoutGroupEntryCountByBasicId[basicId] =
+          (aggregate.knockoutGroupEntryCountByBasicId[basicId] ?? 0) + 1;
+      }
+      const lane = outcome.modeMetrics.bracketLaneByBasicId[basicId];
+      const reachedFinals =
+        outcome.modeMetrics.reachedFinalsByBasicId[basicId] === true;
+      const champion = outcome.winnerBasicId === basicId;
+      if (lane === "winnersBracket") {
+        aggregate.knockoutWinnersBracketEntryCountByBasicId[basicId] =
+          (aggregate.knockoutWinnersBracketEntryCountByBasicId[basicId] ?? 0) +
+          1;
+        if (reachedFinals) {
+          aggregate.knockoutWinnersBracketToFinalCountByBasicId[basicId] =
+            (aggregate.knockoutWinnersBracketToFinalCountByBasicId[basicId] ??
+              0) + 1;
+        }
+        if (champion) {
+          aggregate.knockoutWinnersBracketChampionCountByBasicId[basicId] =
+            (aggregate.knockoutWinnersBracketChampionCountByBasicId[basicId] ??
+              0) + 1;
+        }
+      }
+      if (lane === "losersBracket") {
+        aggregate.knockoutLosersBracketEntryCountByBasicId[basicId] =
+          (aggregate.knockoutLosersBracketEntryCountByBasicId[basicId] ?? 0) +
+          1;
+        if (reachedFinals) {
+          aggregate.knockoutLosersBracketToFinalCountByBasicId[basicId] =
+            (aggregate.knockoutLosersBracketToFinalCountByBasicId[basicId] ??
+              0) + 1;
+        }
+        if (champion) {
+          aggregate.knockoutLosersBracketChampionCountByBasicId[basicId] =
+            (aggregate.knockoutLosersBracketChampionCountByBasicId[basicId] ??
+              0) + 1;
+        }
+      }
+      if (reachedFinals) {
+        aggregate.knockoutFinalsEntryCountByBasicId[basicId] =
+          (aggregate.knockoutFinalsEntryCountByBasicId[basicId] ?? 0) + 1;
+      }
+    }
+  }
   if (outcome.modeMetrics.kind === "tournament") {
     absorbTransitionCounts(
       aggregate,
@@ -1191,10 +1446,12 @@ export function absorbHeadlessOutcomeIntoAggregate(
       ] += 1;
     }
   }
-  for (const raceMetrics of [
+  const raceMetricsToAbsorb = [
     outcome.raceMetrics.preliminary,
     outcome.raceMetrics.final,
-  ]) {
+    ...(outcome.knockoutPhases?.map((phaseResult) => phaseResult.metrics) ?? []),
+  ];
+  for (const raceMetrics of raceMetricsToAbsorb) {
     if (!raceMetrics) {
       continue;
     }
@@ -1221,6 +1478,16 @@ export function absorbHeadlessOutcomeIntoAggregate(
       raceMetrics,
       aggregate.basicMetricTotalsByContext[context]
     );
+  }
+  if (outcome.knockoutPhases) {
+    for (const phaseResult of outcome.knockoutPhases) {
+      if (phaseResult.phase === "groupA" || phaseResult.phase === "groupB") {
+        absorbPlacementsIntoCounts(
+          phaseResult.placements,
+          aggregate.preliminaryPlacementCountsByBasicId
+        );
+      }
+    }
   }
   absorbScenarioLevelCorrelations(aggregate, outcome);
   for (const basicId of outcome.raceMetrics.final.startedWithMaxProgressDebtBasicIds) {

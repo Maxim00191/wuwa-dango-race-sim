@@ -68,6 +68,7 @@ export const zhCnDictionary: TranslationDictionary = {
     views: {
       normal: "竞速场",
       tournament: "赛程大厅",
+      knockout: "淘汰赛",
       analysis: "庆典档案",
     },
     playback: {
@@ -178,6 +179,68 @@ export const zhCnDictionary: TranslationDictionary = {
       },
     },
   },
+  knockout: {
+    session: {
+      setup: "淘汰赛筹备室",
+      complete: "淘汰赛冠军已诞生",
+      awaiting: {
+        groupA: "等待 A 组开赛",
+        groupB: "等待 B 组开赛",
+        winnersBracket: "等待胜者组开赛",
+        losersBracket: "等待败者组开赛",
+        finals: "等待决赛开赛",
+      },
+    },
+    monteCarlo: {
+      heading: "淘汰赛推演",
+      title: "模拟完整十二团子淘汰赛程",
+      description:
+        "连续进行小组赛、胜者组、败者组与决赛五场冲刺赛，推演总冠军归属。",
+      scenario: {
+        label: "完整淘汰赛",
+        description: "A 组、B 组、胜者组、败者组与冠军决赛。",
+        analysisLabel: "淘汰赛推演",
+      },
+      lineupIncomplete: "请先为两组各选满 6 只且不重复的团子。",
+    },
+    shell: {
+      eyebrow: "淘汰赛场",
+      title: "小团快跑淘汰赛",
+      description:
+        "十二只团子分入两组小组赛，各组前三进入胜者组、后三进入败者组，再由六强角逐最后的冠军。",
+    },
+    phases: {
+      groupA: "A 组",
+      groupB: "B 组",
+      winnersBracket: "胜者组",
+      losersBracket: "败者组",
+      finals: "决赛",
+    },
+    setup: {
+      groupA: {
+        eyebrow: "A 组",
+        title: "A 组阵容",
+        label: "A 组",
+        description: "奥古斯塔、今汐、绯雪、尤诺、卡卡罗、卡提希娅",
+      },
+      groupB: {
+        eyebrow: "B 组",
+        title: "B 组阵容",
+        label: "B 组",
+        description: "达妮娅、西格莉卡、守岸人、千咲、珂莱塔、爱弥斯",
+      },
+      progress: {
+        eyebrow: "赛程进度",
+        champion: "冠军团子：{name}",
+      },
+      actions: {
+        start: "开始淘汰赛",
+        advance: "进行{phase}",
+        advanceIdle: "继续赛程",
+        reset: "重置淘汰赛",
+      },
+    },
+  },
   lineup: {
     heading: "参赛阵容",
     title: "邀请 {count} 只团子加入二周年赛道",
@@ -236,7 +299,7 @@ export const zhCnDictionary: TranslationDictionary = {
       description:
         "完全占满 CPU，并增加单次吞吐量并减少进度上报。进度条将延迟更新。仅推荐10万次以上的推演使用，否则可能会更慢！",
       progressCoarse:
-        "正在后台运算，进度条会卡住和延迟更新。",
+        "正在后台运算，进度条会卡顿并延迟更新。",
     },
   },
   game: {
@@ -322,7 +385,7 @@ export const zhCnDictionary: TranslationDictionary = {
     header: {
       eyebrow: "数据分析",
       description:
-        "基于当前阵容的 {runs} 次模拟得出，包含名次分布、特定条件下的战局推演，以及杯赛多轮次的表现趋势。",
+        "基于当前阵容的 {runs} 次模拟得出，包含名次分布、特定条件下的战局推演，以及多轮赛事的表现趋势。",
       back: "返回模拟",
       scrollToTop: "回到顶部",
     },
@@ -330,6 +393,7 @@ export const zhCnDictionary: TranslationDictionary = {
       overview: "总览数据",
       conditional: "若Ta夺冠",
       tournament: "赛程趋势",
+      knockout: "淘汰赛趋势",
       observer: "观测者记录",
     },
     observer: {
@@ -349,11 +413,127 @@ export const zhCnDictionary: TranslationDictionary = {
       watchReplay: "观看回放",
       watchPreliminaryReplay: "观看预赛回放",
       watchFinalReplay: "观看决赛回放",
+      knockoutPhaseReplay: {
+        groupA: "A 组回放",
+        groupB: "B 组回放",
+        winnersBracket: "胜者组回放",
+        losersBracket: "败者组回放",
+        finals: "决赛组回放",
+      },
+ 
     },
     contexts: {
       sprint: "冲刺赛分析",
       preliminary: "预赛分析",
       final: "决赛分析",
+      knockoutGroup: "小组赛",
+      knockoutBracket: "分组赛",
+      knockoutFinal: "冠军决赛",
+    },
+    knockout: {
+      eyebrow: "淘汰赛分析",
+      title: "按阶段拆分的赛程洞察",
+      description:
+        "跨路线指标来自聚合后的条件概率，而不是赛制固定容量；强调逆袭效率、夺冠路线与高压下的终结能力。",
+      tabs: {
+        flow: "赛程流向",
+        competitors: "选手矩阵",
+        drilldown: "单体详情",
+      },
+      championshipTitle: "总冠军率",
+      championshipDescription: "完成五场淘汰赛后夺冠的概率。",
+      groupTitle: "小组赛胜率",
+      advancementTitle: "小组前三晋级表现",
+      topThreeToFinals: "闯入决赛",
+      topThreeToChampion: "小组前三最终夺冠",
+      winnersPathChampion: "胜者组夺冠",
+      winnersPathChampionHint: "进入胜者组后最终夺冠的赛事占比",
+      losersPathChampion: "败者组夺冠",
+      losersPathChampionHint: "进入败者组后最终逆袭夺冠的赛事占比",
+      finalistConversionLeader: "决赛终结者",
+      finalistConversionLeaderHint: "进入决赛后的夺冠率为 {rate}",
+      noFinalistData: "暂无决赛样本",
+      comebackShareOfCups: "败者组逆袭夺冠占比",
+      comebackShareOfCupsHint:
+        "所有模拟赛事中，冠军走完败者组路线夺冠的占比",
+      laneFinalClose: "决赛圈 → 夺冠",
+      laneFinalCloseHint: "从该分组路线晋级决赛后，最终夺冠的比例",
+      laneStructuralNote:
+        "路线进入总次数会随「席位 × 模拟局数」线性放大；下方漏斗率才真正反映赛果。",
+      flowComebackKingTitle: "逆袭之王",
+      flowComebackKingDescription:
+        "在败者组路线出现过的样本里，夺冠条件概率最高（需满足最少样本量）",
+      comebackKingSample: "败者路线出现 {count} 次",
+      flowPathSplitTitle: "夺冠路线依赖",
+      flowPathSplitDescription:
+        "若有夺冠，奖杯来自胜者组路径与败者组路径的占比各有多少",
+      pathSplitWinnerShare: "{rate} · 胜者路线",
+      pathSplitLoserShare: "{rate} · 败者路线",
+      pathSplitTitles: "共 {count} 次夺冠计入",
+      flowPremiumLaneTitle: "胜者席位压力",
+      flowPremiumLaneDescription:
+        "常客进胜者组但整体夺冠偏少：用「占用胜者席位的赛事占比」减去「夺冠占比」衡量落差",
+      premiumLaneOccupancy: "胜者路线席位占比",
+      premiumLaneTitles: "夺冠占比",
+      premiumLaneSpread: "占用 − 夺冠",
+      flowFinalChokeTitle: "决赛高压区",
+      flowFinalChokeDescription:
+        "多次进决赛却夺冠率偏低的选手（按决赛→冠军转化率从低到高列出）",
+      flowEmptySample: "路线样本尚不足",
+      entries: "进入次数",
+      entriesHint: "该阶段路径在本批次中的出现次数",
+      finalists: "决赛席位",
+      finalistsHint: "该路径中成功进入冠军决赛的次数",
+      conversion: "决赛转化",
+      conversionHint: "该路径进入决赛后的最终夺冠率",
+      winnersLaneTitle: "胜者组漏斗",
+      winnersLaneDescription:
+        "从该路线晋级决赛后的夺冠效率，而不是把所有路线登记次数简单相加。",
+      losersLaneTitle: "败者组漏斗",
+      losersLaneDescription:
+        "弱势组晋级后的决赛抗压表现，用「进决赛再夺冠」衡量路线韧性。",
+      competitorTitle: "选手路径矩阵",
+      competitorDescription:
+        "每一行都拆开小组分流、分组赛存活与决赛限定夺冠转化，让两场出局与三场争冠的样本保持可比。",
+      reachFinal: "进入决赛",
+      finalConversion: "决赛 -> 冠军",
+      titles: "冠军数",
+      drilldownEyebrow: "单体路径详情",
+      drilldownDescription:
+        "这里只展示该选手实际进入过的阶段，避免把两场出局和三场争冠的历程混成同一种样本。",
+      phaseGroup: "小组赛",
+      phaseWinners: "胜者组",
+      phaseLosers: "败者组",
+      phaseFinal: "冠军决赛",
+      toWinners: "进胜者组",
+      toLosers: "进败者组",
+      toFinal: "进决赛",
+      toChampion: "夺冠",
+      titleShare: "总体夺冠占比",
+      selectCompetitor: "选择选手",
+      flowGraphTitle: "淘汰赛流向图",
+      flowGraphDescription:
+        "所有百分比均来自该选手在统计计数上的条件/边际划分：连线为「在上一阶段样本内」的转移率，节点主数字为占整批赛事的边际比例。",
+      flowGraphPicker: "团子视角",
+      flowGraphEmpty: "先运行淘汰赛推演以生成流向图。",
+      flowGraphNodeCup: "完整赛事",
+      flowGraphRuns: "推演次数：{count} 次",
+      flowGraphNodeCupHint: "每场模拟都按固定 12 人赛程从小组打到决赛。",
+      flowGraphParticipation: "占本批赛事中进入其小组阶段的份额",
+      flowGraphGroupMeta: "观察到的小组晋级次数：{runs}",
+      flowGraphBracketPhase: "第二阶段·双分组分流",
+      flowGraphBracketMeta: "该路线晋级次数：{runs}",
+      flowGraphJoint: "边际 · 占全部推演 {rate}",
+      flowGraphMerge: "六人冠军决赛",
+      flowGraphFinalMeta: "冠军决赛出场次数：{runs}",
+      flowGraphConditionalFinalToTitle: "以进入冠军决赛为条件",
+      flowGraphChampion: "赛事冠军",
+      flowGraphTitlesMeta: "各路线夺冠合计：{count}",
+      flowGraphFromWinners: "经胜者组进入决赛",
+      flowGraphFromLosers: "经败者组进入决赛",
+      flowGraphCupViaWinners: "经胜者组路线夺冠",
+      flowGraphCupViaLosers: "经败者组路线夺冠",
+      flowGraphUnknownGroup: "小组归属（自定义分组）",
     },
     metrics: {
       averageTournamentLength: "平均赛程长度",
@@ -363,7 +543,7 @@ export const zhCnDictionary: TranslationDictionary = {
       fastestFinish: "最速通关",
       fastestFinishHint: "本批次模拟中用时最短的一局",
       titleShare: "最高夺冠率",
-      titleShareHint: "{name} 捧杯的次数最多",
+      titleShareHint: "{name} 夺冠的次数最多",
       noWinnerData: "暂无冠军数据",
       bottomHalfComeback: "下半区逆袭率",
       bestStability: "发挥最稳定",
@@ -538,6 +718,13 @@ export const zhCnDictionary: TranslationDictionary = {
       customFinal: "自定义决赛",
       finalsReady: "决战就绪",
       tournamentSetup: "赛程筹备室",
+      knockout: {
+        groupA: "淘汰赛 · A 组",
+        groupB: "淘汰赛 · B 组",
+        winnersBracket: "淘汰赛 · 胜者组",
+        losersBracket: "淘汰赛 · 败者组",
+        finals: "淘汰赛 · 决赛",
+      },
     },
     log: {
       abbyResetScheduled: "{actor} 落在队伍最后方，下回合将被直接传送回起点。",
