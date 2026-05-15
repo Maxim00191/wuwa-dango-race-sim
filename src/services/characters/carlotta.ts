@@ -1,3 +1,4 @@
+import { skillTrigger } from "@/broadcast/skillTrigger";
 import { rollInclusive } from "@/services/characters/dice";
 import { characterParam, text } from "@/i18n";
 import type {
@@ -21,12 +22,15 @@ function rollCarlottaLuckyDoubleDice(
   return {
     diceValue,
     initialDiceValue: baseFace,
-    skillNarrative: isLuckyDouble
-      ? text("simulation.skills.carlottaDouble", {
-          actor: characterParam("carlotta"),
-          value: diceValue,
-        })
-      : undefined,
+    ...(isLuckyDouble
+      ? skillTrigger(
+          "carlotta.double",
+          text("simulation.skills.carlottaDouble", {
+            actor: characterParam("carlotta"),
+            value: diceValue,
+          })
+        )
+      : {}),
   };
 }
 

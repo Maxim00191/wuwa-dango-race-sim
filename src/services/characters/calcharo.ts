@@ -1,3 +1,4 @@
+import { skillTrigger } from "@/broadcast/skillTrigger";
 import { characterParam, text } from "@/i18n";
 import { rollStandardBasicDice } from "@/services/characters/basic";
 import { orderedBasicRacerIdsForLeaderboard } from "@/services/racerRanking";
@@ -18,9 +19,12 @@ function resolveCalcharoLastPlaceBoost(
   }
   return {
     diceValue: context.diceValue + 3,
-    skillNarrative: text("simulation.skills.calcharoLastPlaceBoost", {
-      actor: characterParam("calcharo"),
-    }),
+    ...skillTrigger(
+      "calcharo.lastPlaceBoost",
+      text("simulation.skills.calcharoLastPlaceBoost", {
+        actor: characterParam("calcharo"),
+      })
+    ),
   };
 }
 

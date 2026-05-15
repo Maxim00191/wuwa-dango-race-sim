@@ -1,3 +1,4 @@
+import { skillTrigger } from "@/broadcast/skillTrigger";
 import { characterParam, text } from "@/i18n";
 import { rollStandardBasicDice } from "@/services/characters/basic";
 import { MIDPOINT_DISTANCE } from "@/services/midpoint";
@@ -154,9 +155,12 @@ function resolveIunoAnchoredDestiny(
         stackBottomToTop: nextDestinationStack,
       },
     ],
-    skillNarrative: text("simulation.skills.iunoAnchoredDestiny", {
-      actor: characterParam("iuno"),
-    }),
+    ...skillTrigger(
+      "iuno.anchoredDestiny",
+      text("simulation.skills.iunoAnchoredDestiny", {
+        actor: characterParam("iuno"),
+      })
+    ),
   };
 }
 

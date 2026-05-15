@@ -1,3 +1,4 @@
+import { skillTrigger } from "@/broadcast/skillTrigger";
 import { characterParam, text } from "@/i18n";
 import { rollInclusive } from "@/services/characters/dice";
 import type {
@@ -51,20 +52,26 @@ function applySigrikaPressure(
     return {
       state,
       planPatches,
-      skillNarrative: text("simulation.skills.sigrikaMarkSingle", {
-        actor: characterParam("sigrika"),
-        target: characterParam(targets[0]!),
-      }),
+      ...skillTrigger(
+        "sigrika.markSingle",
+        text("simulation.skills.sigrikaMarkSingle", {
+          actor: characterParam("sigrika"),
+          target: characterParam(targets[0]!),
+        })
+      ),
     };
   }
   return {
     state,
     planPatches,
-    skillNarrative: text("simulation.skills.sigrikaMarkDouble", {
-      actor: characterParam("sigrika"),
-      firstTarget: characterParam(targets[0]!),
-      secondTarget: characterParam(targets[1]!),
-    }),
+    ...skillTrigger(
+      "sigrika.markDouble",
+      text("simulation.skills.sigrikaMarkDouble", {
+        actor: characterParam("sigrika"),
+        firstTarget: characterParam(targets[0]!),
+        secondTarget: characterParam(targets[1]!),
+      })
+    ),
   };
 }
 

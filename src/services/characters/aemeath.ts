@@ -1,4 +1,5 @@
 import { ABBY_ID } from "@/constants/ids";
+import { skillTrigger } from "@/broadcast/skillTrigger";
 import { characterParam, text } from "@/i18n";
 import { rollInclusive } from "@/services/characters/dice";
 import { MIDPOINT_DISTANCE } from "@/services/midpoint";
@@ -122,9 +123,12 @@ function resolveAemeathMidpointLeap(
         stackBottomToTop: nextDestinationStack,
       },
     ],
-    skillNarrative: text("simulation.skills.aemeathLeap", {
-      actor: characterParam("aemeath"),
-    }),
+    ...skillTrigger(
+      "aemeath.leap",
+      text("simulation.skills.aemeathLeap", {
+        actor: characterParam("aemeath"),
+      })
+    ),
   };
 }
 

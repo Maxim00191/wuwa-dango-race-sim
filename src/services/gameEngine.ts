@@ -8,6 +8,9 @@ import {
   SELECTABLE_BASIC_DANGO_IDS,
 } from "@/constants/ids";
 import { CHARACTER_BY_ID } from "@/services/characters";
+import { buildSkillPlaybackSegment } from "@/broadcast/formatSkillBanner";
+import type { SkillBannerActionId } from "@/broadcast/skillBannerLexicon";
+import { resolveSkillBannerActionId } from "@/broadcast/skillBannerLexicon";
 import { characterParam, directionParam, text, type LocalizedText } from "@/i18n";
 import {
   addClockwise,
@@ -259,6 +262,26 @@ function appendLog(state: GameState, entry: GameLogEntry): GameState {
   return { ...state, log: [...state.log, entry] };
 }
 
+function recordSkillTrigger(
+  state: GameState,
+  segments: PlaybackSegment[],
+  actorId: DangoId,
+  narrative: LocalizedText,
+  skillBannerActionId?: SkillBannerActionId
+): GameState {
+  segments.push(
+    buildSkillPlaybackSegment(
+      actorId,
+      resolveSkillBannerActionId(actorId, narrative, skillBannerActionId),
+      narrative
+    )
+  );
+  return appendLog(state, {
+    kind: "skillTrigger",
+    message: narrative,
+  });
+}
+
 function applyEntityRuntimePatches(
   entities: GameState["entities"],
   patches: Partial<Record<DangoId, Partial<EntityRuntimeState>>> | undefined
@@ -457,6 +480,7 @@ function applySkillHookAfterDice(
   state: GameState;
   segments: PlaybackSegment[];
   skillNarrative?: LocalizedText;
+  skillBannerActionId?: SkillBannerActionId;
 } {
   const character = CHARACTER_BY_ID[context.rollerId];
   if (!character) {
@@ -471,6 +495,7 @@ function applySkillHookAfterDice(
     state: resolution.state,
     segments: resolution.segments ?? [],
     skillNarrative: resolution.skillNarrative,
+    skillBannerActionId: resolution.skillBannerActionId,
   };
 }
 
@@ -481,6 +506,7 @@ function applySkillHookBeforeTurn(
   state: GameState;
   segments: PlaybackSegment[];
   skillNarrative?: LocalizedText;
+  skillBannerActionId?: SkillBannerActionId;
 } {
   const character = CHARACTER_BY_ID[context.rollerId];
   if (!character) {
@@ -495,6 +521,7 @@ function applySkillHookBeforeTurn(
     state: resolution.state,
     segments: resolution.segments ?? [],
     skillNarrative: resolution.skillNarrative,
+    skillBannerActionId: resolution.skillBannerActionId,
   };
 }
 
@@ -508,6 +535,7 @@ function applySkillHookAtRoundStart(
 ): {
   state: GameState;
   skillNarrative?: LocalizedText;
+  skillBannerActionId?: SkillBannerActionId;
 } {
   const character = CHARACTER_BY_ID[context.actorId];
   if (!character) {
@@ -535,6 +563,7 @@ function applySkillHookAtRoundEnd(
 ): {
   state: GameState;
   skillNarrative?: LocalizedText;
+  skillBannerActionId?: SkillBannerActionId;
 } {
   const character = CHARACTER_BY_ID[context.actorId];
   if (!character) {
@@ -572,15 +601,13 @@ function applyRoundStartSkillHooks(
     if (!roundStartOutcome.skillNarrative) {
       continue;
     }
-    nextState = appendLog(nextState, {
-      kind: "skillTrigger",
-      message: roundStartOutcome.skillNarrative,
-    });
-    openingSegments.push({
-      kind: "skill",
+    nextState = recordSkillTrigger(
+      nextState,
+      openingSegments,
       actorId,
-      message: roundStartOutcome.skillNarrative,
-    });
+      roundStartOutcome.skillNarrative,
+      roundStartOutcome.skillBannerActionId
+    );
   }
   return { state: nextState, openingSegments };
 }
@@ -605,15 +632,13 @@ function applyRoundEndSkillHooks(
     if (!roundEndOutcome.skillNarrative) {
       continue;
     }
-    nextState = appendLog(nextState, {
-      kind: "skillTrigger",
-      message: roundEndOutcome.skillNarrative,
-    });
-    closingSegments.push({
-      kind: "skill",
+    nextState = recordSkillTrigger(
+      nextState,
+      closingSegments,
       actorId,
-      message: roundEndOutcome.skillNarrative,
-    });
+      roundEndOutcome.skillNarrative,
+      roundEndOutcome.skillBannerActionId
+    );
   }
   return { state: nextState, closingSegments };
 }
@@ -675,6 +700,7 @@ function applySkillHookAfterTurnRolls(
   state: GameState;
   planPatches?: Partial<Record<DangoId, Partial<TurnRollPlan>>>;
   skillNarrative?: LocalizedText;
+  skillBannerActionId?: SkillBannerActionId;
 } {
   const character = CHARACTER_BY_ID[context.actorId];
   if (!character) {
@@ -696,6 +722,7 @@ function applySkillHookAfterTurnRolls(
     state: resolution.state,
     planPatches: resolution.planPatches,
     skillNarrative: resolution.skillNarrative,
+    skillBannerActionId: resolution.skillBannerActionId,
   };
 }
 
@@ -706,6 +733,7 @@ function applySkillHookAfterMovement(
   state: GameState;
   segments: PlaybackSegment[];
   skillNarrative?: LocalizedText;
+  skillBannerActionId?: SkillBannerActionId;
 } {
   const character = CHARACTER_BY_ID[context.rollerId];
   if (!character) {
@@ -720,6 +748,7 @@ function applySkillHookAfterMovement(
     state: resolution.state,
     segments: resolution.segments ?? [],
     skillNarrative: resolution.skillNarrative,
+    skillBannerActionId: resolution.skillBannerActionId,
   };
 }
 
@@ -730,6 +759,7 @@ function applySkillHookAfterMovementResolution(
   state: GameState;
   segments: PlaybackSegment[];
   skillNarrative?: LocalizedText;
+  skillBannerActionId?: SkillBannerActionId;
 } {
   const character = CHARACTER_BY_ID[context.rollerId];
   if (!character) {
@@ -744,6 +774,7 @@ function applySkillHookAfterMovementResolution(
     state: resolution.state,
     segments: resolution.segments ?? [],
     skillNarrative: resolution.skillNarrative,
+    skillBannerActionId: resolution.skillBannerActionId,
   };
 }
 
@@ -754,6 +785,7 @@ function applySkillHookAfterTurn(
   state: GameState;
   segments: PlaybackSegment[];
   skillNarrative?: LocalizedText;
+  skillBannerActionId?: SkillBannerActionId;
 } {
   const character = CHARACTER_BY_ID[context.rollerId];
   if (!character) {
@@ -768,6 +800,7 @@ function applySkillHookAfterTurn(
     state: resolution.state,
     segments: resolution.segments ?? [],
     skillNarrative: resolution.skillNarrative,
+    skillBannerActionId: resolution.skillBannerActionId,
   };
 }
 
@@ -780,6 +813,7 @@ function resolveMovementDiceValue(
   diceValue: number;
   entityPatches?: Partial<Record<DangoId, Partial<EntityRuntimeState>>>;
   skillNarrative?: LocalizedText;
+  skillBannerActionId?: SkillBannerActionId;
 } {
   const character = CHARACTER_BY_ID[plan.actorId];
   const handler = character?.skillHooks.resolveMovement;
@@ -1309,15 +1343,13 @@ function applySkillHooksAfterAffectedMovement(
     if (!skillOutcome.skillNarrative) {
       continue;
     }
-    nextState = appendLog(nextState, {
-      kind: "skillTrigger",
-      message: skillOutcome.skillNarrative,
-    });
-    segments.push({
-      kind: "skill",
-      actorId: subjectId,
-      message: skillOutcome.skillNarrative,
-    });
+    nextState = recordSkillTrigger(
+      nextState,
+      segments,
+      subjectId,
+      skillOutcome.skillNarrative,
+      skillOutcome.skillBannerActionId
+    );
   }
   return { state: nextState, segments };
 }
@@ -1776,6 +1808,7 @@ function createTurnRollPlans(
       initialDiceValue,
       entityPatches: diceOutcome.entityPatches,
       skillNarrative: diceOutcome.skillNarrative,
+      skillBannerActionId: diceOutcome.skillBannerActionId,
     };
     allInitialRollsById[actorId] = initialDiceValue;
     allResolvedRollsById[actorId] = diceOutcome.diceValue;
@@ -1868,15 +1901,13 @@ function resolveTurnForEntity(
   nextState = beforeTurnOutcome.state;
   segments.push(...beforeTurnOutcome.segments);
   if (beforeTurnOutcome.skillNarrative) {
-    nextState = appendLog(nextState, {
-      kind: "skillTrigger",
-      message: beforeTurnOutcome.skillNarrative,
-    });
-    segments.push({
-      kind: "skill",
-      actorId: actingEntityId,
-      message: beforeTurnOutcome.skillNarrative,
-    });
+    nextState = recordSkillTrigger(
+      nextState,
+      segments,
+      actingEntityId,
+      beforeTurnOutcome.skillNarrative,
+      beforeTurnOutcome.skillBannerActionId
+    );
   }
   nextState = {
     ...nextState,
@@ -1897,19 +1928,23 @@ function resolveTurnForEntity(
     actorId: actingEntityId,
     value: plan.initialDiceValue,
   });
-  for (const narrative of [plan.skillNarrative, movementOutcome.skillNarrative]) {
-    if (!narrative) {
-      continue;
-    }
-    nextState = appendLog(nextState, {
-      kind: "skillTrigger",
-      message: narrative,
-    });
-    segments.push({
-      kind: "skill",
-      actorId: actingEntityId,
-      message: narrative,
-    });
+  if (plan.skillNarrative) {
+    nextState = recordSkillTrigger(
+      nextState,
+      segments,
+      actingEntityId,
+      plan.skillNarrative,
+      plan.skillBannerActionId
+    );
+  }
+  if (movementOutcome.skillNarrative) {
+    nextState = recordSkillTrigger(
+      nextState,
+      segments,
+      actingEntityId,
+      movementOutcome.skillNarrative,
+      movementOutcome.skillBannerActionId
+    );
   }
   const diceContext: SkillHookContext = {
     turnIndex: state.turnIndex,
@@ -1923,15 +1958,13 @@ function resolveTurnForEntity(
   nextState = afterDiceOutcome.state;
   segments.push(...afterDiceOutcome.segments);
   if (afterDiceOutcome.skillNarrative) {
-    nextState = appendLog(nextState, {
-      kind: "skillTrigger",
-      message: afterDiceOutcome.skillNarrative,
-    });
-    segments.push({
-      kind: "skill",
-      actorId: actingEntityId,
-      message: afterDiceOutcome.skillNarrative,
-    });
+    nextState = recordSkillTrigger(
+      nextState,
+      segments,
+      actingEntityId,
+      afterDiceOutcome.skillNarrative,
+      afterDiceOutcome.skillBannerActionId
+    );
   }
   const activeCellIndex = findCellIndexForEntity(nextState.cells, actingEntityId);
   if (activeCellIndex === null) {
@@ -1965,15 +1998,13 @@ function resolveTurnForEntity(
     skippedState = afterTurnOutcome.state;
     skippedSegments.push(...afterTurnOutcome.segments);
     if (afterTurnOutcome.skillNarrative) {
-      skippedState = appendLog(skippedState, {
-        kind: "skillTrigger",
-        message: afterTurnOutcome.skillNarrative,
-      });
-      skippedSegments.push({
-        kind: "skill",
-        actorId: actingEntityId,
-        message: afterTurnOutcome.skillNarrative,
-      });
+      skippedState = recordSkillTrigger(
+        skippedState,
+        skippedSegments,
+        actingEntityId,
+        afterTurnOutcome.skillNarrative,
+        afterTurnOutcome.skillBannerActionId
+      );
     }
     return finalizeResolvedTurn(
       finalizeActorTurnResolution(skippedState, actingEntityId, skippedSegments)
@@ -2037,15 +2068,13 @@ function resolveTurnForEntity(
   nextState = afterTurnOutcome.state;
   segments.push(...afterTurnOutcome.segments);
   if (afterTurnOutcome.skillNarrative) {
-    nextState = appendLog(nextState, {
-      kind: "skillTrigger",
-      message: afterTurnOutcome.skillNarrative,
-    });
-    segments.push({
-      kind: "skill",
-      actorId: actingEntityId,
-      message: afterTurnOutcome.skillNarrative,
-    });
+    nextState = recordSkillTrigger(
+      nextState,
+      segments,
+      actingEntityId,
+      afterTurnOutcome.skillNarrative,
+      afterTurnOutcome.skillBannerActionId
+    );
   }
   return finalizeResolvedTurn(
     finalizeActorTurnResolution(nextState, actingEntityId, segments)
@@ -2167,15 +2196,13 @@ function openNextTurnWithDicePlans(
       preMovementOutcome.planPatches
     );
     if (preMovementOutcome.skillNarrative) {
-      nextState = appendLog(nextState, {
-        kind: "skillTrigger",
-        message: preMovementOutcome.skillNarrative,
-      });
-      openingSegments.push({
-        kind: "skill",
+      nextState = recordSkillTrigger(
+        nextState,
+        openingSegments,
         actorId,
-        message: preMovementOutcome.skillNarrative,
-      });
+        preMovementOutcome.skillNarrative,
+        preMovementOutcome.skillBannerActionId
+      );
     }
   }
   const pendingTurn = buildPendingTurnResolution(

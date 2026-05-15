@@ -1,3 +1,4 @@
+import { skillTrigger } from "@/broadcast/skillTrigger";
 import { characterParam, text } from "@/i18n";
 import { rollInclusive } from "@/services/characters/dice";
 import { orderedBasicRacerIdsForLeaderboard } from "@/services/racerRanking";
@@ -33,9 +34,12 @@ function resolveCartethyiaComebackMovement(
   }
   return {
     diceValue: context.diceValue + 2,
-    skillNarrative: text("simulation.skills.cartethyiaComebackBoost", {
-      actor: characterParam("cartethyia"),
-    }),
+    ...skillTrigger(
+      "cartethyia.boost",
+      text("simulation.skills.cartethyiaComebackBoost", {
+        actor: characterParam("cartethyia"),
+      })
+    ),
   };
 }
 
@@ -65,9 +69,12 @@ function resolveCartethyiaComebackUnlock(
         },
       },
     },
-    skillNarrative: text("simulation.skills.cartethyiaComebackAwaken", {
-      actor: characterParam("cartethyia"),
-    }),
+    ...skillTrigger(
+      "cartethyia.awaken",
+      text("simulation.skills.cartethyiaComebackAwaken", {
+        actor: characterParam("cartethyia"),
+      })
+    ),
   };
 }
 

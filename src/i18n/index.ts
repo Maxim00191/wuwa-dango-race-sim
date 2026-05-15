@@ -4,6 +4,7 @@ import type {
   AppLanguage,
   CharacterParam,
   DirectionParam,
+  LexiconParam,
   LocalizedParam,
   LocalizedText,
   TranslatableContent,
@@ -87,6 +88,9 @@ function resolveParam(
   if ((param as CharacterParam).type === "character") {
     const characterId = (param as CharacterParam).id;
     return translate(language, `characters.${characterId}`);
+  }
+  if ((param as LexiconParam).type === "lexicon") {
+    return translate(language, (param as LexiconParam).key);
   }
   const direction = (param as DirectionParam).value;
   return translate(language, `common.directions.${direction}`);

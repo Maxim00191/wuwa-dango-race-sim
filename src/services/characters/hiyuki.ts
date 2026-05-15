@@ -1,3 +1,4 @@
+import { skillTrigger } from "@/broadcast/skillTrigger";
 import { ABBY_ID } from "@/constants/ids";
 import { characterParam, text } from "@/i18n";
 import { rollInclusive } from "@/services/characters/dice";
@@ -30,9 +31,12 @@ function resolveHiyukiBondedMovement(
   }
   return {
     diceValue: context.diceValue + 1,
-    skillNarrative: text("simulation.skills.hiyukiBondedAdvance", {
-      actor: characterParam("hiyuki"),
-    }),
+    ...skillTrigger(
+      "hiyuki.bondedAdvance",
+      text("simulation.skills.hiyukiBondedAdvance", {
+        actor: characterParam("hiyuki"),
+      })
+    ),
   };
 }
 
@@ -64,10 +68,13 @@ function resolveHiyukiMeetingAbby(
         },
       },
     },
-    skillNarrative: text("simulation.skills.hiyukiMetAbby", {
-      actor: characterParam("hiyuki"),
-      boss: characterParam(ABBY_ID),
-    }),
+    ...skillTrigger(
+      "hiyuki.metAbby",
+      text("simulation.skills.hiyukiMetAbby", {
+        actor: characterParam("hiyuki"),
+        boss: characterParam(ABBY_ID),
+      })
+    ),
   };
 }
 

@@ -1,3 +1,4 @@
+import { skillTrigger } from "@/broadcast/skillTrigger";
 import { characterParam, text } from "@/i18n";
 import { rollInclusive } from "@/services/characters/dice";
 import type {
@@ -28,9 +29,12 @@ function resolvePhoebeLuckyMovement(
   }
   return {
     diceValue: context.diceValue + 1,
-    skillNarrative: text("simulation.skills.phoebeLucky", {
-      actor: characterParam("phoebe"),
-    }),
+    ...skillTrigger(
+      "phoebe.lucky",
+      text("simulation.skills.phoebeLucky", {
+        actor: characterParam("phoebe"),
+      })
+    ),
   };
 }
 

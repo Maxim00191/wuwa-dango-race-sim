@@ -508,6 +508,28 @@ export const zhCnDictionary: TranslationDictionary = {
       prelimHeader: "预赛 \\ 决赛",
     },
   },
+  skills: {
+    names: {
+      luukHerssen: "来颗糖吧",
+      sigrika: "日灵，帮帮忙",
+      denia: "好事成「双」",
+      hiyuki: "引路白鸟",
+      cartethyia: "翻盘桥段",
+      phoebe: "岁主庇佑",
+      mornye: "精密演算",
+      shorekeeper: "收束的未来",
+      chisa: "视阈解明",
+      carlotta: "利润加倍",
+      lynae: "炫彩时刻",
+      aemeath: "电子幽灵登场~",
+      augusta: "总督权柄",
+      iuno: "锚定命途",
+      phrolova: "优雅阴谋",
+      changli: "谋而后定",
+      jinhsi: "令尹之名",
+      calcharo: "如影随形",
+    },
+  },
   simulation: {
     labels: {
       normalRace: "二周年冲刺",
@@ -589,7 +611,62 @@ export const zhCnDictionary: TranslationDictionary = {
       detail: "看看这波能跑多远...",
     },
     skill: {
-      detail: "共鸣解放高光时刻",
+      headline: "{actor}：{skill}！",
+      detail: "招牌技能已上线。",
+      details: {
+        activate: "被动技能正在影响本段赛程。",
+        carlotta: {
+          double: "利润加倍生效，骰点翻倍。",
+        },
+        chisa: {
+          underdog: "本轮最小点数，额外前进 2 格。",
+        },
+        lynae: {
+          double: "炫彩时刻！点数按双倍结算。",
+          stuck: "发动失败！本回合无法移动。",
+        },
+        aemeath: {
+          leap: "电子幽灵登场，传送至前方最近团子。",
+        },
+        sigrika: {
+          markSingle: "日灵，帮帮忙！标记对手，本回合少前进 1 格。",
+          markDouble:
+            "日灵，帮帮忙！标记两名对手，本回合各少前进 1 格。",
+        },
+        denia: {
+          repeat: "好事成「双」，相同点数额外前进 2 格。",
+        },
+        hiyuki: {
+          metAbby: "引路白鸟与布大王相遇，此后每回合额外前进 1 格。",
+          bondedAdvance: "引路白鸟本回合额外前进 1 格。",
+        },
+        phoebe: {
+          lucky: "岁主庇佑，额外前进 1 格。",
+        },
+        cartethyia: {
+          awaken: "翻盘桥段触发，进入翻盘状态。",
+          boost: "翻盘桥段爆发，额外前进 2 格。",
+        },
+        jinhsi: {
+          stackAscend: "令尹之名发动，跃至叠层最上方。",
+        },
+        changli: {
+          actLastNextRound: "谋而后定，下回合压轴行动。",
+        },
+        calcharo: {
+          lastPlaceBoost: "如影随形，从末位额外前进 3 格。",
+        },
+        augusta: {
+          governorAuthority:
+            "总督权柄发动，本回合不行动，下回合压轴出手。",
+        },
+        iuno: {
+          anchoredDestiny: "锚定命途，将前后名次团子牵引至同一格。",
+        },
+        phrolova: {
+          bottomBoost: "优雅阴谋，于叠层底部额外前进 3 格。",
+        },
+      },
     },
     effect: {
       propulsionDevice: {

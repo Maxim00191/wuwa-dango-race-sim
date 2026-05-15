@@ -536,6 +536,28 @@ export const enDictionary: TranslationDictionary = {
       prelimHeader: "Prelim \\ Final",
     },
   },
+  skills: {
+    names: {
+      luukHerssen: "Have a Candy",
+      sigrika: "Solar Spirit, Lend Me a Hand",
+      denia: "Good Things Come in Pairs",
+      hiyuki: "Guiding White Bird",
+      cartethyia: "Comeback Scene",
+      phoebe: "Blessings of the Sentinel",
+      mornye: "Precision Calculation",
+      shorekeeper: "Convergent Future",
+      chisa: "Visual Threshold Unveiled",
+      carlotta: "Profit Doubled",
+      lynae: "Dazzling Moment",
+      aemeath: "Digital Ghost, on the scene~",
+      augusta: "The Ephor's Authority",
+      iuno: "Anchored Destiny",
+      phrolova: "Elegant Intrigue",
+      changli: "Plan Before Acting",
+      jinhsi: "The Name of the Lingyin",
+      calcharo: "Misery follows",
+    },
+  },
   simulation: {
     labels: {
       normalRace: "Anniversary Sprint",
@@ -627,7 +649,67 @@ export const enDictionary: TranslationDictionary = {
       detail: "Let's see how far this can take them...",
     },
     skill: {
-      detail: "Resonance Ultimate Activated",
+      headline: "{actor}: {skill}!",
+      detail: "Signature skill online.",
+      details: {
+        activate: "Passive skill shaping this exchange.",
+        carlotta: {
+          double: "Profit Doubled hits—the dice doubles up.",
+        },
+        chisa: {
+          underdog: "Lowest roll this round earns two bonus steps.",
+        },
+        lynae: {
+          double: "Dazzling Moment! doubles the roll.",
+          stuck: "Dazzling Moment! fizzles—no movement this turn.",
+        },
+        aemeath: {
+          leap: "Digital Ghost warps to the nearest rival ahead.",
+        },
+        sigrika: {
+          markSingle: "Solar Spirit marks a rival—movement trimmed by one.",
+          markDouble:
+            "Solar Spirit marks two rivals—movement trimmed by one each.",
+        },
+        denia: {
+          repeat: "Matching roll—two bonus steps locked in.",
+        },
+        hiyuki: {
+          metAbby:
+            "Guiding White Bird bonds with Boss Abby for a lasting pace boost.",
+          bondedAdvance: "Guiding White Bird adds one step this turn.",
+        },
+        phoebe: {
+          lucky: "Blessings of the Sentinel add one step.",
+        },
+        cartethyia: {
+          awaken: "Comeback Scene arms after hitting last place.",
+          boost: "Comeback Scene fires for two bonus steps.",
+        },
+        jinhsi: {
+          stackAscend: "The Name of the Lingyin surges to the stack top.",
+        },
+        changli: {
+          actLastNextRound:
+            "Plan Before Acting—finale queued for next round.",
+        },
+        calcharo: {
+          lastPlaceBoost:
+            "Misery follows from the back—three bonus steps.",
+        },
+        augusta: {
+          governorAuthority:
+            "The Ephor's Authority—turn skipped, finale lined up next round.",
+        },
+        iuno: {
+          anchoredDestiny:
+            "Anchored Destiny rallies rivals onto the same tile.",
+        },
+        phrolova: {
+          bottomBoost:
+            "Elegant Intrigue from the stack base—three bonus steps.",
+        },
+      },
     },
     effect: {
       propulsionDevice: {

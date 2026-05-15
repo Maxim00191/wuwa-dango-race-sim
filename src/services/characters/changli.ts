@@ -1,3 +1,4 @@
+import { skillTrigger } from "@/broadcast/skillTrigger";
 import { characterParam, text } from "@/i18n";
 import { rollStandardBasicDice } from "@/services/characters/basic";
 import { findCellIndexForEntity } from "@/services/stateCells";
@@ -51,9 +52,12 @@ function resolveChangliActLastNextRound(
         },
       },
     },
-    skillNarrative: text("simulation.skills.changliActLastNextRound", {
-      actor: characterParam("changli"),
-    }),
+    ...skillTrigger(
+      "changli.actLastNextRound",
+      text("simulation.skills.changliActLastNextRound", {
+        actor: characterParam("changli"),
+      })
+    ),
   };
 }
 

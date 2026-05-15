@@ -65,7 +65,10 @@ function clonePlaybackSegment(segment: PlaybackSegment): PlaybackSegment {
     return { ...segment };
   }
   if (segment.kind === "skill") {
-    return { ...segment, message: { ...segment.message } };
+    return {
+      ...segment,
+      message: segment.message ? { ...segment.message } : undefined,
+    };
   }
   if (segment.kind === "hops") {
     return {

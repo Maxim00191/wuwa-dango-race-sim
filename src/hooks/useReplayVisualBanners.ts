@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { skillBannerFromPlaybackSegment } from "@/broadcast/formatSkillBanner";
 import type { BroadcastBannerPayload } from "@/components/BroadcastBanner";
 import { ABBY_ID } from "@/constants/ids";
 import { characterParam, text } from "@/i18n";
@@ -110,11 +111,10 @@ function queuedBannerFromSegment(
     };
   }
   if (segment.kind === "skill") {
+    const skillBanner = skillBannerFromPlaybackSegment(segment);
     return {
       payload: {
-        variant: "skill",
-        headline: segment.message,
-        detail: text("banner.skill.detail"),
+        ...skillBanner,
         accentDangoId: segment.actorId,
       },
       holdMs: SKILL_BANNER_READ_MS,

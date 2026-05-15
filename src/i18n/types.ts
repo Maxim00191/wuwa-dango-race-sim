@@ -12,7 +12,17 @@ export type DirectionParam = {
   value: LocalizedDirection;
 };
 
-export type LocalizedParam = string | number | CharacterParam | DirectionParam;
+export type LexiconParam = {
+  type: "lexicon";
+  key: string;
+};
+
+export type LocalizedParam =
+  | string
+  | number
+  | CharacterParam
+  | DirectionParam
+  | LexiconParam;
 
 export type TranslationParams = Record<string, LocalizedParam>;
 
@@ -47,6 +57,13 @@ export function directionParam(
   return {
     type: "direction",
     value,
+  };
+}
+
+export function lexiconParam(key: string): LexiconParam {
+  return {
+    type: "lexicon",
+    key,
   };
 }
 

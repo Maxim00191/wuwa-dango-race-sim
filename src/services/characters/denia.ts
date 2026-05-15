@@ -1,3 +1,4 @@
+import { skillTrigger } from "@/broadcast/skillTrigger";
 import { characterParam, text } from "@/i18n";
 import { rollInclusive } from "@/services/characters/dice";
 import type {
@@ -22,11 +23,14 @@ function rollDeniaDice(
         skillState: { previousRoll: initialDiceValue },
       },
     },
-    skillNarrative: matchedPreviousRoll
-      ? text("simulation.skills.deniaRepeat", {
-          actor: characterParam("denia"),
-        })
-      : undefined,
+    ...(matchedPreviousRoll
+      ? skillTrigger(
+          "denia.repeat",
+          text("simulation.skills.deniaRepeat", {
+            actor: characterParam("denia"),
+          })
+        )
+      : {}),
   };
 }
 

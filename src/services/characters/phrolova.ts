@@ -1,3 +1,4 @@
+import { skillTrigger } from "@/broadcast/skillTrigger";
 import { characterParam, text } from "@/i18n";
 import { rollStandardBasicDice } from "@/services/characters/basic";
 import type {
@@ -35,11 +36,14 @@ function resolvePhrolovaElegantConspiracyAtRoundStart(
         },
       },
     },
-    skillNarrative: bottomBoostReady
-      ? text("simulation.skills.phrolovaBottomBoost", {
-          actor: characterParam("phrolova"),
-        })
-      : undefined,
+    ...(bottomBoostReady
+      ? skillTrigger(
+          "phrolova.bottomBoost",
+          text("simulation.skills.phrolovaBottomBoost", {
+            actor: characterParam("phrolova"),
+          })
+        )
+      : {}),
   };
 }
 

@@ -1,3 +1,4 @@
+import { skillTrigger } from "@/broadcast/skillTrigger";
 import { characterParam, text } from "@/i18n";
 import { rollStandardBasicDice } from "@/services/characters/basic";
 import { teleportEntitySliceCellsOnly } from "@/services/stateCells";
@@ -49,9 +50,12 @@ function resolveJinhsiStackAscend(
         cellIndex: context.cellIndex,
       },
     ],
-    skillNarrative: text("simulation.skills.jinhsiStackAscend", {
-      actor: characterParam("jinhsi"),
-    }),
+    ...skillTrigger(
+      "jinhsi.stackAscend",
+      text("simulation.skills.jinhsiStackAscend", {
+        actor: characterParam("jinhsi"),
+      })
+    ),
   };
 }
 

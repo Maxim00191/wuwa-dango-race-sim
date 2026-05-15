@@ -1,3 +1,4 @@
+import { skillTrigger } from "@/broadcast/skillTrigger";
 import { rollInclusive } from "@/services/characters/dice";
 import { characterParam, text } from "@/i18n";
 import type {
@@ -32,9 +33,12 @@ function resolveChisaUnderdogMovement(
   }
   return {
     diceValue: context.diceValue + 2,
-    skillNarrative: text("simulation.skills.chisaUnderdog", {
-      actor: characterParam("chisa"),
-    }),
+    ...skillTrigger(
+      "chisa.underdog",
+      text("simulation.skills.chisaUnderdog", {
+        actor: characterParam("chisa"),
+      })
+    ),
   };
 }
 

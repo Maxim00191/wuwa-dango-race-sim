@@ -1,3 +1,4 @@
+import { skillTrigger } from "@/broadcast/skillTrigger";
 import { rollInclusive } from "@/services/characters/dice";
 import { characterParam, text } from "@/i18n";
 import type {
@@ -22,19 +23,25 @@ function rollLynaeUnstableDice(
     return {
       diceValue: initialDiceValue * 2,
       initialDiceValue,
-      skillNarrative: text("simulation.skills.lynaeDouble", {
-        actor: characterParam("lynae"),
-        value: initialDiceValue * 2,
-      }),
+      ...skillTrigger(
+        "lynae.double",
+        text("simulation.skills.lynaeDouble", {
+          actor: characterParam("lynae"),
+          value: initialDiceValue * 2,
+        })
+      ),
     };
   }
   if (unstableRoll < LYNAE_DOUBLE_CHANCE + LYNAE_STUCK_CHANCE) {
     return {
       diceValue: 0,
       initialDiceValue,
-      skillNarrative: text("simulation.skills.lynaeStuck", {
-        actor: characterParam("lynae"),
-      }),
+      ...skillTrigger(
+        "lynae.stuck",
+        text("simulation.skills.lynaeStuck", {
+          actor: characterParam("lynae"),
+        })
+      ),
     };
   }
   return { diceValue: initialDiceValue, initialDiceValue };

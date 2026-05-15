@@ -24,6 +24,7 @@ import {
   reduceGameState,
 } from "@/services/gameEngine";
 import { cloneCellMap, cloneEntityMap } from "@/services/stateCells";
+import { skillBannerFromPlaybackSegment } from "@/broadcast/formatSkillBanner";
 import type { BroadcastBannerPayload } from "@/components/BroadcastBanner";
 import type {
   DangoId,
@@ -451,9 +452,7 @@ export function useGame() {
         if (segment.kind === "skill") {
           await shineBanner(
             {
-              variant: "skill",
-              headline: segment.message,
-              detail: text("banner.skill.detail"),
+              ...skillBannerFromPlaybackSegment(segment),
               accentDangoId: segment.actorId,
             },
             SKILL_BANNER_READ_MS

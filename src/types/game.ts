@@ -53,6 +53,7 @@ export type SkillHookResolution = {
   state: GameState;
   segments?: PlaybackSegment[];
   skillNarrative?: LocalizedText;
+  skillBannerActionId?: import("@/broadcast/skillBannerLexicon").SkillBannerActionId;
 };
 
 export type SkillHookHandler = (
@@ -91,6 +92,7 @@ export type TurnRollPreparationResolution = {
   state: GameState;
   planPatches?: Partial<Record<DangoId, Partial<TurnRollPlan>>>;
   skillNarrative?: LocalizedText;
+  skillBannerActionId?: import("@/broadcast/skillBannerLexicon").SkillBannerActionId;
 };
 
 export type TurnRollPreparationHookHandler = (
@@ -108,6 +110,7 @@ export type RoundStartHookContext = {
 export type RoundStartHookResolution = {
   state: GameState;
   skillNarrative?: LocalizedText;
+  skillBannerActionId?: import("@/broadcast/skillBannerLexicon").SkillBannerActionId;
 };
 
 export type RoundStartHookHandler = (
@@ -125,6 +128,7 @@ export type RoundEndHookContext = {
 export type RoundEndHookResolution = {
   state: GameState;
   skillNarrative?: LocalizedText;
+  skillBannerActionId?: import("@/broadcast/skillBannerLexicon").SkillBannerActionId;
 };
 
 export type RoundEndHookHandler = (
@@ -146,6 +150,7 @@ export type MovementEvaluationResult = {
   diceValue: number;
   entityPatches?: Partial<Record<DangoId, Partial<EntityRuntimeState>>>;
   skillNarrative?: LocalizedText;
+  skillBannerActionId?: import("@/broadcast/skillBannerLexicon").SkillBannerActionId;
 };
 
 export type MovementEvaluationHookHandler = (
@@ -170,6 +175,7 @@ export type MovementStepHookResult = {
   state: GameState;
   segments?: PlaybackSegment[];
   skillNarrative?: LocalizedText;
+  skillBannerActionId?: import("@/broadcast/skillBannerLexicon").SkillBannerActionId;
 };
 
 export type MovementStepHookHandler = (
@@ -308,7 +314,8 @@ export type PlaybackRollSegment = {
 export type PlaybackSkillSegment = {
   kind: "skill";
   actorId: DangoId;
-  message: LocalizedText;
+  skillBannerActionId?: import("@/broadcast/skillBannerLexicon").SkillBannerActionId;
+  message?: LocalizedText;
 };
 
 export type PlaybackHopsSegment = {
@@ -410,6 +417,7 @@ export type TurnRollPlan = {
   movementModifiers?: MovementModifier[];
   entityPatches?: Partial<Record<DangoId, Partial<EntityRuntimeState>>>;
   skillNarrative?: LocalizedText;
+  skillBannerActionId?: import("@/broadcast/skillBannerLexicon").SkillBannerActionId;
 };
 
 export type PendingTurnResolution = {
@@ -446,6 +454,7 @@ export type DiceRollResult = {
   initialDiceValue?: number;
   entityPatches?: Partial<Record<DangoId, Partial<EntityRuntimeState>>>;
   skillNarrative?: LocalizedText;
+  skillBannerActionId?: import("@/broadcast/skillBannerLexicon").SkillBannerActionId;
 };
 
 type CharacterDefinitionBase = {

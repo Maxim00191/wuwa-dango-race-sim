@@ -1,3 +1,4 @@
+import { skillTrigger } from "@/broadcast/skillTrigger";
 import { characterParam, text } from "@/i18n";
 import { rollStandardBasicDice } from "@/services/characters/basic";
 import type {
@@ -55,9 +56,12 @@ function resolveAugustaGovernorAuthority(
         },
       },
     },
-    skillNarrative: text("simulation.skills.augustaGovernorAuthority", {
-      actor: characterParam(context.actorId),
-    }),
+    ...skillTrigger(
+      "augusta.governorAuthority",
+      text("simulation.skills.augustaGovernorAuthority", {
+        actor: characterParam(context.actorId),
+      })
+    ),
   };
 }
 
