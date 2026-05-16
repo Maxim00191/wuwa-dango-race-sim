@@ -2,7 +2,7 @@ import { MAP_IDS, MAP_PRESETS, type MapId } from "@/constants/maps";
 import { useTranslation } from "@/i18n/useTranslation";
 
 type MapSelectorProps = {
-  selectedMapId: MapId;
+  selectedMapId: MapId | null;
   onSelectMapId: (mapId: MapId) => void;
   disabled?: boolean;
 };

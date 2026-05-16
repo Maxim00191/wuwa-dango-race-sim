@@ -42,6 +42,7 @@ type ReplayGameBridge = {
 export type UseReplayTimelineOptions = {
   game: ReplayGameBridge;
   onReplayBoardLoaded?: (board: BoardEffectAssignmentJson[]) => void;
+  onReplayCleared?: () => void;
 };
 
 function lastIndexSameTurn(
@@ -144,7 +145,8 @@ export function useReplayTimeline(options: UseReplayTimelineOptions) {
     setCursorStep(0);
     gameRef.current.setAutoPlayEnabled(false);
     gameRef.current.reset();
-  }, [clearReplayVisualBanners, resetLiveCommitted]);
+    options.onReplayCleared?.();
+  }, [clearReplayVisualBanners, resetLiveCommitted, options]);
 
   const flushPlaybackForNewSession = useCallback(() => {
     clearReplayVisualBanners();
@@ -156,7 +158,8 @@ export function useReplayTimeline(options: UseReplayTimelineOptions) {
     setCursorStep(0);
     setSeekTurnDraft("");
     gameRef.current.setAutoPlayEnabled(false);
-  }, [clearReplayVisualBanners, resetLiveCommitted]);
+    options.onReplayCleared?.();
+  }, [clearReplayVisualBanners, resetLiveCommitted, options]);
 
   const scrubToStep = useCallback(
     (

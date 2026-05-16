@@ -7,16 +7,20 @@ import {
 } from "@/constants/maps";
 import { writePersistedMapId } from "@/services/savedMapSelection";
 import { preferredMapIdForWorkspaceView } from "@/services/workspaceMapPreference";
+import { boardEffectAssignmentsToMap } from "@/services/matchReplay";
 import type { BoardEffectAssignmentJson } from "@/types/replay";
 
 export function useMapSelection(workspaceView: WorkspaceView) {
-  const [selectedMapId, setSelectedMapIdState] = useState<MapId>(() =>
+  const [liveMapId, setLiveMapId] = useState<MapId>(() =>
     preferredMapIdForWorkspaceView(workspaceView)
   );
 
+  const [replayOverride, setReplayOverride] =
+    useState<BoardEffectAssignmentJson[] | null>(null);
+
   useEffect(() => {
     const preferredMapId = preferredMapIdForWorkspaceView(workspaceView);
-    setSelectedMapIdState((current) => {
+    setLiveMapId((current) => {
       if (current === preferredMapId) {
         return current;
       }
@@ -25,30 +29,41 @@ export function useMapSelection(workspaceView: WorkspaceView) {
     });
   }, [workspaceView]);
 
-  const boardEffects = useMemo(
-    () => boardLookupForMap(selectedMapId),
-    [selectedMapId]
-  );
+  const activeMapId = useMemo((): MapId | null => {
+    if (replayOverride) {
+      return resolveMapIdFromBoardAssignments(replayOverride);
+    }
+    return liveMapId;
+  }, [liveMapId, replayOverride]);
+
+  const boardEffects = useMemo(() => {
+    if (replayOverride) {
+      return boardEffectAssignmentsToMap(replayOverride);
+    }
+    return boardLookupForMap(liveMapId);
+  }, [liveMapId, replayOverride]);
 
   const setSelectedMapId = useCallback((mapId: MapId) => {
-    setSelectedMapIdState(mapId);
+    setLiveMapId(mapId);
     writePersistedMapId(mapId);
   }, []);
 
   const syncFromBoardAssignments = useCallback(
     (rows: BoardEffectAssignmentJson[]) => {
-      const resolved = resolveMapIdFromBoardAssignments(rows);
-      if (resolved) {
-        setSelectedMapId(resolved);
-      }
+      setReplayOverride(rows);
     },
-    [setSelectedMapId]
+    []
   );
 
+  const clearReplayOverride = useCallback(() => {
+    setReplayOverride(null);
+  }, []);
+
   return {
-    selectedMapId,
+    selectedMapId: activeMapId,
     setSelectedMapId,
     boardEffects,
     syncFromBoardAssignments,
+    clearReplayOverride,
   };
 }

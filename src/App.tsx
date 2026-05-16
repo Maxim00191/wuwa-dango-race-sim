@@ -55,6 +55,7 @@ export default function App() {
   const normalGame = useGame(gameBoardOptions);
   const normalReplay = useReplayTimeline({
     onReplayBoardLoaded: mapSelection.syncFromBoardAssignments,
+    onReplayCleared: mapSelection.clearReplayOverride,
     game: {
       state: normalGame.state,
       reset: normalGame.reset,
@@ -77,6 +78,7 @@ export default function App() {
   );
   const knockoutReplay = useReplayTimeline({
     onReplayBoardLoaded: mapSelection.syncFromBoardAssignments,
+    onReplayCleared: mapSelection.clearReplayOverride,
     game: {
       state: knockout.race.state,
       reset: knockout.clearRace,
@@ -92,6 +94,7 @@ export default function App() {
   });
   const tournamentReplay = useReplayTimeline({
     onReplayBoardLoaded: mapSelection.syncFromBoardAssignments,
+    onReplayCleared: mapSelection.clearReplayOverride,
     game: {
       state: tournament.race.state,
       reset: tournament.clearRace,
