@@ -170,9 +170,9 @@ export const enDictionary: TranslationDictionary = {
         eyebrow: "Round 2",
         title: "Grand Final Lineup",
         description:
-          "Proceed with the preliminary seedings, or drag the badges to create a custom showdown.",
+          "Proceed with the preliminary seedings, or drag the dangos to create a custom showdown.",
         helper:
-          "Drag a badge to rearrange the order. You can also use the up and down arrow keys while a badge is selected.",
+          "Drag a dango to rearrange the order. You can also use the up and down arrow keys while a dango is selected.",
         ariaLabel: "Final Standings",
         placementAria: "Placement {placement}, {name}",
         start: "Launch Final",
@@ -254,7 +254,7 @@ export const enDictionary: TranslationDictionary = {
     heading: "Starting Roster",
     title: "Invite {count} dangos to the track",
     description:
-      "Click a badge to invite them. Once the race heats up, Boss Abby will crash the party.",
+      "Click a dango to invite them. Once the race heats up, Boss Abby will crash the party.",
     statusReady: "{selected} / {total} ready to go",
     statusOpen: "{selected} / {total} ready · {remaining} {spots} left",
     spotsOne: "slot",

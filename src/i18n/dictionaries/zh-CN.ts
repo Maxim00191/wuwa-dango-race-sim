@@ -165,8 +165,8 @@ export const zhCnDictionary: TranslationDictionary = {
         eyebrow: "第二轮",
         title: "决赛阵容",
         description:
-          "保留预赛结果直接开启巅峰对决，或者拖拽名牌来一场自定义赛局。",
-        helper: "拖拽名牌可以调整顺位；选中名牌后，使用上下方向键也能进行微调。",
+          "保留预赛结果直接开启巅峰对决，或者拖拽团子来一场自定义赛局。",
+        helper: "拖拽团子可以调整顺位；选中团子后，使用上下方向键也能进行微调。",
         ariaLabel: "决赛顺位列表",
         placementAria: "第 {placement} 位，{name}",
         start: "开启总决赛",
@@ -244,7 +244,7 @@ export const zhCnDictionary: TranslationDictionary = {
   lineup: {
     heading: "参赛阵容",
     title: "邀请 {count} 只团子加入二周年赛道",
-    description: "点击名牌即可邀请团子入场。比赛正式打响后，布大王将以首领身份强势介入。",
+    description: "点击团子即可邀请团子入场。比赛正式打响后，布大王将以首领身份强势介入。",
     statusReady: "{selected} / {total} 已就位",
     statusOpen: "{selected} / {total} 已就位 · 还有 {remaining} 个空位",
     spotsOne: "名额",
