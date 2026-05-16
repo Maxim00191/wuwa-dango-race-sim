@@ -2,7 +2,6 @@ import { ABBY_ID } from "@/constants/ids";
 import { KnockoutSetupPanel } from "@/components/KnockoutSetupPanel";
 import {
   useKnockoutWorkspace,
-  useMonteCarloWorkspace,
   useSharedSimulation,
 } from "@/app/contexts/workspaceContexts";
 import { RaceStartButton } from "@/app/components/RaceStartButton";
@@ -12,7 +11,6 @@ import { useTranslation } from "@/i18n/useTranslation";
 export function KnockoutWorkspace() {
   const { t } = useTranslation();
   const shared = useSharedSimulation();
-  const monteCarlo = useMonteCarloWorkspace();
   const knockout = useKnockoutWorkspace();
 
   return (
@@ -34,18 +32,6 @@ export function KnockoutWorkspace() {
         selectedScenarioId: "knockoutTournament",
         onSelectedScenarioChange: () => {},
         onRunBatch: knockout.requestMonteCarloBatch,
-      }}
-      monteCarloCoordinator={{
-        progress: monteCarlo.monteCarlo.progress,
-        isStopping: monteCarlo.monteCarlo.isStopping,
-        extremePerformanceEnabled: monteCarlo.extremePerformanceEnabled,
-        onExtremePerformanceEnabledChange: monteCarlo.setExtremePerformanceEnabled,
-        onAbortRun: monteCarlo.abortRun,
-      }}
-      sharedMap={{
-        selectedMapId: shared.mapSelection.selectedMapId,
-        onSelectMapId: shared.mapSelection.setSelectedMapId,
-        boardEffects: shared.mapSelection.boardEffects,
       }}
       race={{
         state: knockout.tournament.race.state,

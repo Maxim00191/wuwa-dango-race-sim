@@ -4,7 +4,8 @@ import type { WorkspaceView } from "@/config/workspaceViews";
 import type { HeadlessSimulationScenario } from "@/services/gameEngine";
 import { isValidBasicSelection } from "@/services/gameEngine";
 import { isValidKnockoutGroupLineups } from "@/services/savedKnockoutSetup";
-import { runMonteCarloBatch } from "@/services/monteCarloRunner";
+import { runMonteCarloBatch } from "@/services/monteCarlo/runner";
+import { progressStore } from "@/services/monteCarlo/progressStore";
 import type { DangoId } from "@/types/game";
 import type {
   MonteCarloAggregateSnapshot,
@@ -71,8 +72,7 @@ export function useMonteCarloSimulation({
   boardEffectByCellIndex,
   onComplete,
 }: UseMonteCarloSimulationOptions) {
-  const [progress, setProgress] = useState<MonteCarloProgressState>(null);
-  const [isStopping, setIsStopping] = useState(false);
+  const [localIsStopping, setLocalIsStopping] = useState(false);
   const runIdRef = useRef(0);
   const abortControllerRef = useRef<AbortController | null>(null);
   const lastProgressAtRef = useRef(0);
@@ -115,7 +115,7 @@ export function useMonteCarloSimulation({
         force ||
         isComplete ||
         (extremePerformanceRunRef.current && chunkJump);
-      if (!bypassThrottle && now - lastProgressAtRef.current < 16) {
+      if (!bypassThrottle && now - lastProgressAtRef.current < 32) {
         progressFrameRef.current = requestAnimationFrame(() => flushProgress());
         return;
       }
@@ -174,10 +174,11 @@ export function useMonteCarloSimulation({
         etaLastSampleTimeRef.current = 0;
       }
 
-      setProgress({
+      progressStore.setState({
         completedGames: completed,
         totalGames: total,
         timeRemainingLabel,
+        isStopping: abortControllerRef.current?.signal.aborted ?? false,
       });
     },
     []
@@ -228,11 +229,12 @@ export function useMonteCarloSimulation({
       const runId = (runIdRef.current += 1);
       const abortController = new AbortController();
       abortControllerRef.current = abortController;
-      setIsStopping(false);
-      setProgress({
+      setLocalIsStopping(false);
+      progressStore.setState({
         completedGames: 0,
         totalGames,
         timeRemainingLabel: null,
+        isStopping: false,
       });
       pendingProgressRef.current = null;
       lastProgressAtRef.current = 0;
@@ -270,8 +272,8 @@ export function useMonteCarloSimulation({
         progressFrameRef.current = null;
       }
       pendingProgressRef.current = null;
-      setProgress(null);
-      setIsStopping(false);
+      progressStore.setState(null);
+      setLocalIsStopping(false);
       if (result.snapshot) {
         onComplete(result.snapshot, returnView);
       }
@@ -284,14 +286,18 @@ export function useMonteCarloSimulation({
     if (!controller || controller.signal.aborted) {
       return;
     }
-    setIsStopping(true);
+    setLocalIsStopping(true);
     controller.abort();
+    const current = progressStore.getState();
+    if (current) {
+      progressStore.setState({ ...current, isStopping: true });
+    }
   }, []);
 
   return {
-    progress,
-    isStopping,
+    isStopping: localIsStopping,
     runScenario,
     abortRun,
   };
 }
+

@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from "react";
+import { useMemo, type ReactNode, memo } from "react";
 import type { BroadcastBannerPayload } from "@/components/BroadcastBanner";
 import { GameShellBoardPanel } from "@/components/gameShell/GameShellBoardPanel";
 import { GameShellPlaybackCluster } from "@/components/gameShell/GameShellPlaybackCluster";
@@ -44,7 +44,7 @@ type GameShellProps = {
   spectate?: GameShellSpectate;
 };
 
-export function GameShell({
+export const GameShell = memo(function GameShell({
   state,
   rankingState,
   broadcastPayload,
@@ -178,4 +178,5 @@ export function GameShell({
       </div>
     </div>
   );
-}
+});
+

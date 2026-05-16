@@ -1,6 +1,5 @@
 import { DangoPicker } from "@/components/DangoPicker";
 import {
-  useMonteCarloWorkspace,
   useNormalWorkspace,
   useSharedSimulation,
 } from "@/app/contexts/workspaceContexts";
@@ -11,7 +10,6 @@ import { useTranslation } from "@/i18n/useTranslation";
 export function NormalWorkspace() {
   const { t } = useTranslation();
   const shared = useSharedSimulation();
-  const monteCarlo = useMonteCarloWorkspace();
   const normal = useNormalWorkspace();
 
   return (
@@ -32,18 +30,6 @@ export function NormalWorkspace() {
         selectedScenarioId: "normalRace",
         onSelectedScenarioChange: () => {},
         onRunBatch: normal.requestMonteCarloBatch,
-      }}
-      monteCarloCoordinator={{
-        progress: monteCarlo.monteCarlo.progress,
-        isStopping: monteCarlo.monteCarlo.isStopping,
-        extremePerformanceEnabled: monteCarlo.extremePerformanceEnabled,
-        onExtremePerformanceEnabledChange: monteCarlo.setExtremePerformanceEnabled,
-        onAbortRun: monteCarlo.abortRun,
-      }}
-      sharedMap={{
-        selectedMapId: shared.mapSelection.selectedMapId,
-        onSelectMapId: shared.mapSelection.setSelectedMapId,
-        boardEffects: shared.mapSelection.boardEffects,
       }}
       race={{
         state: normal.game.state,

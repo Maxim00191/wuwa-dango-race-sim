@@ -1,6 +1,5 @@
 import { TournamentSetupPanel } from "@/components/TournamentSetupPanel";
 import {
-  useMonteCarloWorkspace,
   useSharedSimulation,
   useTournamentWorkspace,
 } from "@/app/contexts/workspaceContexts";
@@ -11,7 +10,6 @@ import { useTranslation } from "@/i18n/useTranslation";
 export function TournamentWorkspace() {
   const { t } = useTranslation();
   const shared = useSharedSimulation();
-  const monteCarlo = useMonteCarloWorkspace();
   const tournament = useTournamentWorkspace();
 
   return (
@@ -42,18 +40,6 @@ export function TournamentWorkspace() {
             scenarioId as "tournament" | "final"
           ),
         onRunBatch: tournament.requestMonteCarloBatch,
-      }}
-      monteCarloCoordinator={{
-        progress: monteCarlo.monteCarlo.progress,
-        isStopping: monteCarlo.monteCarlo.isStopping,
-        extremePerformanceEnabled: monteCarlo.extremePerformanceEnabled,
-        onExtremePerformanceEnabledChange: monteCarlo.setExtremePerformanceEnabled,
-        onAbortRun: monteCarlo.abortRun,
-      }}
-      sharedMap={{
-        selectedMapId: shared.mapSelection.selectedMapId,
-        onSelectMapId: shared.mapSelection.setSelectedMapId,
-        boardEffects: shared.mapSelection.boardEffects,
       }}
       race={{
         state: tournament.tournament.race.state,
