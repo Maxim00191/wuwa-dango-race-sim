@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { WorkspaceView } from "@/components/AppNavigation";
+import type { WorkspaceView } from "@/config/workspaceViews";
 import { ABBY_ID } from "@/constants/ids";
 import { useLineupSelection } from "@/hooks/useLineupSelection";
 import { useMapSelection } from "@/hooks/useMapSelection";

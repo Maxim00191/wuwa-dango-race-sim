@@ -22,7 +22,9 @@ export function reduceGameState(
         ? structuredClone(snapshot.pendingTurn)
         : null,
       log: [],
-      lastTurnPlayback: null,
+      lastTurnPlayback: snapshot.lastTurnPlayback
+        ? { ...snapshot.lastTurnPlayback }
+        : null,
       playbackStamp: 0,
     };
   }

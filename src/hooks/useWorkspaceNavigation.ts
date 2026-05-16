@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import type { WorkspaceView } from "@/components/AppNavigation";
+import type { WorkspaceView } from "@/config/workspaceViews";
 import type { MonteCarloAggregateSnapshot } from "@/types/monteCarlo";
 
 export function useWorkspaceNavigation() {

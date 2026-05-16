@@ -99,7 +99,4 @@ export type ApplicationWorkspaceState = ReturnType<
   typeof useApplicationWorkspaceState
 >;
 
-export type SimulationWorkspaceView = Exclude<
-  ApplicationWorkspaceState["navigation"]["workspaceView"],
-  "analysis"
->;
+export type { SimulationWorkspaceView } from "@/config/workspaceViews";

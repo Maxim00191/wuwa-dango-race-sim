@@ -1,7 +1,7 @@
-import type { WorkspaceView } from "@/components/AppNavigation";
+import type { SimulationWorkspaceView } from "@/config/workspaceViews";
 import { parseReplayJsonText } from "@/services/replayImport";
 
-export type SimulationWorkspaceView = Exclude<WorkspaceView, "analysis">;
+export type { SimulationWorkspaceView };
 
 export type ObserverReplayWorkspaceSlice = {
   flushPlayback: () => void;

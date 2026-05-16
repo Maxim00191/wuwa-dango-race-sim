@@ -113,6 +113,7 @@ function serializeVisualEvents(
     turnOrderActorIds: playback.turnOrderActorIds
       ? [...playback.turnOrderActorIds]
       : undefined,
+    turnQueue: playback.turnQueue ? { ...playback.turnQueue } : undefined,
   };
 }
 
@@ -249,7 +250,23 @@ export function materializeGameStateFromFrame(
     abbyPendingTeleportToStart: frame.abbyPendingTeleportToStart,
     lastRollById: { ...frame.lastRollById },
     log: [],
-    lastTurnPlayback: null,
+    lastTurnPlayback: frame.visualEvents
+      ? {
+          turnIndex: frame.visualEvents.turnIndex,
+          segments: frame.visualEvents.segments.map(clonePlaybackSegment),
+          playbackStamp: 0,
+          sourceCells: cells,
+          sourceEntities: entities,
+          presentationMode: "settled",
+          showTurnIntroBanner: frame.visualEvents.showTurnIntroBanner,
+          turnOrderActorIds: frame.visualEvents.turnOrderActorIds
+            ? [...frame.visualEvents.turnOrderActorIds]
+            : undefined,
+          turnQueue: frame.visualEvents.turnQueue
+            ? { ...frame.visualEvents.turnQueue }
+            : undefined,
+        }
+      : null,
     pendingTurn: clonePendingTurn(frame.pendingTurn),
     actLastNextRoundOrderCounter: frame.actLastNextRoundOrderCounter,
     playbackStamp: 0,

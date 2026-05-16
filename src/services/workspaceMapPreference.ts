@@ -1,4 +1,4 @@
-import type { WorkspaceView } from "@/components/AppNavigation";
+import type { WorkspaceView } from "@/config/workspaceViews";
 import {
   DEFAULT_MAP_ID,
   KNOCKOUT_MAP_ID,

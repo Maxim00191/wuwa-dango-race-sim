@@ -7,6 +7,7 @@ import type {
   PlaybackSegment,
   RaceMode,
   RaceSetup,
+  TurnQueueAttachment,
 } from "@/types/game";
 
 export type MatchRecordSchemaVersion = 1;
@@ -21,6 +22,7 @@ export type ReplayFrameVisualEvents = {
   segments: PlaybackSegment[];
   showTurnIntroBanner: boolean;
   turnOrderActorIds?: DangoId[];
+  turnQueue?: TurnQueueAttachment;
 };
 
 export type MatchGameFrameJson = {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { WorkspaceView } from "@/components/AppNavigation";
+import type { WorkspaceView } from "@/config/workspaceViews";
 import {
   boardLookupForMap,
   resolveMapIdFromBoardAssignments,

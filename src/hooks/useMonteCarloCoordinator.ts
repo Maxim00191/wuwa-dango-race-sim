@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { WorkspaceView } from "@/components/AppNavigation";
+import type { WorkspaceView } from "@/config/workspaceViews";
 import { useMonteCarloSimulation } from "@/hooks/useMonteCarloSimulation";
 import type { useMapSelection } from "@/hooks/useMapSelection";
 import type { MonteCarloAggregateSnapshot } from "@/types/monteCarlo";

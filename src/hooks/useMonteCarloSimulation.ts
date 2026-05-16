@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { LocalizedText } from "@/i18n";
-import type { WorkspaceView } from "@/components/AppNavigation";
+import type { WorkspaceView } from "@/config/workspaceViews";
 import type { HeadlessSimulationScenario } from "@/services/gameEngine";
 import { isValidBasicSelection } from "@/services/gameEngine";
 import { isValidKnockoutGroupLineups } from "@/services/savedKnockoutSetup";

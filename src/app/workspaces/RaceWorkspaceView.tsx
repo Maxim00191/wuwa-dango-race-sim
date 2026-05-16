@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { BroadcastBannerPayload } from "@/components/BroadcastBanner";
-import { GameShell, type GameShellSpectate } from "@/components/GameShell";
+import { GameShell } from "@/components/GameShell";
+import type { GameShellSpectate } from "@/types/gameShell";
 import { MapSelector } from "@/components/MapSelector";
 import {
   MonteCarloPanel,

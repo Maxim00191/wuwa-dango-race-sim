@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { ReplayTimelineCluster } from "@/components/ReplayTimelineCluster";
-import type { GameShellSpectate } from "@/components/GameShell";
+import type { GameShellSpectate } from "@/types/gameShell";
 import type { useGame } from "@/hooks/useGame";
 import { useReplayImportExport } from "@/hooks/useReplayImportExport";
 import { useReplayToolbarLabels } from "@/hooks/useReplayToolbarLabels";
