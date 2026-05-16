@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { text } from "@/i18n";
-import { useGame } from "@/hooks/useGame";
+import { useGame, type UseGameOptions } from "@/hooks/useGame";
 import { isValidBasicSelection } from "@/services/gameEngine";
 import {
   createCustomFinalRaceSetup,
@@ -24,8 +24,11 @@ function arraysEqual(left: DangoId[], right: DangoId[]): boolean {
   return left.every((id, index) => id === right[index]);
 }
 
-export function useTournament(selectedBasicIds: DangoId[]) {
-  const race = useGame();
+export function useTournament(
+  selectedBasicIds: DangoId[],
+  options: UseGameOptions = {}
+) {
+  const race = useGame(options);
   const [persistedFinalPlacements, setPersistedFinalPlacements] = useState<DangoId[]>(
     () => resolvePersistedOrDefaultTournamentFinalPlacements(selectedBasicIds)
   );

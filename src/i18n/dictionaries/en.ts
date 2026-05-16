@@ -79,6 +79,25 @@ export const enDictionary: TranslationDictionary = {
       label: "lang",
     },
   },
+  mapSelection: {
+    eyebrow: "Track layout",
+    title: "Active map",
+    description:
+      "Configuration is applied globally.",
+    presets: {
+      default: {
+        eyebrow: "Standard circuit",
+        label: "Default track",
+        description: "Original festival sprint layout.",
+      },
+      knockout: {
+        eyebrow: "Knockout circuit",
+        label: "Knockout track",
+        description:
+          "Knockout layout with denser propulsion, hindrance, and time rift coverage.",
+      },
+    },
+  },
   theme: {
     switchToLightAria: "Switch to daylight theme",
     switchToDarkAria: "Switch to night theme",
@@ -745,6 +764,26 @@ export const enDictionary: TranslationDictionary = {
       changli: "Plan Before Acting",
       jinhsi: "The Name of the Lingyin",
       calcharo: "Misery follows",
+    },
+    descriptions: {
+      luukHerssen: "When triggering a Propulsion Device, advance an extra 3 cells. However, when triggering a Hindrance Device, retreat an extra 1 cell.",
+      sigrika: "After each round of dice rolls, mark up to two dangos ranked immediately above you (the first roll only determines turn order). Marked dangos move 1 less cell this turn, but movement will not drop to 0 or less.",
+      denia: "When rolling the dice, if the result is the same as the previous roll, advance an extra 2 cells.",
+      hiyuki: "After meeting Boss Abby, advance an extra 1 cell for every subsequent move.",
+      cartethyia: "Triggers at most once per match. After moving, if in last place, there is a 60% chance to advance an extra 2 cells for the rest of the match.",
+      phoebe: "50% chance to advance an extra 1 cell.",
+      mornye: "Dice rolls will cycle through 3, 2, and 1.",
+      shorekeeper: "Dice will only roll 2 or 3.",
+      chisa: "When rolling the dice, if the result is one of the smallest in the current round, advance an extra 2 cells.",
+      carlotta: "28% chance to advance with double the dice roll.",
+      lynae: "Each turn, 60% chance to move with double the dice roll, but 20% chance to be unable to move.",
+      aemeath: "Once per match, after passing the midpoint, if there are other dangos (excluding Boss Abby) ahead, teleport to the top of the nearest one.",
+      augusta: "At the start of a turn, if at the top of a stack, do not act this turn and act last in the next round.",
+      iuno: "Once per match, after passing the midpoint, if there are other dangos (excluding Boss Abby) ranked ahead or behind, teleport them to your cell. Their stack order will match their previous rankings.",
+      phrolova: "At the start of a turn, if at the bottom of a stack, advance an extra 3 cells when moving.",
+      changli: "If stacked on top of other dangos, there is a 65% chance to act last in the next round.",
+      jinhsi: "If other dangos are stacked on top, there is a 40% chance to move to the very top of the stack.",
+      calcharo: "When starting to move, if in last place, advance an extra 3 cells.",
     },
   },
   simulation: {

@@ -63,6 +63,7 @@ type GameShellProps = {
   headerTitle: string;
   headerDescription: string;
   sessionLabel: string;
+  mapSelector?: ReactNode;
   setupPanel?: ReactNode;
   showSetupPanel?: boolean;
   startControls: ReactNode;
@@ -93,6 +94,7 @@ export function GameShell({
   headerTitle,
   headerDescription,
   sessionLabel,
+  mapSelector,
   setupPanel,
   showSetupPanel = false,
   startControls,
@@ -298,6 +300,7 @@ export function GameShell({
         </div>
       </header>
 
+      {mapSelector}
       {showSetupPanel ? setupPanel : null}
 
       <div className="flex w-full flex-col gap-3 sm:gap-4">

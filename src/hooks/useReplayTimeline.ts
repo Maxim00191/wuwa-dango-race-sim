@@ -16,7 +16,11 @@ import {
   serializeEngineFrame,
 } from "@/services/matchReplay";
 import type { GameState, RaceSetup } from "@/types/game";
-import type { MatchGameFrameJson, MatchRecord } from "@/types/replay";
+import type {
+  BoardEffectAssignmentJson,
+  MatchGameFrameJson,
+  MatchRecord,
+} from "@/types/replay";
 
 const QUICK_RESOLVE_SAFETY_CAP = 250_000;
 
@@ -37,6 +41,7 @@ type ReplayGameBridge = {
 
 export type UseReplayTimelineOptions = {
   game: ReplayGameBridge;
+  onReplayBoardLoaded?: (board: BoardEffectAssignmentJson[]) => void;
 };
 
 function lastIndexSameTurn(
@@ -70,7 +75,7 @@ function computeReplayPlayTurnTarget(
 }
 
 export function useReplayTimeline(options: UseReplayTimelineOptions) {
-  const { game } = options;
+  const { game, onReplayBoardLoaded } = options;
   const {
     enabled: replayBannersEnabled,
     payload: replayBannerPayload,
@@ -124,9 +129,10 @@ export function useReplayTimeline(options: UseReplayTimelineOptions) {
     setPlaybackAuto(false);
     setReplayPlayTurnTarget(null);
     setCursorStep(0);
+    onReplayBoardLoaded?.(nextRecord.board);
     const snapshot = materializeGameStateFromFrame(nextRecord.frames[0]!);
     gameRef.current.hydrateEngineState(snapshot);
-  }, [clearReplayVisualBanners, resetLiveCommitted]);
+  }, [clearReplayVisualBanners, onReplayBoardLoaded, resetLiveCommitted]);
 
   const clearReplay = useCallback(() => {
     clearReplayVisualBanners();

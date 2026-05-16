@@ -7,6 +7,7 @@ import {
 import { DangoPicker } from "@/components/DangoPicker";
 import { FooterSocialLinks } from "@/components/FooterSocialLinks";
 import { GameShell, type GameShellSpectate } from "@/components/GameShell";
+import { MapSelector } from "@/components/MapSelector";
 import { MonteCarloPanel } from "@/components/MonteCarloPanel";
 import { ReplayTimelineCluster } from "@/components/ReplayTimelineCluster";
 import { KnockoutSetupPanel } from "@/components/KnockoutSetupPanel";
@@ -14,7 +15,8 @@ import { TournamentSetupPanel } from "@/components/TournamentSetupPanel";
 import { ABBY_ID } from "@/constants/ids";
 import { text } from "@/i18n";
 import { useTranslation } from "@/i18n/useTranslation";
-import { useGame } from "@/hooks/useGame";
+import { useGame, type UseGameOptions } from "@/hooks/useGame";
+import { useMapSelection } from "@/hooks/useMapSelection";
 import { useReplayTimeline } from "@/hooks/useReplayTimeline";
 import { useLineupSelection } from "@/hooks/useLineupSelection";
 import { useMonteCarloSimulation } from "@/hooks/useMonteCarloSimulation";
@@ -23,7 +25,6 @@ import { useKnockoutLineup } from "@/hooks/useKnockoutLineup";
 import { useKnockoutTournament } from "@/hooks/useKnockoutTournament";
 import { useTournament } from "@/hooks/useTournament";
 import { mergeKnockoutParticipantIds } from "@/services/knockout/bracket";
-import { KNOCKOUT_BOARD_CELL_EFFECT_LOOKUP } from "@/services/knockout/knockoutBoardLookup";
 import { isValidBasicSelection } from "@/services/gameEngine";
 import { BASIC_CHARACTER_LIST } from "@/services/characters";
 import {
@@ -42,9 +43,18 @@ function arraysEqual(left: string[], right: string[]): boolean {
 
 export default function App() {
   const { t, tText } = useTranslation();
+  const [workspaceView, setWorkspaceView] = useState<WorkspaceView>("normal");
+  const mapSelection = useMapSelection(workspaceView);
+  const gameBoardOptions = useMemo(
+    (): UseGameOptions => ({
+      boardEffects: mapSelection.boardEffects,
+    }),
+    [mapSelection.boardEffects]
+  );
   const lineup = useLineupSelection();
-  const normalGame = useGame();
+  const normalGame = useGame(gameBoardOptions);
   const normalReplay = useReplayTimeline({
+    onReplayBoardLoaded: mapSelection.syncFromBoardAssignments,
     game: {
       state: normalGame.state,
       reset: normalGame.reset,
@@ -58,13 +68,15 @@ export default function App() {
       getLastRaceSetup: normalGame.getLastRaceSetup,
     },
   });
-  const tournament = useTournament(lineup.selectedBasicIds);
+  const tournament = useTournament(lineup.selectedBasicIds, gameBoardOptions);
   const knockoutLineup = useKnockoutLineup();
   const knockout = useKnockoutTournament(
     knockoutLineup.groupAIds,
-    knockoutLineup.groupBIds
+    knockoutLineup.groupBIds,
+    gameBoardOptions
   );
   const knockoutReplay = useReplayTimeline({
+    onReplayBoardLoaded: mapSelection.syncFromBoardAssignments,
     game: {
       state: knockout.race.state,
       reset: knockout.clearRace,
@@ -79,6 +91,7 @@ export default function App() {
     },
   });
   const tournamentReplay = useReplayTimeline({
+    onReplayBoardLoaded: mapSelection.syncFromBoardAssignments,
     game: {
       state: tournament.race.state,
       reset: tournament.clearRace,
@@ -99,7 +112,6 @@ export default function App() {
       ? __BUILD_TIMESTAMP__
       : buildDate.toLocaleString();
   }, []);
-  const [workspaceView, setWorkspaceView] = useState<WorkspaceView>("normal");
   const [analysisReturnView, setAnalysisReturnView] =
     useState<Exclude<WorkspaceView, "analysis">>("normal");
   const [selectedTournamentMonteCarloScenarioId, setSelectedTournamentMonteCarloScenarioId] =
@@ -122,7 +134,7 @@ export default function App() {
   );
 
   const monteCarlo = useMonteCarloSimulation({
-    boardEffectByCellIndex: normalGame.boardEffects,
+    boardEffectByCellIndex: mapSelection.boardEffects,
     onComplete: handleMonteCarloComplete,
   });
 
@@ -246,7 +258,6 @@ export default function App() {
         scenarioLabel: text("knockout.monteCarlo.scenario.analysisLabel"),
         returnView: "knockout",
         extremePerformance: monteCarloExtremePerformance,
-        boardEffectByCellIndex: KNOCKOUT_BOARD_CELL_EFFECT_LOOKUP,
       });
     },
     [
@@ -794,7 +805,18 @@ export default function App() {
               rankingState={normalGame.rankingState}
               broadcastPayload={normalGame.broadcastPayload}
               boardCells={normalGame.boardCells}
-              boardEffects={normalGame.boardEffects}
+              boardEffects={mapSelection.boardEffects}
+              mapSelector={
+                <MapSelector
+                  selectedMapId={mapSelection.selectedMapId}
+                  onSelectMapId={mapSelection.setSelectedMapId}
+                  disabled={
+                    normalGame.state.phase === "running" ||
+                    normalGame.isAnimating ||
+                    normalReplay.isReplayLoaded
+                  }
+                />
+              }
               hoppingEntityIds={normalGame.hoppingEntityIds}
               idleParticipantIds={idleParticipantIds}
               headerEyebrow={t("normal.shell.eyebrow")}
@@ -866,7 +888,18 @@ export default function App() {
               rankingState={knockout.race.rankingState}
               broadcastPayload={knockout.race.broadcastPayload}
               boardCells={knockout.race.boardCells}
-              boardEffects={knockout.race.boardEffects}
+              boardEffects={mapSelection.boardEffects}
+              mapSelector={
+                <MapSelector
+                  selectedMapId={mapSelection.selectedMapId}
+                  onSelectMapId={mapSelection.setSelectedMapId}
+                  disabled={
+                    knockout.race.state.phase === "running" ||
+                    knockout.race.isAnimating ||
+                    knockoutReplay.isReplayLoaded
+                  }
+                />
+              }
               hoppingEntityIds={knockout.race.hoppingEntityIds}
               idleParticipantIds={[...knockoutParticipantIds, ABBY_ID]}
               headerEyebrow={t("knockout.shell.eyebrow")}
@@ -954,7 +987,18 @@ export default function App() {
               rankingState={tournament.race.rankingState}
               broadcastPayload={tournament.race.broadcastPayload}
               boardCells={tournament.race.boardCells}
-              boardEffects={tournament.race.boardEffects}
+              boardEffects={mapSelection.boardEffects}
+              mapSelector={
+                <MapSelector
+                  selectedMapId={mapSelection.selectedMapId}
+                  onSelectMapId={mapSelection.setSelectedMapId}
+                  disabled={
+                    tournament.race.state.phase === "running" ||
+                    tournament.race.isAnimating ||
+                    tournamentReplay.isReplayLoaded
+                  }
+                />
+              }
               hoppingEntityIds={tournament.race.hoppingEntityIds}
               idleParticipantIds={idleParticipantIds}
               headerEyebrow={t("tournament.shell.eyebrow")}

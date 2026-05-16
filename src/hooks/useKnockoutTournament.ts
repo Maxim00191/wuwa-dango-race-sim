@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { text } from "@/i18n";
-import { useGame } from "@/hooks/useGame";
-import { KNOCKOUT_BOARD_CELL_EFFECT_LOOKUP } from "@/services/knockout/knockoutBoardLookup";
+import { useGame, type UseGameOptions } from "@/hooks/useGame";
 import {
   KNOCKOUT_PHASE_SEQUENCE,
   nextKnockoutPhase,
@@ -49,11 +48,10 @@ function applyPhasePlacements(
 
 export function useKnockoutTournament(
   groupAIds: DangoId[],
-  groupBIds: DangoId[]
+  groupBIds: DangoId[],
+  options: UseGameOptions = {}
 ) {
-  const race = useGame({
-    boardEffects: KNOCKOUT_BOARD_CELL_EFFECT_LOOKUP,
-  });
+  const race = useGame(options);
   const raceReset = race.reset;
   const raceStart = race.start;
   const raceState = race.state;

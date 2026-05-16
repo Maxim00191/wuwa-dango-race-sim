@@ -37,6 +37,7 @@ type PickerModeButtonProps = {
 };
 
 type GroupMemberTileProps = {
+  id: DangoId;
   accentHex: string;
   highlighted: boolean;
   isDark: boolean;
@@ -64,29 +65,44 @@ function PickerModeButton({
 }
 
 function GroupMemberTile({
+  id,
   accentHex,
   highlighted,
   isDark,
   name,
 }: GroupMemberTileProps) {
+  const { t } = useTranslation();
   return (
-    <div
-      className="rounded-2xl border px-3 py-3 text-sm font-semibold text-slate-800 dark:text-slate-100"
-      style={{
-        borderColor: highlighted
-          ? colorWithAlpha(accentHex, 0.52)
-          : colorWithAlpha(accentHex, 0.2),
-        backgroundColor: highlighted
-          ? colorWithAlpha(accentHex, isDark ? 0.2 : 0.12)
-          : isDark
-            ? "rgba(15, 23, 42, 0.72)"
-            : "rgba(255, 255, 255, 0.92)",
-        boxShadow: highlighted
-          ? `0 0 0 1px ${colorWithAlpha(accentHex, isDark ? 0.28 : 0.16)}`
-          : "none",
-      }}
-    >
-      <span className="block truncate">{name}</span>
+    <div className="group relative">
+      <div
+        className="rounded-2xl border px-3 py-3 text-sm font-semibold text-slate-800 dark:text-slate-100"
+        style={{
+          borderColor: highlighted
+            ? colorWithAlpha(accentHex, 0.52)
+            : colorWithAlpha(accentHex, 0.2),
+          backgroundColor: highlighted
+            ? colorWithAlpha(accentHex, isDark ? 0.2 : 0.12)
+            : isDark
+              ? "rgba(15, 23, 42, 0.72)"
+              : "rgba(255, 255, 255, 0.92)",
+          boxShadow: highlighted
+            ? `0 0 0 1px ${colorWithAlpha(accentHex, isDark ? 0.28 : 0.16)}`
+            : "none",
+        }}
+      >
+        <span className="block truncate">{name}</span>
+      </div>
+
+      <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 w-64 -translate-x-1/2 origin-bottom scale-95 opacity-0 transition-all group-hover:scale-100 group-hover:opacity-100">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xl shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-900 dark:shadow-slate-950/50">
+          <p className="mb-1 text-xs font-bold" style={{ color: accentHex }}>
+            {t(`skills.names.${id}`)}
+          </p>
+          <p className="text-[11px] leading-relaxed text-slate-600 dark:text-slate-400">
+            {t(`skills.descriptions.${id}`)}
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
@@ -256,72 +272,87 @@ export function DangoPicker({
                       const interactive = isSelected || canAdd;
 
                       return (
-                        <button
-                          key={character.id}
-                          type="button"
-                          disabled={!interactive}
-                          onClick={() => onToggleBasicId(character.id)}
-                          className={`min-h-9 w-full rounded-xl border px-2 py-2 text-left text-xs font-semibold transition sm:min-h-10 sm:rounded-2xl sm:px-3 sm:py-2.5 sm:text-sm md:min-h-11 md:py-3 ${
-                            interactive
-                              ? "hover:-translate-y-0.5 hover:shadow-lg"
-                              : "cursor-not-allowed"
-                          } ${
-                            isSelected
-                              ? "text-slate-950 dark:text-slate-50"
-                              : canAdd
-                                ? "text-slate-800 dark:text-slate-100"
-                                : "text-slate-400 dark:text-slate-600"
-                          }`}
-                          style={{
-                            borderColor: isSelected
-                              ? colorWithAlpha(attributeMeta.colorHex, 0.72)
-                              : canAdd
-                                ? colorWithAlpha(attributeMeta.colorHex, 0.24)
-                                : "transparent",
-                            backgroundColor: isSelected
-                              ? colorWithAlpha(
-                                  attributeMeta.colorHex,
-                                  isDark ? 0.28 : 0.16
-                                )
-                              : canAdd
-                                ? isDark
-                                  ? "rgba(15, 23, 42, 0.82)"
-                                  : "rgba(255, 255, 255, 0.92)"
-                                : isDark
-                                  ? "rgba(15, 23, 42, 0.38)"
-                                  : "rgba(241, 245, 249, 0.84)",
-                            boxShadow: isSelected
-                              ? `0 0 0 1px ${colorWithAlpha(
-                                  attributeMeta.colorHex,
-                                  isDark ? 0.42 : 0.18
-                                )}`
-                              : "none",
-                          }}
-                        >
-                          <span className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2 md:gap-3">
-                            <span className="min-w-0 truncate">
-                              {getCharacterName(character.id)}
-                            </span>
-                            <span
-                              className="w-fit shrink-0 rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] sm:px-2.5 sm:py-1 sm:text-[10px] sm:tracking-[0.16em]"
-                              style={{
-                                backgroundColor: colorWithAlpha(
-                                  attributeMeta.colorHex,
-                                  isDark ? 0.2 : 0.12
-                                ),
-                                color: attributeMeta.colorHex,
-                              }}
-                            >
-                              {isSelected
-                                ? t("lineup.selected")
+                        <div key={character.id} className="group relative">
+                          <button
+                            type="button"
+                            disabled={!interactive}
+                            onClick={() => onToggleBasicId(character.id)}
+                            className={`min-h-9 w-full rounded-xl border px-2 py-2 text-left text-xs font-semibold transition sm:min-h-10 sm:rounded-2xl sm:px-3 sm:py-2.5 sm:text-sm md:min-h-11 md:py-3 ${
+                              interactive
+                                ? "hover:-translate-y-0.5 hover:shadow-lg"
+                                : "cursor-not-allowed"
+                            } ${
+                              isSelected
+                                ? "text-slate-950 dark:text-slate-50"
                                 : canAdd
-                                  ? t("lineup.available")
-                                  : inOtherLineup
-                                    ? t("lineup.selected")
-                                    : t("lineup.locked")}
+                                  ? "text-slate-800 dark:text-slate-100"
+                                  : "text-slate-400 dark:text-slate-600"
+                            }`}
+                            style={{
+                              borderColor: isSelected
+                                ? colorWithAlpha(attributeMeta.colorHex, 0.72)
+                                : canAdd
+                                  ? colorWithAlpha(attributeMeta.colorHex, 0.24)
+                                  : "transparent",
+                              backgroundColor: isSelected
+                                ? colorWithAlpha(
+                                    attributeMeta.colorHex,
+                                    isDark ? 0.28 : 0.16
+                                  )
+                                : canAdd
+                                  ? isDark
+                                    ? "rgba(15, 23, 42, 0.82)"
+                                    : "rgba(255, 255, 255, 0.92)"
+                                  : isDark
+                                    ? "rgba(15, 23, 42, 0.38)"
+                                    : "rgba(241, 245, 249, 0.84)",
+                              boxShadow: isSelected
+                                ? `0 0 0 1px ${colorWithAlpha(
+                                    attributeMeta.colorHex,
+                                    isDark ? 0.42 : 0.18
+                                  )}`
+                                : "none",
+                            }}
+                          >
+                            <span className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2 md:gap-3">
+                              <span className="min-w-0 truncate">
+                                {getCharacterName(character.id)}
+                              </span>
+                              <span
+                                className="w-fit shrink-0 rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] sm:px-2.5 sm:py-1 sm:text-[10px] sm:tracking-[0.16em]"
+                                style={{
+                                  backgroundColor: colorWithAlpha(
+                                    attributeMeta.colorHex,
+                                    isDark ? 0.2 : 0.12
+                                  ),
+                                  color: attributeMeta.colorHex,
+                                }}
+                              >
+                                {isSelected
+                                  ? t("lineup.selected")
+                                  : canAdd
+                                    ? t("lineup.available")
+                                    : inOtherLineup
+                                      ? t("lineup.selected")
+                                      : t("lineup.locked")}
+                              </span>
                             </span>
-                          </span>
-                        </button>
+                          </button>
+
+                          <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 w-64 -translate-x-1/2 origin-bottom scale-95 opacity-0 transition-all group-hover:scale-100 group-hover:opacity-100">
+                            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xl shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-900 dark:shadow-slate-950/50">
+                              <p
+                                className="mb-1 text-xs font-bold"
+                                style={{ color: attributeMeta.colorHex }}
+                              >
+                                {t(`skills.names.${character.id}`)}
+                              </p>
+                              <p className="text-[11px] leading-relaxed text-slate-600 dark:text-slate-400">
+                                {t(`skills.descriptions.${character.id}`)}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
                       );
                     })
                   ) : (
@@ -443,6 +474,7 @@ export function DangoPicker({
                   {group.characters.map((character) => (
                     <GroupMemberTile
                       key={character.id}
+                      id={character.id}
                       accentHex={group.accentHex}
                       highlighted={selectedSet.has(character.id)}
                       isDark={isDark}
