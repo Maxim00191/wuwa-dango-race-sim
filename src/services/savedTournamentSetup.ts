@@ -2,6 +2,10 @@ import {
   createDefaultFinalPlacements,
   sanitizeFinalPlacements,
 } from "@/services/raceSetup";
+import {
+  readStorageValue,
+  writeStorageValue,
+} from "@/services/persistence/storage";
 import type { DangoId } from "@/types/game";
 
 export const SAVED_TOURNAMENT_FINALS_STORAGE_KEY =
@@ -39,11 +43,8 @@ function parsePersistedTournamentFinalsMap(
 export function readPersistedTournamentFinalPlacements(
   selectedBasicIds: DangoId[]
 ): DangoId[] | null {
-  if (typeof globalThis.localStorage === "undefined") {
-    return null;
-  }
   const persistedMap = parsePersistedTournamentFinalsMap(
-    globalThis.localStorage.getItem(SAVED_TOURNAMENT_FINALS_STORAGE_KEY)
+    readStorageValue(SAVED_TOURNAMENT_FINALS_STORAGE_KEY)
   );
   const persistedPlacements =
     persistedMap[buildTournamentFinalsKey(selectedBasicIds)] ?? null;
@@ -57,15 +58,12 @@ export function writePersistedTournamentFinalPlacements(
   selectedBasicIds: DangoId[],
   placements: DangoId[]
 ): void {
-  if (typeof globalThis.localStorage === "undefined") {
-    return;
-  }
   const persistedMap = parsePersistedTournamentFinalsMap(
-    globalThis.localStorage.getItem(SAVED_TOURNAMENT_FINALS_STORAGE_KEY)
+    readStorageValue(SAVED_TOURNAMENT_FINALS_STORAGE_KEY)
   );
   persistedMap[buildTournamentFinalsKey(selectedBasicIds)] =
     sanitizeFinalPlacements(placements, selectedBasicIds);
-  globalThis.localStorage.setItem(
+  writeStorageValue(
     SAVED_TOURNAMENT_FINALS_STORAGE_KEY,
     JSON.stringify(persistedMap)
   );

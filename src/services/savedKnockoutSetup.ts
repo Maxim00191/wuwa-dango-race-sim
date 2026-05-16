@@ -5,6 +5,10 @@ import {
 } from "@/services/knockout/defaults";
 import { CHARACTER_BY_ID } from "@/services/characters";
 import { isValidBasicSelection } from "@/services/gameEngine";
+import {
+  readStorageValue,
+  writeStorageValue,
+} from "@/services/persistence/storage";
 import type { DangoId } from "@/types/game";
 
 export const SAVED_KNOCKOUT_SETUP_STORAGE_KEY =
@@ -79,19 +83,13 @@ export function isValidKnockoutGroupLineups(
 }
 
 export function readPersistedKnockoutSetup(): KnockoutGroupLineups | null {
-  if (typeof globalThis.localStorage === "undefined") {
-    return null;
-  }
   return parseStoredKnockoutPayload(
-    globalThis.localStorage.getItem(SAVED_KNOCKOUT_SETUP_STORAGE_KEY)
+    readStorageValue(SAVED_KNOCKOUT_SETUP_STORAGE_KEY)
   );
 }
 
 export function writePersistedKnockoutSetup(lineups: KnockoutGroupLineups): void {
-  if (typeof globalThis.localStorage === "undefined") {
-    return;
-  }
-  globalThis.localStorage.setItem(
+  writeStorageValue(
     SAVED_KNOCKOUT_SETUP_STORAGE_KEY,
     JSON.stringify(lineups)
   );

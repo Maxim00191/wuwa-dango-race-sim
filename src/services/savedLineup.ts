@@ -5,6 +5,10 @@ import {
 import { LINEUP_GROUPS } from "@/constants/lineupGroups";
 import { CHARACTER_BY_ID } from "@/services/characters";
 import { isValidBasicSelection } from "@/services/gameEngine";
+import {
+  readStorageValue,
+  writeStorageValue,
+} from "@/services/persistence/storage";
 import type { DangoId } from "@/types/game";
 
 export const SAVED_LINEUP_STORAGE_KEY = "dango_scramble_saved_lineup";
@@ -78,22 +82,11 @@ export function parseStoredLineupPayload(raw: string | null): DangoId[] | null {
 }
 
 export function readPersistedLineupSelection(): DangoId[] | null {
-  if (typeof globalThis.localStorage === "undefined") {
-    return null;
-  }
-  return parseStoredLineupPayload(
-    globalThis.localStorage.getItem(SAVED_LINEUP_STORAGE_KEY)
-  );
+  return parseStoredLineupPayload(readStorageValue(SAVED_LINEUP_STORAGE_KEY));
 }
 
 export function writePersistedLineupSelection(ids: DangoId[]): void {
-  if (typeof globalThis.localStorage === "undefined") {
-    return;
-  }
-  globalThis.localStorage.setItem(
-    SAVED_LINEUP_STORAGE_KEY,
-    JSON.stringify(ids)
-  );
+  writeStorageValue(SAVED_LINEUP_STORAGE_KEY, JSON.stringify(ids));
 }
 
 export function resolvePersistedOrSmartDefaultLineup(): DangoId[] {

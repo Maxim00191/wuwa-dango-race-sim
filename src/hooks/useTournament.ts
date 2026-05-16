@@ -3,26 +3,18 @@ import { text } from "@/i18n";
 import { useGame, type UseGameOptions } from "@/hooks/useGame";
 import { isValidBasicSelection } from "@/services/gameEngine";
 import {
-  createCustomFinalRaceSetup,
   createDefaultFinalPlacements,
-  createTournamentFinalRaceSetup,
   createTournamentPreliminaryRaceSetup,
   deriveBasicPlacementsFromRace,
   isValidFinalPlacements,
   sanitizeFinalPlacements,
 } from "@/services/raceSetup";
+import { resolveTournamentFinalRaceSetup } from "@/services/tournamentFinalSetup";
 import {
   resolvePersistedOrDefaultTournamentFinalPlacements,
   writePersistedTournamentFinalPlacements,
 } from "@/services/savedTournamentSetup";
 import type { DangoId } from "@/types/game";
-
-function arraysEqual(left: DangoId[], right: DangoId[]): boolean {
-  if (left.length !== right.length) {
-    return false;
-  }
-  return left.every((id, index) => id === right[index]);
-}
 
 export function useTournament(
   selectedBasicIds: DangoId[],
@@ -137,13 +129,8 @@ export function useTournament(
     }
     const sanitized = sanitizeFinalPlacements(finalPlacements, selectedBasicIds);
     setFinalPlacementsState(sanitized);
-    const shouldUseTournamentFinalSetup =
-      preliminaryPlacements !== null &&
-      arraysEqual(sanitized, preliminaryPlacements);
     race.start(
-      shouldUseTournamentFinalSetup
-        ? createTournamentFinalRaceSetup(sanitized)
-        : createCustomFinalRaceSetup(sanitized)
+      resolveTournamentFinalRaceSetup(preliminaryPlacements, sanitized)
     );
   }, [finalPlacements, preliminaryPlacements, race, selectedBasicIds]);
 
