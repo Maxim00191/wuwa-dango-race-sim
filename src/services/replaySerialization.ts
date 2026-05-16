@@ -198,6 +198,7 @@ export function serializeEngineFrame(state: GameState): MatchGameFrameJson {
     turnIndex: state.turnIndex,
     entityOrder: [...state.entityOrder],
     preserveEntityOrderOnFirstTurn: state.preserveEntityOrderOnFirstTurn,
+    activeBasicsShareStartingCell: state.activeBasicsShareStartingCell,
     raceWinDistanceInClockwiseSteps: state.raceWinDistanceInClockwiseSteps,
     activeBasicIds: [...state.activeBasicIds],
     winnerId: state.winnerId,
@@ -235,6 +236,10 @@ export function materializeGameStateFromFrame(
     entityOrder: [...frame.entityOrder],
     preserveEntityOrderOnFirstTurn:
       frame.preserveEntityOrderOnFirstTurn ?? false,
+    activeBasicsShareStartingCell:
+      frame.activeBasicsShareStartingCell ??
+      frame.preserveEntityOrderOnFirstTurn ??
+      false,
     raceWinDistanceInClockwiseSteps:
       frame.raceWinDistanceInClockwiseSteps ??
       LAP_DISTANCE_IN_CLOCKWISE_STEPS,

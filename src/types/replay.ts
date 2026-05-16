@@ -31,6 +31,7 @@ export type MatchGameFrameJson = {
   turnIndex: number;
   entityOrder: DangoId[];
   preserveEntityOrderOnFirstTurn?: boolean;
+  activeBasicsShareStartingCell?: boolean;
   raceWinDistanceInClockwiseSteps?: number;
   activeBasicIds: DangoId[];
   winnerId: DangoId | null;

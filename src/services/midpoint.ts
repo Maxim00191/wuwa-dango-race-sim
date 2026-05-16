@@ -17,3 +17,33 @@ export function hasCrossedMidpoint(
     context.endRaceDisplacement >= midpointDistance
   );
 }
+
+export function peakRaceDisplacementForTurn(
+  context: Pick<
+    PostMovementHookContext,
+    | "startRaceDisplacement"
+    | "endRaceDisplacement"
+    | "diceValue"
+    | "travelDirection"
+  >
+): number {
+  const forwardSteps =
+    context.travelDirection === "clockwise" ? context.diceValue : 0;
+  return Math.max(
+    context.endRaceDisplacement,
+    context.startRaceDisplacement + forwardSteps
+  );
+}
+
+export function hasPassedCourseMidpoint(
+  context: Pick<
+    PostMovementHookContext,
+    | "startRaceDisplacement"
+    | "endRaceDisplacement"
+    | "diceValue"
+    | "travelDirection"
+  >,
+  midpointDistance: number = courseMidpointDistance()
+): boolean {
+  return peakRaceDisplacementForTurn(context) >= midpointDistance;
+}

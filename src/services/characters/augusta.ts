@@ -20,6 +20,9 @@ function resolveAugustaGovernorAuthority(
   if (entity?.skillState.augustaServingDelayedTurn) {
     return { state };
   }
+  if (context.turnIndex <= 1 && state.activeBasicsShareStartingCell) {
+    return { state };
+  }
   const nextEligible =
     entity?.skillState.augustaGovernorAuthorityNextEligibleTurnIndex;
   if (

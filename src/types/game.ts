@@ -454,6 +454,7 @@ export type GameState = {
   cells: Map<CellIndex, DangoId[]>;
   entityOrder: DangoId[];
   preserveEntityOrderOnFirstTurn: boolean;
+  activeBasicsShareStartingCell: boolean;
   raceWinDistanceInClockwiseSteps: number;
   entities: Record<DangoId, EntityRuntimeState>;
   activeBasicIds: DangoId[];

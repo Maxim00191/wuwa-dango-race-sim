@@ -11,6 +11,7 @@ export function createInitialGameState(): GameState {
     cells: new Map(),
     entityOrder: [],
     preserveEntityOrderOnFirstTurn: false,
+    activeBasicsShareStartingCell: false,
     raceWinDistanceInClockwiseSteps: LAP_DISTANCE_IN_CLOCKWISE_STEPS,
     entities: {},
     activeBasicIds: [],

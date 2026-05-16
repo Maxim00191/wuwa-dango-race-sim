@@ -1,7 +1,7 @@
 import { skillTrigger } from "@/broadcast/skillTrigger";
 import { characterParam, text } from "@/i18n";
 import { rollStandardBasicDice } from "@/services/characters/basic";
-import { courseMidpointDistance } from "@/services/midpoint";
+import { hasPassedCourseMidpoint } from "@/services/midpoint";
 import { orderedBasicRacerIdsForLeaderboard } from "@/services/racerRanking";
 import {
   applyStackTeleportCellsOnly,
@@ -84,9 +84,7 @@ function resolveIunoAnchoredDestiny(
     return { state };
   }
   const endDisplacement = context.endRaceDisplacement;
-  const passedCourseMidpoint =
-    endDisplacement >= courseMidpointDistance();
-  const scope = passedCourseMidpoint
+  const scope = hasPassedCourseMidpoint(context)
     ? resolveAnchoredDestinyTeleportScope(
         orderedBasicRacerIdsForLeaderboard(state),
         context.rollerId

@@ -2,7 +2,12 @@ import { ABBY_ID } from "@/constants/ids";
 import { skillTrigger } from "@/broadcast/skillTrigger";
 import { characterParam, text } from "@/i18n";
 import { rollInclusive } from "@/services/characters/dice";
-import { courseMidpointDistance } from "@/services/midpoint";
+import {
+  clockwiseDistanceAhead,
+  leaderboardClockwiseCourseProgress,
+} from "@/services/circular";
+import { hasPassedCourseMidpoint } from "@/services/midpoint";
+import { orderedBasicRacerIdsForLeaderboard } from "@/services/racerRanking";
 import {
   applyStackTeleportCellsOnly,
   findCellIndexForEntity,
@@ -10,6 +15,7 @@ import {
 } from "@/services/stateCells";
 import type {
   CharacterDefinition,
+  DangoId,
   DiceRollContext,
   DiceRollResult,
   GameState,
@@ -26,30 +32,98 @@ function rollAemeathDice(
   return { diceValue: rollInclusive(1, 3) };
 }
 
-function findNearestAheadTeleportTarget(
+function isActorInLeadingCluster(state: GameState, actorId: DangoId): boolean {
+  const rankedBasicIds = orderedBasicRacerIdsForLeaderboard(state);
+  const leaderId = rankedBasicIds[0];
+  if (!leaderId) {
+    return true;
+  }
+  const leaderDisplacement =
+    state.entities[leaderId]?.raceDisplacement ?? Number.NEGATIVE_INFINITY;
+  const actorDisplacement =
+    state.entities[actorId]?.raceDisplacement ?? Number.NEGATIVE_INFINITY;
+  return actorDisplacement >= leaderDisplacement;
+}
+
+function isTargetStrictlyAheadOnCourse(
+  actorCellIndex: number,
+  targetCellIndex: number,
+  actorRaceDisplacement: number,
+  targetRaceDisplacement: number
+): boolean {
+  if (actorCellIndex === targetCellIndex) {
+    return false;
+  }
+  if (targetRaceDisplacement > actorRaceDisplacement) {
+    return true;
+  }
+  if (targetRaceDisplacement < actorRaceDisplacement) {
+    return false;
+  }
+  return (
+    leaderboardClockwiseCourseProgress(targetCellIndex) >
+    leaderboardClockwiseCourseProgress(actorCellIndex)
+  );
+}
+
+function findNearestStrictlyAheadTeleportTarget(
   state: GameState,
-  rollerId: string,
-  forwardFromRaceDisplacement: number
+  actorId: DangoId
 ): { destinationCellIndex: number; anchorRaceDisplacement: number } | null {
-  if (!state.entities[rollerId]) {
+  const actor = state.entities[actorId];
+  if (!actor) {
+    return null;
+  }
+  if (isActorInLeadingCluster(state, actorId)) {
+    return null;
+  }
+  const rankedBasicIds = orderedBasicRacerIdsForLeaderboard(state);
+  const actorRankIndex = rankedBasicIds.indexOf(actorId);
+  if (actorRankIndex <= 0) {
+    return null;
+  }
+  const aheadIds = rankedBasicIds.slice(0, actorRankIndex);
+  const actorCellIndex = findCellIndexForEntity(state.cells, actorId);
+  if (actorCellIndex === null) {
     return null;
   }
   let nearest:
-    | { destinationCellIndex: number; anchorRaceDisplacement: number; distance: number }
+    | {
+        destinationCellIndex: number;
+        anchorRaceDisplacement: number;
+        clockwiseStepsAhead: number;
+      }
     | null = null;
-  for (const [targetId, target] of Object.entries(state.entities)) {
-    if (targetId === rollerId || targetId === ABBY_ID) {
+  for (const targetId of aheadIds) {
+    if (targetId === ABBY_ID) {
       continue;
     }
-    const distance = target.raceDisplacement - forwardFromRaceDisplacement;
-    if (distance <= 0) {
+    const target = state.entities[targetId];
+    if (!target) {
       continue;
     }
-    if (!nearest || distance < nearest.distance) {
+    if (
+      !isTargetStrictlyAheadOnCourse(
+        actorCellIndex,
+        target.cellIndex,
+        actor.raceDisplacement,
+        target.raceDisplacement
+      )
+    ) {
+      continue;
+    }
+    const clockwiseStepsAhead = clockwiseDistanceAhead(
+      actorCellIndex,
+      target.cellIndex
+    );
+    if (clockwiseStepsAhead <= 0) {
+      continue;
+    }
+    if (!nearest || clockwiseStepsAhead < nearest.clockwiseStepsAhead) {
       nearest = {
         destinationCellIndex: target.cellIndex,
         anchorRaceDisplacement: target.raceDisplacement,
-        distance,
+        clockwiseStepsAhead,
       };
     }
   }
@@ -73,12 +147,13 @@ function resolveAemeathMidpointLeap(
   if (!entity || entity.skillState.hasUsedMidpointLeap) {
     return { state };
   }
-  const endDisplacement = context.endRaceDisplacement;
-  const passedCourseMidpoint =
-    endDisplacement >= courseMidpointDistance();
-  const teleportTarget = passedCourseMidpoint
-    ? findNearestAheadTeleportTarget(state, context.rollerId, endDisplacement)
-    : null;
+  if (!hasPassedCourseMidpoint(context)) {
+    return { state };
+  }
+  const teleportTarget = findNearestStrictlyAheadTeleportTarget(
+    state,
+    context.rollerId
+  );
   if (!teleportTarget) {
     return { state };
   }

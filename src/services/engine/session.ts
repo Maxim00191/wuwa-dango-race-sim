@@ -1,5 +1,6 @@
 import { FINISH_LINE_CELL_INDEX } from "@/constants/board";
 import { ABBY_ID } from "@/constants/ids";
+import { allActiveBasicsShareCell } from "@/services/characters/raceStartLayout";
 import { shuffleOrderStableCopy } from "@/services/engine/core/random";
 import type { DangoId, GameState } from "@/types/game";
 import type { RaceSetup } from "@/types/game";
@@ -37,7 +38,7 @@ export function createRunningSessionFromSetup(setup: RaceSetup): GameState {
       };
     }
   }
-  return {
+  const state: GameState = {
     phase: "running",
     mode: setup.mode,
     label: setup.label,
@@ -49,6 +50,7 @@ export function createRunningSessionFromSetup(setup: RaceSetup): GameState {
       shuffleOrderStableCopy([...setup.selectedBasicIds, ABBY_ID]),
     preserveEntityOrderOnFirstTurn:
       setup.seededFirstTurnActorOrder !== undefined,
+    activeBasicsShareStartingCell: false,
     raceWinDistanceInClockwiseSteps:
       setup.raceWinDistanceInClockwiseSteps,
     entities,
@@ -61,6 +63,10 @@ export function createRunningSessionFromSetup(setup: RaceSetup): GameState {
     pendingTurn: null,
     actLastNextRoundOrderCounter: 0,
     playbackStamp: 0,
+  };
+  return {
+    ...state,
+    activeBasicsShareStartingCell: allActiveBasicsShareCell(state),
   };
 }
 
